@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ward Attendance - eVarsity® School ERP</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --primary-light: #F0FDFA;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#0D9488"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>eVarsity® School ERP</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Parent Console</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance Log</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results & CIA</a></li>
+        <li class="sidebar-item"><a href="homework.html">📎 Ward Homework</a></li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Account</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Class Timetable</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Curriculum Subjects</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Faculty Inbox</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile console</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
+        </li>
+      </ul>
+</aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Ward Attendance Ledger</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search child records...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="parentAvatar">P</div>
+            <div style="font-weight: 600;" id="parentDisplayName">Parent Name</div>
+          </div>
+</div>
+      </header>
+
+      <div class="content-area">
+        
+        <div class="card" style="border-top: 4px solid var(--primary); padding:20px; margin-bottom:20px; background-color: var(--bg-card);">
+          <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+            <div class="avatar-circle" style="width:70px; height:70px; font-size:28px; line-height:70px; background-color: var(--primary-light); color: var(--primary-dark); font-weight: bold;" id="stuBigAvatar">S</div>
+            <div style="flex:1;">
+              <h2 id="stuHeaderName" style="margin:0; font-size:22px; color:var(--text-main);">Loading Student Name...</h2>
+              <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:14px;" id="stuHeaderClass">Loading Standard...</p>
+            </div>
+            <div style="display:grid; grid-template-columns:auto auto; gap:10px 20px; font-size:13px; border-left:1px solid var(--border-color); padding-left:20px;">
+              <div>🔑 <b>Admission ID:</b> <span id="infoAdmID">--</span></div>
+              <div>📅 <b>Academic Term:</b> <span>Term I</span></div>
+              <div>👨‍🏫 <b>Class Teacher:</b> <span id="infoTeacher">--</span></div>
+              <div>🏫 <b>Academic Year:</b> <span>2026 - 2027</span></div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="card" style="text-align:center; margin-bottom:20px;">
+          <h3 class="card-title">Overall Cumulative Attendance Rate</h3>
+          <div style="font-size: 64px; font-weight: 800; color: var(--primary); margin: 20px 0;" id="attValueText">--</div>
+          <p>Adherence Status: <b style="color:var(--success)">Good Standing</b></p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom:15px;">Recent Attendance Sessions</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr><th>Date</th><th>Session Period</th><th>Status</th><th>Remarks</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>15 Jun 2026</td><td>Morning & Afternoon</td><td><span class="badge badge-success">Present</span></td><td>Regular Attendant</td></tr>
+                <tr><td>14 Jun 2026</td><td>Morning & Afternoon</td><td><span class="badge badge-success">Present</span></td><td>Regular Attendant</td></tr>
+                <tr><td>13 Jun 2026</td><td>Morning & Afternoon</td><td><span class="badge badge-success">Present</span></td><td>Regular Attendant</td></tr>
+                <tr><td>12 Jun 2026</td><td>Morning & Afternoon</td><td><span class="badge badge-success">Present</span></td><td>Regular Attendant</td></tr>
+                <tr><td>11 Jun 2026</td><td>Morning & Afternoon</td><td><span class="badge badge-success">Present</span></td><td>Regular Attendant</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let currentParentName = '';
+  let currentParentId = '';
+  let currentChild = null;
+
+  function loadParentProfile() {
+    const parentId = localStorage.getItem('userId') || 'PAR001';
+    const childId = localStorage.getItem('childId') || 'STU001';
+    const students = AppState.getData('lms_students');
+    
+    currentChild = students.find(s => s.id === childId || s.parentUsername === parentId) || students[0];
+    currentParentName = currentChild.parent;
+    currentParentId = currentChild.parentUsername || parentId;
+
+    document.getElementById('parentDisplayName').innerText = currentParentName;
+    const nameParts = currentParentName.split(' ');
+    document.getElementById('parentAvatar').innerText = nameParts.map(p => p[0]).join('');
+  }
+
+    
+  function loadStudentInfoCard(studentObj) {
+    document.getElementById('stuHeaderName').innerText = studentObj.name;
+    document.getElementById('stuHeaderClass').innerText = studentObj.class + ' - Section ' + studentObj.section;
+    document.getElementById('infoAdmID').innerText = studentObj.id;
+
+    // Resolve class teacher
+    const classes = AppState.getData('lms_classes');
+    const cls = classes.find(c => c.name === studentObj.class);
+    document.getElementById('infoTeacher').innerText = cls ? cls.teacherName : 'Assigned Faculty';
+
+    // Avatar
+    const avatar = document.getElementById('stuBigAvatar');
+    if (studentObj.photo) {
+      avatar.innerHTML = `<img src="${studentObj.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      avatar.style.background = 'transparent';
+    } else {
+      const nameParts = studentObj.name.split(' ');
+      avatar.innerText = nameParts.map(p => p[0]).join('');
+      avatar.style.backgroundColor = 'var(--primary-light)';
+    }
+  }
+
+
+    window.addEventListener('load', () => {
+      loadParentProfile();
+      loadStudentInfoCard(currentChild);
+      document.getElementById('attValueText').innerText = (currentChild.attendance || 85) + '%';
+    });
+  </script>
+</body>
+</html>

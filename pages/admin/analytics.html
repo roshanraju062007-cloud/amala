@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Performance Analytics - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Academic Performance Analytics</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="stats-grid">
+    <div class="stat-card" style="border-left-color: var(--primary)"><div class="stat-info"><h3>Avg score</h3><div class="stat-value">78.5%</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--success)"><div class="stat-info"><h3>Pass Rate</h3><div class="stat-value">96.2%</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--warning)"><div class="stat-info"><h3>Avg Attendance</h3><div class="stat-value">91.4%</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--danger)"><div class="stat-info"><h3>Staff Ratio</h3><div class="stat-value">1:17</div></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Score Distributions (Bar Chart)</h3>
+      <canvas id="scoresChart" width="500" height="250" style="width:100%; height:250px;"></canvas>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Top 5 Academic Performers</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>Rank</th><th>Student</th><th>Grade</th><th>Percentage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>🏆 1</td><td>Aditya Patel</td><td>10-A</td><td>98.2%</td></tr>
+          <tr><td>🥈 2</td><td>Priya Seth</td><td>12-Science</td><td>97.4%</td></tr>
+          <tr><td>🥉 3</td><td>Amit Shah</td><td>9-C</td><td>96.8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      drawBarChart('scoresChart', ['Math', 'Science', 'English', 'Social Science', 'Hindi'], [82, 79, 88, 74, 80], 'var(--primary)');
+    });
+  </script>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

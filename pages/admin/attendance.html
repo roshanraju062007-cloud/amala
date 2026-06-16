@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Attendance Sheet - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Daily Attendance Sheet</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="grid-2" style="grid-template-columns: 8fr 4fr;">
+    <div class="card">
+      <h3 class="card-title">Attendance Register</h3>
+      
+      <div style="display:flex; gap:15px; margin-bottom:15px;">
+        <select class="form-control" style="width:150px;" id="attClass" onchange="loadAttendanceRoster()"></select>
+        <input type="date" class="form-control" style="width:180px;" id="attDate" onchange="loadAttendanceRoster()">
+      </div>
+
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Student</th><th>Status</th><th>Remarks</th></tr></thead>
+        <tbody id="attRosterBody"></tbody>
+      </table>
+      
+      <div style="margin-top:15px; text-align:right;">
+        <button class="btn btn-warning" onclick="sendAlerts()">📢 Send Absentee Alerts</button>
+        <button class="btn btn-primary" onclick="saveAttendance()">Save Register</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3 class="card-title">Daily Heatmap calendar</h3>
+        <p style="font-size:12px; margin-bottom:10px;">Marking a student absent writes a red block on their monthly dashboard calendar.</p>
+        <div class="heatmap-calendar">
+          <div class="heatmap-day heatmap-present">1</div>
+          <div class="heatmap-day heatmap-present">2</div>
+          <div class="heatmap-day heatmap-present">3</div>
+          <div class="heatmap-day heatmap-present">4</div>
+          <div class="heatmap-day heatmap-absent" id="hm-target">5</div>
+          <div class="heatmap-day heatmap-present">6</div>
+          <div class="heatmap-day heatmap-holiday">7</div>
+          <div class="heatmap-day heatmap-present">8</div>
+          <div class="heatmap-day heatmap-present">9</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  window.addEventListener('load', () => {
+    // Today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('attDate').value = today;
+
+    loadClassesDropdown();
+    loadAttendanceRoster();
+  });
+
+  function loadClassesDropdown() {
+    const classes = AppState.getData('lms_classes');
+    const select = document.getElementById('attClass');
+    select.innerHTML = '';
+    classes.forEach(c => {
+      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+  }
+
+  function loadAttendanceRoster() {
+    const cVal = document.getElementById('attClass').value;
+    const dateVal = document.getElementById('attDate').value;
+    const students = AppState.getData('lms_students');
+    const filtered = students.filter(s => s.class === cVal);
+    
+    const attState = AppState.getData('lms_attendance') || {};
+    const body = document.getElementById('attRosterBody');
+    body.innerHTML = '';
+
+    if(filtered.length === 0) {
+      body.innerHTML = '<tr><td colspan="4">No students enrolled in this grade class.</td></tr>';
+      return;
+    }
+
+    filtered.forEach(s => {
+      const stateKey = `${dateVal}_${s.id}`;
+      const marked = attState[stateKey] || 'Present';
+      
+      const pChecked = marked === 'Present' ? 'checked' : '';
+      const aChecked = marked === 'Absent' ? 'checked' : '';
+      const lChecked = marked === 'Late' ? 'checked' : '';
+
+      body.innerHTML += `<tr>
+        <td>${s.id}</td>
+        <td><b>${s.name}</b></td>
+        <td>
+          <label><input type="radio" name="att_${s.id}" value="Present" ${pChecked}> Present</label> &nbsp;
+          <label><input type="radio" name="att_${s.id}" value="Absent" ${aChecked}> Absent</label> &nbsp;
+          <label><input type="radio" name="att_${s.id}" value="Late" ${lChecked}> Late</label>
+        </td>
+        <td><input type="text" class="form-control" id="rem_${s.id}" placeholder="Remarks" value=""></td>
+      </tr>`;
+    });
+  }
+
+  function saveAttendance() {
+    const cVal = document.getElementById('attClass').value;
+    const dateVal = document.getElementById('attDate').value;
+    const students = AppState.getData('lms_students');
+    const filtered = students.filter(s => s.class === cVal);
+
+    const attState = AppState.getData('lms_attendance') || {};
+    let absentCount = 0;
+    
+    filtered.forEach(s => {
+      const radios = document.getElementsByName(`att_${s.id}`);
+      let status = 'Present';
+      radios.forEach(r => {
+        if(r.checked) status = r.value;
+      });
+      if(status === 'Absent') absentCount++;
+      attState[`${dateVal}_${s.id}`] = status;
+    });
+
+    AppState.saveData('lms_attendance', attState);
+    
+    // Update Heatmap demo box
+    const hmTarget = document.getElementById('hm-target');
+    if(absentCount > 0) {
+      hmTarget.className = 'heatmap-day heatmap-absent';
+    } else {
+      hmTarget.className = 'heatmap-day heatmap-present';
+    }
+
+    AppState.addNotice(`Attendance marked for ${cVal} on ${dateVal}`);
+    App.showToast('Attendance Register saved.');
+  }
+
+  function sendAlerts() {
+    App.showToast('Triggering Twilio/SMS Parent notices...');
+    setTimeout(() => {
+      App.showToast('Absentees parents alerted successfully via SMS/WhatsApp!', 'success');
+    }, 1500);
+  }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fee Accounts - eVarsity® School ERP</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --primary-light: #F0FDFA;
+    }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#0D9488"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>eVarsity® School ERP</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Parent Console</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance Log</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results & CIA</a></li>
+        <li class="sidebar-item"><a href="homework.html">📎 Ward Homework</a></li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Account</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Class Timetable</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Curriculum Subjects</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Faculty Inbox</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile console</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
+        </li>
+      </ul>
+</aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">School ERP Fee Ledger</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search child records...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="parentAvatar">P</div>
+            <div style="font-weight: 600;" id="parentDisplayName">Parent Name</div>
+          </div>
+</div>
+      </header>
+
+      <div class="content-area">
+        
+        <div class="card" style="border-top: 4px solid var(--primary); padding:20px; margin-bottom:20px; background-color: var(--bg-card);">
+          <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+            <div class="avatar-circle" style="width:70px; height:70px; font-size:28px; line-height:70px; background-color: var(--primary-light); color: var(--primary-dark); font-weight: bold;" id="stuBigAvatar">S</div>
+            <div style="flex:1;">
+              <h2 id="stuHeaderName" style="margin:0; font-size:22px; color:var(--text-main);">Loading Student Name...</h2>
+              <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:14px;" id="stuHeaderClass">Loading Standard...</p>
+            </div>
+            <div style="display:grid; grid-template-columns:auto auto; gap:10px 20px; font-size:13px; border-left:1px solid var(--border-color); padding-left:20px;">
+              <div>🔑 <b>Admission ID:</b> <span id="infoAdmID">--</span></div>
+              <div>📅 <b>Academic Term:</b> <span>Term I</span></div>
+              <div>👨‍🏫 <b>Class Teacher:</b> <span id="infoTeacher">--</span></div>
+              <div>🏫 <b>Academic Year:</b> <span>2026 - 2027</span></div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="card" style="margin-bottom:20px;">
+          <h3 class="card-title">Fee Outstanding Details</h3>
+          <hr style="margin:15px 0; border:0; border-top:1px solid var(--border-color)">
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; text-align:center;">
+            <div class="card" style="background-color: var(--primary-light);">
+              <h4 style="color:var(--primary-dark)">Total School Fee</h4>
+              <h2 style="margin-top:10px; color:var(--primary-dark)">₹25,000</h2>
+            </div>
+            <div class="card" style="background-color: var(--gray-100);">
+              <h4>Paid Amount</h4>
+              <h2 style="margin-top:10px;" id="paidAmtText">₹0</h2>
+            </div>
+            <div class="card" style="background-color: var(--danger-light);">
+              <h4 style="color:var(--danger)">Balance Outstanding</h4>
+              <h2 style="margin-top:10px; color:var(--danger)" id="balanceAmtText">₹0</h2>
+            </div>
+          </div>
+          
+          <div style="margin-top:20px; text-align:right;" id="payBtnContainer">
+            <button class="btn btn-primary" onclick="openPaymentModal()">💳 Pay Outstanding Fees</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mock Payment Modal -->
+  <div class="modal-overlay" id="payModal">
+    <div class="card" style="width:400px;">
+      <h3 style="margin-bottom:15px;">🔒 Gateway: Mock payment</h3>
+      <p style="margin-bottom:15px;">Paying school fees amount: <b id="payModalAmt">--</b></p>
+      
+      <div class="form-group">
+        <label>Select Payment Mode</label>
+        <select class="form-control">
+          <option>Net Banking / UPI</option>
+          <option>Credit / Debit Card</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label>Payment PIN (Mock)</label>
+        <input type="password" class="form-control" placeholder="••••" value="1234">
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn btn-outline" onclick="closePaymentModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="processPayment()">Confirm & Pay</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let currentParentName = '';
+  let currentParentId = '';
+  let currentChild = null;
+
+  function loadParentProfile() {
+    const parentId = localStorage.getItem('userId') || 'PAR001';
+    const childId = localStorage.getItem('childId') || 'STU001';
+    const students = AppState.getData('lms_students');
+    
+    currentChild = students.find(s => s.id === childId || s.parentUsername === parentId) || students[0];
+    currentParentName = currentChild.parent;
+    currentParentId = currentChild.parentUsername || parentId;
+
+    document.getElementById('parentDisplayName').innerText = currentParentName;
+    const nameParts = currentParentName.split(' ');
+    document.getElementById('parentAvatar').innerText = nameParts.map(p => p[0]).join('');
+  }
+
+    
+  function loadStudentInfoCard(studentObj) {
+    document.getElementById('stuHeaderName').innerText = studentObj.name;
+    document.getElementById('stuHeaderClass').innerText = studentObj.class + ' - Section ' + studentObj.section;
+    document.getElementById('infoAdmID').innerText = studentObj.id;
+
+    // Resolve class teacher
+    const classes = AppState.getData('lms_classes');
+    const cls = classes.find(c => c.name === studentObj.class);
+    document.getElementById('infoTeacher').innerText = cls ? cls.teacherName : 'Assigned Faculty';
+
+    // Avatar
+    const avatar = document.getElementById('stuBigAvatar');
+    if (studentObj.photo) {
+      avatar.innerHTML = `<img src="${studentObj.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      avatar.style.background = 'transparent';
+    } else {
+      const nameParts = studentObj.name.split(' ');
+      avatar.innerText = nameParts.map(p => p[0]).join('');
+      avatar.style.backgroundColor = 'var(--primary-light)';
+    }
+  }
+
+
+    window.addEventListener('load', () => {
+      loadParentProfile();
+      loadStudentInfoCard(currentChild);
+      renderFeeDetails();
+    });
+
+    function renderFeeDetails() {
+      let balance = 0;
+      let paid = 25000;
+      if (currentChild.fee === 'Unpaid') { balance = 25000; paid = 0; }
+      if (currentChild.fee === 'Partial') { balance = 12500; paid = 12500; }
+
+      document.getElementById('paidAmtText').innerText = '₹' + paid.toLocaleString();
+      document.getElementById('balanceAmtText').innerText = '₹' + balance.toLocaleString();
+
+      const btnContainer = document.getElementById('payBtnContainer');
+      if (balance === 0) {
+        btnContainer.innerHTML = '<b style="color:var(--success)">✔️ School Fee Ledger Balance Cleared.</b>';
+      } else {
+        btnContainer.innerHTML = '<button class="btn btn-primary" onclick="openPaymentModal()">💳 Pay Outstanding Fees</button>';
+      }
+    }
+
+    function openPaymentModal() {
+      let balance = 25000;
+      if (currentChild.fee === 'Partial') balance = 12500;
+      document.getElementById('payModalAmt').innerText = '₹' + balance.toLocaleString();
+      document.getElementById('payModal').classList.add('open');
+    }
+
+    function closePaymentModal() {
+      document.getElementById('payModal').classList.remove('open');
+    }
+
+    function processPayment() {
+      const students = AppState.getData('lms_students');
+      const idx = students.findIndex(s => s.id === currentChild.id);
+      if (idx !== -1) {
+        students[idx].fee = 'Paid';
+        AppState.saveData('lms_students', students);
+        currentChild.fee = 'Paid';
+      }
+      
+      closePaymentModal();
+      App.showToast('School fees payment completed successfully!');
+      renderFeeDetails();
+    }
+  </script>
+</body>
+</html>

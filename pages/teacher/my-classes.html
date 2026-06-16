@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Assigned Classrooms - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Teacher</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
+      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">My Assigned Classrooms</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight: 600;" id="userDisplayName">Teacher Name</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="grid-3">
+    <div class="card">
+      <h4 style="font-size:16px; margin-bottom:8px;">Class 10-A</h4>
+      <p><b>Subject:</b> Mathematics</p>
+      <p><b>Students:</b> 35 enrolled</p>
+      <p><b>Next Class:</b> Tomorrow 8:00 AM</p>
+      <button class="btn btn-success" style="width:100%; margin-top:15px;" onclick="alert('Student Roster:\n1. Aditya Patel\n2. Arun Das\n3. Sneha Gupta')">View Student Roster</button>
+    </div>
+    
+    <div class="card">
+      <h4 style="font-size:16px; margin-bottom:8px;">Class 12-A</h4>
+      <p><b>Subject:</b> Algebra</p>
+      <p><b>Students:</b> 42 enrolled</p>
+      <p><b>Next Class:</b> Today 12:45 PM</p>
+      <button class="btn btn-success" style="width:100%; margin-top:15px;" onclick="alert('Viewing roster for Class 12-A')">View Student Roster</button>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Staff Profile - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Teacher</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
+      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">My Staff Profile</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight: 600;" id="userDisplayName">Teacher Name</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+  <div class="card">
+      <h3 class="card-title">My Profile Details</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-size:14px; line-height:2.0;">
+        <div>👤 <b>Full Name:</b> <span id="profName"></span></div>
+        <div>🔑 <b>Staff ID:</b> <span id="profId"></span></div>
+        <div>🏫 <b>Department:</b> <span id="profDept"></span></div>
+        <div>🎒 <b>Class Assigned:</b> <span id="profClass"></span></div>
+        <div>📞 <b>Phone:</b> <span id="profPhone"></span></div>
+        <div>📚 <b>Subjects Taught:</b> <span id="profSubjects"></span></div>
+      </div>
+    </div>
+        
+  <div class="card" style="max-width:600px; margin:0 auto;">
+    <div style="text-align:center; margin-bottom:20px;">
+      <div class="avatar-circle" style="width:100px; height:100px; font-size:40px; margin:0 auto 15px;">RK</div>
+      <h2>Mr. Rajesh Kumar</h2>
+      <p style="color:var(--text-muted);">Senior Lecturer - Mathematics Department</p>
+    </div>
+    
+    <table class="data-table">
+      <tbody>
+        <tr><td><b>Employee ID:</b></td><td>TCH001</td></tr>
+        <tr><td><b>Qualification:</b></td><td>M.Sc. Mathematics, B.Ed.</td></tr>
+        <tr><td><b>Phone:</b></td><td>+91 94412 34567</td></tr>
+        <tr><td><b>Email:</b></td><td>rajesh.maths@amalahss.edu.in</td></tr>
+        <tr><td><b>Date of Joining:</b></td><td>12 Aug 2018</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+        const tId = localStorage.getItem('userId') || 'TCH001';
+        const teachers = AppState.getData('lms_teachers');
+        const currentT = teachers.find(t => t.id === tId) || teachers[0];
+
+        document.getElementById('userDisplayName').innerText = currentT.name;
+        const nameParts = currentT.name.split(' ');
+        document.getElementById('userAvatar').innerText = nameParts.map(p => p[0]).join('');
+
+        // Render profile fields
+        document.getElementById('profName').innerText = currentT.name;
+        document.getElementById('profId').innerText = currentT.id;
+        document.getElementById('profDept').innerText = currentT.dept;
+        document.getElementById('profClass').innerText = currentT.classAssigned || 'None';
+        document.getElementById('profPhone').innerText = currentT.phone;
+        document.getElementById('profSubjects').innerText = currentT.subjects;
+      });
+    </script>
+</body>
+</html>

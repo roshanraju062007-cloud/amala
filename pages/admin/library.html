@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Library Registrar - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">School Library Registrar</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Book Catalogue</h3>
+      <table class="data-table">
+        <thead>
+          <tr><th>ISBN</th><th>Title</th><th>Author</th><th>Available</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>978-01-234</td><td>Concepts of Physics</td><td>H.C. Verma</td><td>12 / 15</td></tr>
+          <tr><td>978-93-518</td><td>RD Sharma Class 10 Math</td><td>R.D. Sharma</td><td>3 / 10</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Issue Book Card</h3>
+      <form onsubmit="event.preventDefault(); App.showToast('Book issued successfully!');">
+        <div class="form-group"><label class="form-label">Student ID</label><input type="text" class="form-control" placeholder="STU001"></div>
+        <div class="form-group"><label class="form-label">Book ISBN</label><input type="text" class="form-control" placeholder="978-01-234"></div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-control"></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Issue Book</button>
+      </form>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

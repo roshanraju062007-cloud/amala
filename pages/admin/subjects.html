@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subject Management - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Subject Management</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="grid-2">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 class="card-title" style="margin-bottom:0;">Subject Registry</h3>
+        <select class="form-control" id="classFilter" onchange="filterSubjects()" style="width: 180px;"></select>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Code</th><th>Name</th><th>Class</th><th>Weekly Periods</th><th>Type</th><th>Teacher</th></tr>
+        </thead>
+        <tbody id="subjectTableBody"></tbody>
+      </table>
+    </div>
+    
+    <div class="card">
+      <h3 class="card-title">Add New Subject</h3>
+      <form onsubmit="saveSubject(event)">
+        <div class="form-group"><label class="form-label">Subject Code</label><input type="text" class="form-control" id="subCode" required></div>
+        <div class="form-group"><label class="form-label">Subject Name</label><input type="text" class="form-control" id="subName" required></div>
+        <div class="form-group">
+          <label class="form-label">Target Class</label>
+          <select class="form-control" id="subClass"></select>
+        </div>
+        <div class="form-group"><label class="form-label">Periods per Week</label><input type="number" class="form-control" id="subPeriods" value="5"></div>
+        <div class="form-group">
+          <label class="form-label">Subject Type</label>
+          <select class="form-control" id="subType"><option>Core</option><option>Elective</option><option>Language</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign Teacher</label>
+          <select class="form-control" id="subTeacher"></select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Register Subject</button>
+      </form>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  window.addEventListener('load', () => {
+    loadSubjects();
+    loadClassesDropdown();
+    loadTeacherDropdown();
+  });
+
+  function loadTeacherDropdown() {
+    const tchs = AppState.getData('lms_teachers');
+    const select = document.getElementById('subTeacher');
+    if (!select) return;
+    select.innerHTML = '<option value="Not Assigned">Not Assigned</option>';
+    tchs.forEach(t => {
+      select.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+    });
+  }
+
+  function loadSubjects() {
+    filterSubjects();
+  }
+
+  function filterSubjects() {
+    const filterVal = document.getElementById('classFilter').value;
+    const list = AppState.getData('lms_subjects');
+    const body = document.getElementById('subjectTableBody');
+    body.innerHTML = '';
+    list.forEach(s => {
+      if (filterVal !== 'All' && s.class !== filterVal) return;
+      body.innerHTML += `<tr>
+        <td>${s.code}</td>
+        <td><b>${s.name}</b></td>
+        <td>${s.class}</td>
+        <td>${s.periods}</td>
+        <td>${s.type}</td>
+        <td>${s.teacher || 'Not Assigned'}</td>
+      </tr>`;
+    });
+  }
+
+  function loadClassesDropdown() {
+    const classes = AppState.getData('lms_classes');
+    
+    const filterSelect = document.getElementById('classFilter');
+    if (filterSelect) {
+      filterSelect.innerHTML = '<option value="All">All Classes</option>';
+      classes.forEach(c => {
+        filterSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      });
+    }
+
+    const select = document.getElementById('subClass');
+    if (select) {
+      select.innerHTML = '';
+      classes.forEach(c => {
+        select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      });
+    }
+  }
+
+  function saveSubject(e) {
+    e.preventDefault();
+    const code = document.getElementById('subCode').value.trim();
+    const name = document.getElementById('subName').value.trim();
+    const className = document.getElementById('subClass').value;
+    const periods = document.getElementById('subPeriods').value;
+    const type = document.getElementById('subType').value;
+    const teacherSelect = document.getElementById('subTeacher');
+    const teacher = teacherSelect ? teacherSelect.value : 'Not Assigned';
+
+    const list = AppState.getData('lms_subjects');
+    list.push({ code, name, class: className, periods, type, teacher });
+    AppState.saveData('lms_subjects', list);
+    
+    document.getElementById('subCode').value = '';
+    document.getElementById('subName').value = '';
+    
+    loadSubjects();
+    App.showToast('Subject Registered successfully!');
+  }
+
+  </script>
+</body>
+</html>

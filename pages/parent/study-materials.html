@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Materials - eVarsity® School ERP</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --primary-light: #F0FDFA;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#0D9488"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>eVarsity® School ERP</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Parent Console</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance Log</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results & CIA</a></li>
+        <li class="sidebar-item"><a href="homework.html">📎 Ward Homework</a></li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Account</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Class Timetable</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Curriculum Subjects</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Faculty Inbox</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile console</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
+        </li>
+      </ul>
+</aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Lecture Reference Study Materials</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search child records...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="parentAvatar">P</div>
+            <div style="font-weight: 600;" id="parentDisplayName">Parent Name</div>
+          </div>
+</div>
+      </header>
+
+      <div class="content-area">
+        <div class="card" style="margin-bottom: 20px;">
+          <div>
+            <label style="font-weight:600; margin-right:10px;">Select Class to View Reference Materials:</label>
+            <select class="form-control" style="display:inline-block; width:280px;" id="materialsClassSelect" onchange="loadSelectedMaterials()"></select>
+            <button class="btn btn-outline" style="margin-left: 10px;" onclick="resetToMyChildClass()">Ward's Class</button>
+          </div>
+        </div>
+
+        <div class="grid-3" id="materials-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let currentParentName = '';
+  let currentParentId = '';
+  let currentChild = null;
+
+  function loadParentProfile() {
+    const parentId = localStorage.getItem('userId') || 'PAR001';
+    const childId = localStorage.getItem('childId') || 'STU001';
+    const students = AppState.getData('lms_students');
+    
+    currentChild = students.find(s => s.id === childId || s.parentUsername === parentId) || students[0];
+    currentParentName = currentChild.parent;
+    currentParentId = currentChild.parentUsername || parentId;
+
+    document.getElementById('parentDisplayName').innerText = currentParentName;
+    const nameParts = currentParentName.split(' ');
+    document.getElementById('parentAvatar').innerText = nameParts.map(p => p[0]).join('');
+  }
+
+
+    window.addEventListener('load', () => {
+      loadParentProfile();
+      loadClassesDropdown(() => {
+        resetToMyChildClass();
+      });
+    });
+
+    function loadClassesDropdown(callback) {
+      const classes = AppState.getData('lms_classes');
+      const select = document.getElementById('materialsClassSelect');
+      select.innerHTML = '';
+      classes.forEach(c => {
+        select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      });
+      if(callback) callback();
+    }
+
+    function resetToMyChildClass() {
+      if (!currentChild) return;
+      document.getElementById('materialsClassSelect').value = currentChild.class;
+      loadSelectedMaterials();
+    }
+
+    function loadSelectedMaterials() {
+      const className = document.getElementById('materialsClassSelect').value;
+      const materials = AppState.getData('lms_materials').filter(m => m.class === className);
+      const grid = document.getElementById('materials-grid');
+      grid.innerHTML = '';
+
+      const finalMaterials = materials.length > 0 ? materials : [
+        { title: className + ' Term Curriculum Syllabus', type: 'PDF' },
+        { title: className + ' Recommended General Reference Books', type: 'DOC' }
+      ];
+
+      finalMaterials.forEach(m => {
+        grid.innerHTML += `<div class="card" style="text-align:center;">
+          <div style="font-size:36px; margin-bottom:10px;">📚</div>
+          <h4>${m.title}</h4>
+          <span class="badge badge-purple" style="margin:8px auto; display:inline-block;">${m.type}</span>
+          <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="App.showToast('File downloaded successfully!')">⬇️ Download File</button>
+        </div>`;
+      });
+    }
+  </script>
+</body>
+</html>

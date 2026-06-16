@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Study Partner - eVarsity® School ERP</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #6366F1;
+      --primary-dark: #4F46E5;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>eVarsity® School ERP</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Student Portal</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Curriculum Subjects</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="online-tests.html">✍️ Online Tests</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Class Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance Log</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results & Internals</a></li>
+        <li class="sidebar-item"><a href="report-card.html">📄 Term Report Card</a></li>
+        <li class="sidebar-item"><a href="ai-assistant.html">🤖 AI Study Assistant</a></li>
+        <li class="sidebar-item"><a href="chat.html">💬 Chat Inbox</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Student Profile</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
+        </li>
+      </ul>
+</aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">AI Study Partner</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search course files...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">S</div>
+            <div style="font-weight: 600;" id="userDisplayName">Student Name</div>
+          </div>
+</div>
+      </header>
+
+      <div class="content-area">
+        <div class="card" style="display:flex; flex-direction:column; height:500px;">
+          <div style="padding:15px; border-bottom:1px solid var(--border-color)">
+            <p><b>StudyBot:</b> I can help you solve math equations, explain biology concepts or grammar rules.</p>
+          </div>
+          <div style="flex:1; padding:20px; overflow-y:auto; background-color:var(--gray-100);" id="studentChatPanel">
+            <p><b>StudyBot:</b> Select a suggested question or write yours below!</p>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <button class="btn btn-outline" style="font-size:12px; padding:6px;" onclick="askAssistant('Explain photosynthesis')">Explain Photosynthesis 🌿</button>
+              <button class="btn btn-outline" style="font-size:12px; padding:6px;" onclick="askAssistant('Solve equation 3x-7=14')">Solve equation 3x-7=14 📐</button>
+            </div>
+          </div>
+          <div style="padding:15px; display:flex; gap:10px; border-top:1px solid var(--border-color);">
+            <input type="text" class="form-control" id="studentChatMsg" placeholder="Ask Claude study engine...">
+            <button class="btn btn-primary" onclick="sendStudentAiMsg()">Ask</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let currentStudent = null;
+
+  function loadStudentProfile() {
+    const stuId = localStorage.getItem('userId') || 'STU001';
+    const students = AppState.getData('lms_students');
+    currentStudent = students.find(s => s.id === stuId) || students[0];
+
+    document.getElementById('userDisplayName').innerText = currentStudent.name;
+    const userAv = document.getElementById('userAvatar');
+    if (currentStudent.photo) {
+      userAv.innerHTML = `<img src="${currentStudent.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      userAv.style.background = 'transparent';
+    } else {
+      const nameParts = currentStudent.name.split(' ');
+      userAv.innerText = nameParts.map(p => p[0]).join('');
+      userAv.style.backgroundColor = 'var(--primary-dark)';
+    }
+  }
+
+
+    window.addEventListener('load', () => {
+      loadStudentProfile();
+    });
+
+    function askAssistant(prompt) {
+      document.getElementById('studentChatMsg').value = prompt;
+      sendStudentAiMsg();
+    }
+
+    function sendStudentAiMsg() {
+      const input = document.getElementById('studentChatMsg');
+      const val = input.value.trim();
+      if(!val) return;
+      
+      const panel = document.getElementById('studentChatPanel');
+      panel.innerHTML += `<p style="text-align:right; margin-top:10px;"><b>You:</b> ${val}</p>`;
+      input.value = '';
+      
+      panel.innerHTML += `<p style="color:var(--primary); margin-top:10px;"><b>StudyBot:</b> Analyzing doubt. Reading curriculum guides...</p>`;
+      
+      setTimeout(() => {
+        panel.innerHTML += `<p style="color:var(--primary); margin-top:5px;"><b>StudyBot:</b> Here is the step-by-step resolution: Photosynthesis is the chemical process by which plants convert sunlight, carbon dioxide, and water into oxygen and glucose. The key component is Chlorophyll. Formula: 6CO2 + 6H2O -> C6H12O6 + 6O2.</p>`;
+        panel.scrollTop = panel.scrollHeight;
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

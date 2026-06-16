@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignments - eVarsity® School ERP</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #6366F1;
+      --primary-dark: #4F46E5;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>eVarsity® School ERP</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Student Portal</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Curriculum Subjects</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="online-tests.html">✍️ Online Tests</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Class Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance Log</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results & Internals</a></li>
+        <li class="sidebar-item"><a href="report-card.html">📄 Term Report Card</a></li>
+        <li class="sidebar-item"><a href="ai-assistant.html">🤖 AI Study Assistant</a></li>
+        <li class="sidebar-item"><a href="chat.html">💬 Chat Inbox</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Student Profile</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
+        </li>
+      </ul>
+</aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">School Homework & Assignments</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search course files...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">S</div>
+            <div style="font-weight: 600;" id="userDisplayName">Student Name</div>
+          </div>
+</div>
+      </header>
+
+      <div class="content-area">
+        <div class="card" style="margin-bottom: 20px;">
+          <div>
+            <label style="font-weight:600; margin-right:10px;">Select Class Standard to View Tasks:</label>
+            <select class="form-control" style="display:inline-block; width:280px;" id="asnClassSelect" onchange="loadSelectedAssignments()"></select>
+            <button class="btn btn-outline" style="margin-left: 10px;" onclick="resetToMyClass()">My Class</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Pending Homework Assignments</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr><th>Title</th><th>Subject</th><th>Due Date</th><th>Max Marks</th><th>Submission</th></tr>
+              </thead>
+              <tbody id="asnTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let currentStudent = null;
+
+  function loadStudentProfile() {
+    const stuId = localStorage.getItem('userId') || 'STU001';
+    const students = AppState.getData('lms_students');
+    currentStudent = students.find(s => s.id === stuId) || students[0];
+
+    document.getElementById('userDisplayName').innerText = currentStudent.name;
+    const userAv = document.getElementById('userAvatar');
+    if (currentStudent.photo) {
+      userAv.innerHTML = `<img src="${currentStudent.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+      userAv.style.background = 'transparent';
+    } else {
+      const nameParts = currentStudent.name.split(' ');
+      userAv.innerText = nameParts.map(p => p[0]).join('');
+      userAv.style.backgroundColor = 'var(--primary-dark)';
+    }
+  }
+
+
+    window.addEventListener('load', () => {
+      loadStudentProfile();
+      loadClassesDropdown(() => {
+        resetToMyClass();
+      });
+    });
+
+    function loadClassesDropdown(callback) {
+      const classes = AppState.getData('lms_classes');
+      const select = document.getElementById('asnClassSelect');
+      select.innerHTML = '';
+      classes.forEach(c => {
+        select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+      });
+      if(callback) callback();
+    }
+
+    function resetToMyClass() {
+      if (!currentStudent) return;
+      document.getElementById('asnClassSelect').value = currentStudent.class;
+      loadSelectedAssignments();
+    }
+
+    function loadSelectedAssignments() {
+      const className = document.getElementById('asnClassSelect').value;
+      const asns = AppState.getData('lms_assignments').filter(a => a.class === className);
+      const submissions = AppState.getData('lms_submissions') || [];
+      const body = document.getElementById('asnTableBody');
+      body.innerHTML = '';
+
+      if (asns.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending homework assignments found.</td></tr>';
+        return;
+      }
+
+      asns.forEach(a => {
+        const sub = submissions.find(s => s.assignmentId === a.id && s.studentId === currentStudent.id);
+        let actionCol = '';
+        if (sub) {
+          actionCol = `<span class="badge badge-success" style="font-weight:600;">✔️ Submitted</span><br>
+                       <a href="${sub.fileData}" download="${sub.fileName}" style="font-size:11px; color:var(--primary); text-decoration:underline;">💾 Download File</a>`;
+        } else {
+          actionCol = `<button class="btn btn-primary" style="padding:4px 8px;" onclick="submitAsn('${a.id}')">Submit File</button>`;
+        }
+
+        body.innerHTML += `<tr>
+          <td><b>${a.title}</b></td>
+          <td>${a.subject}</td>
+          <td>${a.due}</td>
+          <td>${a.marks} Marks</td>
+          <td>${actionCol}</td>
+        </tr>`;
+      });
+    }
+
+    function submitAsn(id) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '*/*';
+      fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(readerEvt) {
+            const base64 = readerEvt.target.result;
+            const submissions = AppState.getData('lms_submissions') || [];
+            submissions.push({
+              id: 'SUB' + Math.floor(1000 + Math.random()*9000),
+              assignmentId: id,
+              studentId: currentStudent.id,
+              studentName: currentStudent.name,
+              fileName: file.name,
+              fileData: base64,
+              submittedAt: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')
+            });
+            AppState.saveData('lms_submissions', submissions);
+            App.showToast('Homework file submitted successfully!');
+            loadSelectedAssignments();
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      fileInput.click();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <circle cx="250" cy="250" r="230" fill="#0A0F24" stroke="#4F46E5" stroke-width="8"/>
+  <circle cx="250" cy="250" r="210" fill="none" stroke="#FFFFFF" stroke-width="4"/>
+  <circle cx="250" cy="250" r="185" fill="#4F46E5" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="250" cy="250" r="175" fill="#FFFFFF"/>
+  <path d="M 250 85 C 310 85, 340 100, 360 160 C 360 270, 250 340, 250 380 C 250 340, 140 270, 140 160 C 160 100, 190 85, 250 85 Z" fill="#D92626" stroke="#000" stroke-width="1.5"/>
+  <path d="M 250 85 C 290 85, 320 95, 335 140 C 335 240, 250 320, 250 380 Z" fill="#FFFFFF"/>
+  <g transform="translate(165, 120) scale(0.12)">
+    <path d="M128 32 C120 40 100 80 100 120 C100 160 130 180 140 200 C150 220 128 256 128 256 C128 256 106 220 116 200 C126 180 156 160 156 120 C156 80 136 40 128 32 Z" fill="#FF8C00"/>
+    <rect x="110" y="240" width="36" height="120" fill="#D3D3D3" rx="10"/>
+    <rect x="100" y="220" width="56" height="20" fill="#8B0000" rx="5"/>
+  </g>
+  <g transform="translate(265, 130) scale(0.11)">
+    <path d="M20 20 L120 20 L120 180 L20 180 Z" fill="#D92626" stroke="#000" stroke-width="4"/>
+    <path d="M120 20 L220 20 L220 180 L120 180 Z" fill="#FFFFFF" stroke="#000" stroke-width="4"/>
+    <line x1="40" y1="50" x2="100" y2="50" stroke="#000" stroke-width="6"/>
+    <line x1="40" y1="90" x2="100" y2="90" stroke="#000" stroke-width="6"/>
+    <line x1="40" y1="130" x2="100" y2="130" stroke="#000" stroke-width="6"/>
+    <line x1="140" y1="50" x2="200" y2="50" stroke="#D92626" stroke-width="6"/>
+    <line x1="140" y1="90" x2="200" y2="90" stroke="#D92626" stroke-width="6"/>
+    <line x1="140" y1="130" x2="200" y2="130" stroke="#D92626" stroke-width="6"/>
+  </g>
+  <g transform="translate(155, 240) scale(0.13)">
+    <polygon points="128,40 230,90 128,140 26,90" fill="#333333"/>
+    <rect x="70" y="110" width="116" height="40" fill="#333333"/>
+    <path d="M220 90 L220 190 C220 200 210 210 200 210" fill="none" stroke="#D92626" stroke-width="6"/>
+    <circle cx="200" cy="210" r="10" fill="#D92626"/>
+  </g>
+  <g transform="translate(270, 240) scale(0.13)">
+    <rect x="110" y="30" width="36" height="180" fill="#D92626" rx="5"/>
+    <rect x="50" y="80" width="156" height="36" fill="#D92626" rx="5"/>
+  </g>
+  <path id="textPathUpper" d="M 50 250 A 200 200 0 1 1 450 250" fill="none"/>
+  <path id="textPathLower" d="M 450 250 A 200 200 0 1 1 50 250" fill="none"/>
+  <text font-family="'Inter', sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="4">
+    <textPath href="#textPathUpper" startOffset="50%" text-anchor="middle">AMALA HIGHER SECONDARY SCHOOL</textPath>
+  </text>
+  <text font-family="'Inter', sans-serif" font-size="24" font-weight="800" fill="#FFFFFF" letter-spacing="3">
+    <textPath href="#textPathLower" startOffset="50%" text-anchor="middle">BE A CREATIVE LEARNER</textPath>
+  </text>
+  <text x="250" y="75" font-family="'Inter', sans-serif" font-size="16" font-weight="800" fill="#0A0F24" text-anchor="middle">PRAISE THE LORD</text>
+  <text x="250" y="415" font-family="'Inter', sans-serif" font-size="16" font-weight="800" fill="#0A0F24" text-anchor="middle">SINCE 1977</text>
+  <path d="M 80 230 L 105 240 L 80 250 Z" fill="#FFF"/>
+  <path d="M 80 260 L 105 270 L 80 280 Z" fill="#FFF"/>
+  <path d="M 420 230 L 395 240 L 420 250 Z" fill="#FFF"/>
+  <path d="M 420 260 L 395 270 L 420 280 Z" fill="#FFF"/>
+</svg>

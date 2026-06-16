@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Structure Configuration - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">School Structure Configuration</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h3>Grade Configurations</h3>
+    <button class="btn btn-primary" onclick="openNewClassModal()">➕ New Class</button>
+  </div>
+
+  <div class="grid-3" id="class-cards-grid"></div>
+
+  <!-- Manage Sections Modal -->
+  <div class="modal-overlay" id="sectionModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="sectionModalTitle">Manage Sections</h3>
+        <button class="modal-close" onclick="App.closeModal('sectionModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:15px;">
+          <b>Current Class Teacher:</b> <span id="sectionClassTeacher"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class Sections</label>
+          <div style="display:flex; gap:10px; margin-bottom:15px;" id="section-checkboxes"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign Class Teacher</label>
+          <select class="form-control" id="sectionTeacherSelect"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('sectionModal')">Close</button>
+        <button class="btn btn-primary" onclick="saveSections()">Save Configurations</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Class Modal -->
+  <div class="modal-overlay" id="newClassModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Grade Level</h3>
+        <button class="modal-close" onclick="App.closeModal('newClassModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Grade / Class Name</label>
+          <input type="text" class="form-control" id="newClassName" placeholder="e.g. 10th Standard" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign Class Teacher</label>
+          <select class="form-control" id="newClassTeacherSelect"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('newClassModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewClass()">Create Grade</button>
+      </div>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  let selectedClassIndex = null;
+
+  window.addEventListener('load', () => {
+    loadClasses();
+    loadTeachersSelect();
+  });
+
+  function loadClasses() {
+    const list = AppState.getData('lms_classes');
+    const grid = document.getElementById('class-cards-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    list.forEach((c, index) => {
+      let bracket = 'Pre-Primary';
+      let bracketCol = 'badge-purple';
+      if (c.name.includes('Standard')) {
+        const lvl = parseInt(c.name);
+        if (lvl >= 1 && lvl <= 5) { bracket = 'Primary'; bracketCol = 'badge-success'; }
+        else if (lvl >= 6 && lvl <= 8) { bracket = 'Middle'; bracketCol = 'badge-warning'; }
+        else if (lvl >= 9 && lvl <= 10) { bracket = 'Secondary'; bracketCol = 'badge-info'; }
+      } else if (c.name.includes('11th') || c.name.includes('12th')) {
+        bracket = 'HSC / Higher Secondary';
+        bracketCol = 'badge-danger';
+      }
+
+      grid.innerHTML += `<div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="font-size:16px;">${c.name}</h4>
+          <span class="badge ${bracketCol}">${bracket}</span>
+        </div>
+        <p><b>Sections:</b> ${c.sections ? c.sections.join(', ') : 'None'}</p>
+        <p><b>Total Wards:</b> ${c.studentsCount || c.students || 0}</p>
+        <p><b>Head Teacher:</b> ${c.teacherName || c.teacher || 'Not Assigned'}</p>
+        <div style="margin-top:15px; display:flex; gap:10px;">
+          <button class="btn btn-primary" style="padding:4px 8px; flex:1;" onclick="openManageSections(${index})">⚙️ Configure</button>
+          <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger);" onclick="deleteClass('${c.name}')">🗑️ Delete</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  function deleteClass(className) {
+    if (!confirm('Are you sure you want to delete class ' + className + '?')) return;
+    let classesList = AppState.getData('lms_classes');
+    classesList = classesList.filter(c => c.name !== className);
+    AppState.saveData('lms_classes', classesList);
+    loadClasses();
+    App.showToast('Class deleted successfully!', 'success');
+  }
+
+  function loadTeachersSelect() {
+    const list = AppState.getData('lms_teachers');
+    const sel = document.getElementById('sectionTeacherSelect');
+    const newSel = document.getElementById('newClassTeacherSelect');
+    sel.innerHTML = '<option value="">Not Assigned</option>';
+    newSel.innerHTML = '<option value="">Not Assigned</option>';
+    list.forEach(t => {
+      sel.innerHTML += `<option value="&lt;TCH&gt; ${t.name}">${t.name}</option>`;
+      newSel.innerHTML += `<option value="&lt;TCH&gt; ${t.name}">${t.name}</option>`;
+    });
+  }
+
+  function openNewClassModal() {
+    App.openModal('newClassModal');
+  }
+
+  function saveNewClass() {
+    const name = document.getElementById('newClassName').value.trim();
+    const teacher = document.getElementById('newClassTeacherSelect').value;
+    if(!name) return alert('Name required.');
+
+    const list = AppState.getData('lms_classes');
+    list.push({ name, sections: ['A'], teacher, students: 0 });
+    AppState.saveData('lms_classes', list);
+    App.closeModal('newClassModal');
+    loadClasses();
+    App.showToast('Grade Created Successfully!');
+  }
+
+  function openManageSections(index) {
+    selectedClassIndex = index;
+    const c = AppState.getData('lms_classes')[index];
+    document.getElementById('sectionModalTitle').innerText = 'Configure ' + c.name;
+    document.getElementById('sectionClassTeacher').innerText = c.teacher || 'Not Assigned';
+    
+    // Checkboxes sections
+    const box = document.getElementById('section-checkboxes');
+    box.innerHTML = '';
+    ['A', 'B', 'C', 'D'].forEach(letter => {
+      const checked = c.sections.includes(letter) ? 'checked' : '';
+      box.innerHTML += `<label><input type="checkbox" value="${letter}" ${checked}> Section ${letter}</label>`;
+    });
+    
+    document.getElementById('sectionTeacherSelect').value = c.teacher || '';
+    App.openModal('sectionModal');
+  }
+
+  function saveSections() {
+    const list = AppState.getData('lms_classes');
+    const c = list[selectedClassIndex];
+    
+    const checkboxes = document.querySelectorAll('#section-checkboxes input[type=checkbox]');
+    const sections = [];
+    checkboxes.forEach(b => {
+      if(b.checked) sections.push(b.value);
+    });
+    if(sections.length === 0) return alert('Must select at least one section.');
+    
+    c.sections = sections;
+    c.teacher = document.getElementById('sectionTeacherSelect').value;
+    
+    AppState.saveData('lms_classes', list);
+    App.closeModal('sectionModal');
+    loadClasses();
+    App.showToast('Sections updated.');
+  }
+
+  </script>
+</body>
+</html>

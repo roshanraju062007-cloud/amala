@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Progress Report Card - Amala HSS eVarsity</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.5; background-color:#F8FAFC; }
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: bold; margin:0; }
+    .subtitle { font-size: 14px; margin-top:5px; text-transform:uppercase; color:#64748B; }
+    .stu-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px; font-size: 14px; }
+    .data-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color:#FFF; }
+    .data-table th, .data-table td { border: 1px solid #CBD5E1; padding: 10px; text-align: left; }
+    .data-table th { background-color: #F1F5F9; }
+    .summary { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; border-top: 2px solid #333; padding-top: 15px; }
+    .print-btn { background-color: #4F46E5; color: #FFF; border: none; padding: 10px 20px; font-size: 14px; border-radius: 4px; cursor: pointer; display: inline-block; margin-bottom: 20px; text-decoration: none; }
+    @media print {
+      .print-btn { display: none; }
+      body { padding: 0; background-color:#FFF; }
+    }
+  </style>
+</head>
+<body>
+  <div style="max-width: 800px; margin: 0 auto;">
+    <a href="dashboard.html" class="print-btn">⬅️ Back to Portal</a>
+    <button onclick="window.print()" class="print-btn" style="float: right;">🖨️ Print Report Card</button>
+
+    <div class="header">
+      <div class="title">AMALA HIGHER SECONDARY SCHOOL</div>
+      <div class="subtitle">eVarsity® Academic Progress Report Card</div>
+    </div>
+
+    <div class="stu-details">
+      <div>👤 <b>Student Name:</b> <span id="stuName">--</span></div>
+      <div>🔑 <b>Admission ID:</b> <span id="stuId">--</span></div>
+      <div>🏫 <b>Class & Section:</b> <span id="stuClass">--</span></div>
+      <div>📅 <b>Academic Session:</b> 2026 - 2027</div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Subject Name</th>
+          <th>Max Marks</th>
+          <th>Marks Obtained</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody id="reportCardTable"></tbody>
+    </table>
+
+    <div class="summary">
+      <div>Overall Term Percentage: <span id="avgPercentage">--</span></div>
+      <div>Class Teacher Status: PASS</div>
+    </div>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      const stuId = localStorage.getItem('userId') || 'STU001';
+      const students = AppState.getData('lms_students');
+      const currentS = students.find(s => s.id === stuId) || students[0];
+
+      document.getElementById('stuName').innerText = currentS.name;
+      document.getElementById('stuId').innerText = currentS.id;
+      document.getElementById('stuClass').innerText = currentS.class + ' (' + currentS.section + ')';
+      
+      const results = AppState.getData('lms_results').filter(r => r.stuId === currentS.id);
+      const table = document.getElementById('reportCardTable');
+      table.innerHTML = '';
+      
+      if (results.length === 0) {
+        table.innerHTML = '<tr><td colspan="4" style="text-align:center;">No results published yet.</td></tr>';
+        return;
+      }
+
+      let totalMax = 0;
+      let totalObtained = 0;
+      results.forEach(r => {
+        totalMax += r.max;
+        totalObtained += r.obtained;
+        table.innerHTML += `<tr>
+          <td><b>${r.subject}</b></td>
+          <td>${r.max}</td>
+          <td>${r.obtained}</td>
+          <td><b>${r.grade}</b></td>
+        </tr>`;
+      });
+
+      const percentage = ((totalObtained / totalMax) * 100).toFixed(2);
+      document.getElementById('avgPercentage').innerText = percentage + '%';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome back, Mr. Rajesh - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Teacher</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
+      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Welcome back, Mr. Rajesh</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight: 600;" id="userDisplayName">Teacher Name</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="stats-grid">
+    <div class="stat-card" style="border-left-color: var(--success)"><div class="stat-info"><h3>My Classes</h3><div class="stat-value">6 Classes</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--info)"><div class="stat-info"><h3>Total Students</h3><div class="stat-value">284</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--danger)"><div class="stat-info"><h3>Assignments Review</h3><div class="stat-value">12 Pending</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--warning)"><div class="stat-info"><h3>Classes Today</h3><div class="stat-value">4 Periods</div></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Today's Teaching Schedule</h3>
+      <ul style="list-style:none;">
+        <li style="padding:12px; border-bottom:1px solid var(--border-color); background-color:var(--primary-light); border-radius:var(--radius); margin-bottom:10px;">
+          ⏱️ <b>08:00 - 08:45 AM</b> | Class 10-A | Subject: Mathematics | Room 101
+        </li>
+        <li style="padding:12px; border-bottom:1px solid var(--border-color); margin-bottom:10px;">
+          ⏱️ <b>08:45 - 09:30 AM</b> | Class 10-B | Subject: Geometry | Room 102
+        </li>
+        <li style="padding:12px; border-bottom:1px solid var(--border-color); margin-bottom:10px;">
+          ⏱️ <b>12:45 - 01:30 PM</b> | Class 12-Science | Subject: Algebra | Lecture Hall 3
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Quick Tasks</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button class="btn btn-success" onclick="window.location.href='attendance.html'">📝 Mark Attendance</button>
+        <button class="btn btn-primary" onclick="window.location.href='study-materials.html'">📂 Upload Notes</button>
+        <button class="btn btn-warning" onclick="window.location.href='assignments.html'">📎 Add Assignment</button>
+        <button class="btn btn-outline" onclick="window.location.href='exams.html'">🏆 Enter Exam Marks</button>
+      </div>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

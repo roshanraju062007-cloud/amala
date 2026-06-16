@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marks Ledger Manager - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Teacher</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
+      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Marks Ledger Manager</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight: 600;" id="userDisplayName">Teacher Name</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="tab-container">
+    <div class="tab active">Enter Marks</div>
+    <div class="tab">Create Online MCQ Test</div>
+    <div class="tab">Performance Summary</div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; gap:15px; margin-bottom:20px;">
+      <select class="form-control" style="width:180px;"><option>Quarterly Examination</option><option>Unit Test 2</option></select>
+      <select class="form-control" style="width:150px;"><option>Class 10-A</option></select>
+      <button class="btn btn-success">Load Records</button>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Roll No</th><th>Student Name</th><th>Marks Obtained (Max: 100)</th><th>Grade</th><th>Remarks</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Aditya Patel</td>
+          <td><input type="number" class="form-control" style="width:80px;" value="95" onchange="App.showToast('Aditya grade auto-updated to A+')"></td>
+          <td><b>A+</b></td>
+          <td><input type="text" class="form-control" value="Excellent Performance"></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Arun Das</td>
+          <td><input type="number" class="form-control" style="width:80px;" value="42"></td>
+          <td><b>C</b></td>
+          <td><input type="text" class="form-control" value="Needs improvement"></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <button class="btn btn-success" style="margin-top:15px;" onclick="App.showToast('Academic marks ledger published!')">Publish Grades</button>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

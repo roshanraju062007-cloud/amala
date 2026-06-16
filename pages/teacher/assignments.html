@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coursework & Submissions - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Teacher</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
+      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Coursework & Submissions</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">MRK</div>
+            <div style="font-weight: 600;">Mr. Rajesh Kumar</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Create Coursework Assignment</h3>
+      <form onsubmit="event.preventDefault(); App.showToast('Assignment uploaded successfully!');">
+        <div class="form-group"><label class="form-label">Assignment Title</label><input type="text" class="form-control" required></div>
+        <div class="form-group">
+          <label class="form-label">Target Class</label>
+          <select class="form-control"><option>Class 10-A</option><option>Class 12-A</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Instructions</label><textarea class="form-control" rows="3"></textarea></div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Post Assignment</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Active Homework Tracker</h3>
+      <table class="data-table">
+        <thead><tr><th>Topic</th><th>Due Date</th><th>Submissions</th></tr></thead>
+        <tbody>
+          <tr><td>Worksheet 3 - Equations</td><td>20 Jun 2026</td><td>28 / 35</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

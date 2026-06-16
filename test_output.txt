@@ -1,0 +1,3 @@
+
+sidebar content: MOCK_SIDEBAR_CONTENT
+browser variables: ${c.name}

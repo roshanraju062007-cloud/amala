@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Admin Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <div class="stats-grid">
+    <div class="stat-card" style="border-left-color: var(--info)">
+      <div class="stat-info">
+        <h3>Total Students</h3>
+        <div class="stat-value" id="stat-students">2,547</div>
+      </div>
+      <div class="stat-icon">🎓</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--success)">
+      <div class="stat-info">
+        <h3>Teachers</h3>
+        <div class="stat-value" id="stat-teachers">148</div>
+      </div>
+      <div class="stat-icon">👨‍🏫</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--warning)">
+      <div class="stat-info">
+        <h3>Classes</h3>
+        <div class="stat-value" id="stat-classes">18</div>
+      </div>
+      <div class="stat-icon">🏫</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--danger)">
+      <div class="stat-info">
+        <h3>Exams Scheduled</h3>
+        <div class="stat-value" id="stat-exams">2</div>
+      </div>
+      <div class="stat-icon">✍️</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">Quick Actions</h3>
+    <div class="actions-grid">
+      <button class="btn btn-outline" onclick="App.openModal('noticeModal')">📣 Send Notice</button>
+      <button class="btn btn-outline" onclick="runBackup()">💾 Database Backup</button>
+      <button class="btn btn-primary" onclick="window.location.href='students.html'">➕ Add Student</button>
+      <button class="btn btn-success" onclick="window.location.href='teachers.html'">➕ Add Teacher</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Attendance Monthly Trend</h3>
+      <canvas id="attendanceChart" width="500" height="250" style="width:100%; height:250px;"></canvas>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Fee Collection (Last 6 Months)</h3>
+      <canvas id="feeChart" width="400" height="250" style="width:100%; height:250px;"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Recent Activity Log</h3>
+      <ul style="list-style:none;" id="activity-log"></ul>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Classes Overview</h3>
+      <div style="max-height: 250px; overflow-y:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Class</th><th>Sections</th><th>Students</th></tr>
+          </thead>
+          <tbody id="classes-summary-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send Notification Modal -->
+  <div class="modal-overlay" id="noticeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Broadcast Notification</h3>
+        <button class="modal-close" onclick="App.closeModal('noticeModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Recipients</label>
+          <select class="form-control" id="notice-target">
+            <option>All Students & Parents</option>
+            <option>Teachers Only</option>
+            <option>Class 10 Only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-control" rows="4" id="notice-msg" placeholder="Write message here..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('noticeModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="broadcastNotice()">Send Notification</button>
+      </div>
+    </div>
+  </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    
+  window.addEventListener('load', () => {
+    loadDashboardStats();
+    drawCharts();
+  });
+
+  function loadDashboardStats() {
+    const students = AppState.getData('lms_students');
+    const teachers = AppState.getData('lms_teachers');
+    const classes = AppState.getData('lms_classes');
+    const exams = AppState.getData('lms_exams');
+    const notices = AppState.getData('lms_notices');
+
+    document.getElementById('stat-students').innerText = students.length;
+    document.getElementById('stat-teachers').innerText = teachers.length;
+    document.getElementById('stat-classes').innerText = classes.length;
+    document.getElementById('stat-exams').innerText = exams.length;
+
+    // Load activities
+    const log = document.getElementById('activity-log');
+    log.innerHTML = '';
+    notices.forEach(n => {
+      log.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid var(--border-color)">🕒 <b>${n.time}</b> - ${n.msg}</li>`;
+    });
+
+    // Load classes overview
+    const clBody = document.getElementById('classes-summary-body');
+    clBody.innerHTML = '';
+    classes.slice(0, 4).forEach(c => {
+      clBody.innerHTML += `<tr><td>${c.name}</td><td>${c.sections.join(', ')}</td><td>${c.students}</td></tr>`;
+    });
+  }
+
+  function drawCharts() {
+    drawBarChart('feeChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], [8.2, 9.5, 11.2, 10.4, 9.8, 12.4], 'var(--danger)');
+    drawLineChart('attendanceChart', ['01 Jun', '03 Jun', '05 Jun', '07 Jun', '09 Jun', '11 Jun', '13 Jun'], [92, 91, 93, 89, 94, 91, 95], 'var(--primary)');
+  }
+
+  function broadcastNotice() {
+    const msg = document.getElementById('notice-msg').value.trim();
+    const target = document.getElementById('notice-target').value;
+    if (!msg) return alert('Message cannot be empty.');
+    AppState.addNotice(`Notice sent to ${target}: "${msg}"`);
+    App.closeModal('noticeModal');
+    loadDashboardStats();
+    App.showToast('Broadcasted successfully!');
+  }
+
+  function runBackup() {
+    App.showToast('Generating MySQL Backup...');
+    setTimeout(() => {
+      App.showToast('Database Backup saved locally under backup/ folder!', 'success');
+    }, 1500);
+  }
+
+  </script>
+</body>
+</html>

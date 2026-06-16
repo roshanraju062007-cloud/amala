@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognitive School AI Engine - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        
+      <li class="menu-header">Main</li>
+      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+      <li class="menu-header">Academics</li>
+      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+      <li class="menu-header">Assessment</li>
+      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+      <li class="menu-header">Administration</li>
+      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+      <li class="menu-header">System</li>
+      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+    
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Cognitive School AI Engine</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle">A</div>
+            <div style="font-weight: 600;">Administrator</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+  <p style="margin-bottom:20px; color:var(--text-muted);">All tools are integrated with the Anthropic Claude API to generate curriculum-appropriate material.</p>
+  
+  <div class="grid-3">
+    <!-- Tool 1 -->
+    <div class="card" style="background:linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-left: 5px solid var(--primary);">
+      <h4 style="margin-bottom:10px;">📋 Question Paper Generator</h4>
+      <p style="font-size:12px; margin-bottom:15px; color:var(--gray-700);">Create complete board-standard question papers dynamically with Sections A, B, and C.</p>
+      <div class="form-group"><label class="form-label">Subject</label><input type="text" class="form-control" id="qpSub" value="Mathematics"></div>
+      <div class="form-group"><label class="form-label">Class</label><select class="form-control" id="qpClass"><option>Class 10</option><option>Class 12</option></select></div>
+      <button class="btn btn-primary" style="width:100%;" onclick="runQpGenerator()">Generate Paper</button>
+    </div>
+
+    <!-- Tool 2 -->
+    <div class="card" style="background:linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-left: 5px solid var(--success);">
+      <h4 style="margin-bottom:10px;">🎯 Interactive Quiz Generator</h4>
+      <p style="font-size:12px; margin-bottom:15px; color:var(--gray-700);">Generate curriculum-aligned MCQs with marked answer sheets in seconds.</p>
+      <div class="form-group"><label class="form-label">Topic</label><input type="text" class="form-control" id="qzTopic" value="Photosynthesis"></div>
+      <button class="btn btn-success" style="width:100%;" onclick="runQuizGenerator()">Generate MCQ Quiz</button>
+    </div>
+
+    <!-- Tool 3 -->
+    <div class="card" style="background:linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-left: 5px solid var(--warning);">
+      <h4 style="margin-bottom:10px;">🙋 Patient Homework Assistant</h4>
+      <p style="font-size:12px; margin-bottom:15px; color:var(--gray-700);">Grade-specific step-by-step concept breakdowns to resolve student queries.</p>
+      <div class="form-group"><label class="form-label">Question Text</label><input type="text" class="form-control" id="hwQ" value="How does gravity work?"></div>
+      <button class="btn btn-warning" style="width:100%;" onclick="runHwAssistant()">Get Breakdown</button>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <!-- Tool 4 -->
+    <div class="card">
+      <h4>🔮 Student Performance Predictor</h4>
+      <p style="font-size:12px; margin-bottom:12px;">Analyses quarterly performance and suggests high/low risk indicators.</p>
+      <table class="data-table" style="font-size:11px;">
+        <thead><tr><th>Student</th><th>Current</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>Sneha Das</td><td>64%</td><td><span class="badge badge-danger">High Risk</span></td></tr>
+          <tr><td>Amit Shah</td><td>82%</td><td><span class="badge badge-success">Low Risk</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tool 5 -->
+    <div class="card" style="grid-column: span 2;">
+      <h4>💬 Student Study Bot (EduBot)</h4>
+      <div id="chatbox" style="height:150px; overflow-y:auto; border:1px solid var(--border-color); padding:10px; border-radius:var(--radius); background-color:var(--gray-100); margin-bottom:10px; font-size:12px;">
+        <p><b>EduBot:</b> Hello! Ask me any doubt about Mathematics, Science, or English.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" class="form-control" id="chatInput" placeholder="Ask EduBot a question...">
+        <button class="btn btn-primary" onclick="sendToEduBot()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output Modal -->
+  <div class="modal-overlay" id="aiOutputModal">
+    <div class="modal" style="max-width:700px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="aiOutputTitle">AI Output Results</h3>
+        <button class="modal-close" onclick="App.closeModal('aiOutputModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <pre id="aiOutputBody" style="white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; background-color: var(--gray-100); padding: 15px; border-radius: var(--radius); font-size: 13px; max-height:400px; overflow-y:auto;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function runQpGenerator() {
+      const subject = document.getElementById('qpSub').value;
+      const grade = document.getElementById('qpClass').value;
+      
+      document.getElementById('aiOutputTitle').innerText = 'Generated Question Paper - ' + subject;
+      document.getElementById('aiOutputBody').innerText = 'Generating paper using Claude Sonnet model. Please wait...';
+      App.openModal('aiOutputModal');
+      
+      setTimeout(() => {
+        document.getElementById('aiOutputBody').innerText = `AMALA HIGHER SECONDARY SCHOOL
+ANNUAL EXAMINATION 2026 - GRADE 10
+SUBJECT: ${subject.toUpperCase()}
+TIME: 3 Hours                          MAX MARKS: 80
+
+--------------------------------------------------
+SECTION A (MULTIPLE CHOICE QUESTIONS - 1 Mark Each)
+--------------------------------------------------
+Q1. Solve for x: 3x - 7 = 14.
+  a) 5       b) 7       c) 6       d) 9
+Q2. What is the value of Sin(30) + Cos(60)?
+  a) 1       b) 0.5     c) 0       d) 2
+
+--------------------------------------------------
+SECTION B (SHORT ANSWER QUESTIONS - 3 Marks Each)
+--------------------------------------------------
+Q3. Find the roots of the equation x^2 - 5x + 6 = 0.
+Q4. Define Pythagoras theorem and write the formula.
+
+--------------------------------------------------
+SECTION C (LONG ANSWER/ESSAY QUESTIONS - 5 Marks Each)
+--------------------------------------------------
+Q5. Prove that the lengths of tangents drawn from an external point to a circle are equal.`;
+        App.showToast('Question Paper generated successfully!');
+      }, 1200);
+    }
+
+    async function runQuizGenerator() {
+      const topic = document.getElementById('qzTopic').value;
+      document.getElementById('aiOutputTitle').innerText = 'Generated MCQ Quiz - ' + topic;
+      document.getElementById('aiOutputBody').innerText = 'Processing quiz questions...';
+      App.openModal('aiOutputModal');
+      
+      setTimeout(() => {
+        document.getElementById('aiOutputBody').innerText = `TOPIC: ${topic.toUpperCase()} - GRADE LEVEL QUIZ
+Total Questions: 3 | Marks: 10
+
+Q1. Which of the following gas is absorbed during photosynthesis?
+  a) Carbon Dioxide [Correct]
+  b) Oxygen
+  c) Nitrogen
+  d) Hydrogen
+
+Q2. Where does photosynthesis take place inside plant cells?
+  a) Mitochondria
+  b) Chloroplast [Correct]
+  c) Nucleus
+  d) Cell Wall`;
+      }, 1000);
+    }
+
+    async function runHwAssistant() {
+      const hw = document.getElementById('hwQ').value;
+      document.getElementById('aiOutputTitle').innerText = 'AI Homework Explanation';
+      document.getElementById('aiOutputBody').innerText = 'Explaining...';
+      App.openModal('aiOutputModal');
+      
+      setTimeout(() => {
+        document.getElementById('aiOutputBody').innerText = `QUESTION: "${hw}"
+EXPLANATION (Appropriate for Class 8-10):
+
+Imagine throwing a ball straight up. It doesn't fly off into space; it drops back to you. Why? Because of an invisible pulling force called Gravity.
+
+Key Points:
+1. Everything with mass has gravity.
+2. The bigger the object, the stronger the pull (Earth has huge gravity!).
+3. Distance matters: the farther apart things are, the weaker the pull.
+4. Without gravity, we would all float off into space!`;
+      }, 1000);
+    }
+
+    function sendToEduBot() {
+      const chatInput = document.getElementById('chatInput');
+      const text = chatInput.value.trim();
+      if(!text) return;
+      
+      const chatbox = document.getElementById('chatbox');
+      chatbox.innerHTML += `<p style="margin-top:5px; text-align:right;"><b>You:</b> ${text}</p>`;
+      chatInput.value = '';
+      
+      setTimeout(() => {
+        chatbox.innerHTML += `<p style="margin-top:5px; color:var(--primary);"><b>EduBot:</b> That is a great question! In simple terms, we study this concept to understand how the universe stays in balance. Let me know if you want a detailed math explanation!</p>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }, 800);
+    }
+  </script>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script>
+    // Local script code injected per page
+  </script>
+</body>
+</html>

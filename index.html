@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - EduSphere LMS (Amala Higher Secondary School)</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 11px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
+      🏫 <b>Amala HSS EduSphere</b><br>
+      All LKG-12th standard portals are fully functional.<br>
+      Select appropriate tab below, then click "Use Demo" or type ID.
+    </div>
+    <!-- Left panel (branding) -->
+    <div class="login-left">
+      <div class="login-left-brand">
+        <div class="login-logo">
+          <!-- Embed SVG Logo -->
+          <svg viewBox="0 0 500 500" style="width:100%; height:100%;">
+            <circle cx="250" cy="250" r="230" fill="#0A0F24"/>
+            <circle cx="250" cy="250" r="175" fill="#4F46E5"/>
+            <path d="M 250 85 C 310 85, 340 100, 360 160 C 360 270, 250 340, 250 380 C 250 340, 140 270, 140 160 C 160 100, 190 85, 250 85 Z" fill="#D92626"/>
+            <text x="250" y="260" fill="#FFF" font-size="70" font-weight="900" text-anchor="middle">AMALA</text>
+            <text x="250" y="310" fill="#FFF" font-size="20" font-weight="600" text-anchor="middle">ESTD 1977</text>
+          </svg>
+        </div>
+        <div class="login-left-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      
+      <div class="login-hero">
+        <h1>Welcome to EduSphere Portal</h1>
+        <p>A unified cloud platform for parents, students, teachers, and administration. Fully integrated with school operations, schedules, academic assessments, and AI tools.</p>
+        
+        <div class="stats-mini-grid">
+          <div class="stat-mini-card">
+            <div class="stat-mini-val">2,547</div>
+            <div class="stat-mini-lbl">Students</div>
+          </div>
+          <div class="stat-mini-card">
+            <div class="stat-mini-val">148</div>
+            <div class="stat-mini-lbl">Teachers</div>
+          </div>
+          <div class="stat-mini-card">
+            <div class="stat-mini-val">LKG-12</div>
+            <div class="stat-mini-lbl">Classes</div>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <p style="font-size: 12px; color: #E0E7FF;">© 2026 Amala Higher Secondary School. All rights reserved.</p>
+      </div>
+    </div>
+    
+    <!-- Right panel (form) -->
+    <div class="login-right">
+      <div class="login-card">
+        <h2 class="login-title">Sign In</h2>
+        <p class="login-subtitle">Choose your workspace and enter details below</p>
+        
+        <div class="role-tabs">
+          <div class="role-tab active" data-role="admin">Admin 🛡️</div>
+          <div class="role-tab" data-role="teacher">Teacher 👨‍🏫</div>
+          <div class="role-tab" data-role="student">Student 🎓</div>
+          <div class="role-tab" data-role="parent">Parent 👪</div>
+        </div>
+        
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="email">User ID / Email</label>
+            <input type="text" id="email" class="form-control" placeholder="Enter User ID" required>
+          </div>
+          
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" for="password" style="margin-bottom: 0;">Password</label>
+              <a href="#" style="font-size: 12px; color: var(--primary); text-decoration: none;">Forgot Password?</a>
+            </div>
+            <div style="position: relative;">
+              <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+              <button type="button" id="togglePass" style="position: absolute; right: 12px; top: 10px; background: none; border: none; cursor: pointer; color: var(--gray-500);">👁️</button>
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-label" style="display: block; margin-bottom: 6px;">Security Verification Code</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <canvas id="captchaCanvas" width="130" height="42" style="border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" onclick="generateCaptcha()"></canvas>
+              <input type="text" id="captchaInput" class="form-control" placeholder="Enter Code" required style="flex: 1; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-align: center;">
+            </div>
+            <small style="color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 4px; display: block;">Click captcha image to reload a new code</small>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+            <input type="checkbox" id="remember" style="cursor: pointer;">
+            <label for="remember" style="font-size: 13px; cursor: pointer; user-select: none;">Remember Me</label>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Login</button>
+        </form>
+        
+        <div class="demo-credentials">
+          <div class="demo-title">Demo Quick Fill</div>
+          <div id="demo-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loader">
+    <div style="text-align: center;">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px; font-weight: 600; color: var(--text-main);">Authenticating...</p>
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
