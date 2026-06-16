@@ -3,109 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marks Ledger Manager - Amala HSS EduSphere</title>
+  <title>Exams & Marks - EduSphere Teacher Portal</title>
   <link rel="stylesheet" href="../../css/main.css">
   <style>
-    :root {
-      --primary: #10B981;
-      --primary-dark: #059669;
-      --primary-light: #ECFDF5;
-    }
+    :root{--primary:#10B981;--primary-dark:#059669;--primary-light:#ECFDF5;}
+    .marks-input{width:75px; text-align:center;}
+    .grade-cell{font-weight:700; font-size:15px;}
+    .g-Ap{color:#059669;} .g-A{color:#10B981;} .g-Bp{color:#2563EB;}
+    .g-B{color:#3B82F6;} .g-C{color:#D97706;} .g-D,.g-F{color:#DC2626;}
   </style>
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
           <circle cx="250" cy="250" r="230" fill="#FFF"/>
-          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <circle cx="250" cy="250" r="180" fill="#10B981"/>
           <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
         </svg>
-        <div class="sidebar-title">
-          AMALA HSS
-          <span>EduSphere LMS</span>
-        </div>
+        <div class="sidebar-title">AMALA HSS<span>Teacher Portal</span></div>
       </div>
       <ul class="sidebar-menu">
-        
-      <li class="menu-header">Teacher</li>
-      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
-      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
-      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
-      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
-      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
-      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
-    
-        <li style="margin-top: 20px;" class="sidebar-item">
-          <a href="#" onclick="App.logout()">🚪 Logout</a>
-        </li>
+        <li class="menu-header">Teacher</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+        <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
-
-    <!-- Main Content -->
     <main class="main-content">
       <header class="header">
         <div class="header-left">
           <button class="hamburger" id="hamburger">☰</button>
-          <h1 class="page-title">Marks Ledger Manager</h1>
+          <h1 class="page-title">Exams &amp; Marks</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search anything...">
-          </div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
-          <div class="user-chip">
-            <div class="avatar-circle" id="userAvatar">T</div>
-            <div style="font-weight: 600;" id="userDisplayName">Teacher Name</div>
-          </div>
+          <div class="user-chip"><div class="avatar-circle" id="userAvatar">T</div><div style="font-weight:600;" id="userDisplayName">Teacher</div></div>
         </div>
       </header>
 
       <div class="content-area">
-        
-  <div class="tab-container">
-    <div class="tab active">Enter Marks</div>
-    <div class="tab">Create Online MCQ Test</div>
-    <div class="tab">Performance Summary</div>
-  </div>
+        <div class="card">
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;align-items:flex-end;">
+            <div>
+              <label class="form-label">Class</label>
+              <select class="form-control" id="examClass" onchange="loadStudentsMarks()" style="min-width:200px;"></select>
+            </div>
+            <div>
+              <label class="form-label">Subject</label>
+              <select class="form-control" id="examSubject" style="min-width:160px;"></select>
+            </div>
+            <div>
+              <label class="form-label">Exam / Test</label>
+              <select class="form-control" id="examName">
+                <option>Quarterly Exam</option>
+                <option>Half-Yearly Exam</option>
+                <option>Annual Exam</option>
+                <option>Unit Test 1</option>
+                <option>Unit Test 2</option>
+                <option>Unit Test 3</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Max Marks</label>
+              <input type="number" class="form-control marks-input" id="maxMarks" value="100" min="10" max="200">
+            </div>
+            <button class="btn btn-primary" onclick="loadStudentsMarks()">Load Students</button>
+          </div>
 
-  <div class="card">
-    <div style="display:flex; gap:15px; margin-bottom:20px;">
-      <select class="form-control" style="width:180px;"><option>Quarterly Examination</option><option>Unit Test 2</option></select>
-      <select class="form-control" style="width:150px;"><option>Class 10-A</option></select>
-      <button class="btn btn-success">Load Records</button>
-    </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Student ID</th><th>Name</th>
+                  <th>Marks Obtained</th><th>Grade</th><th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="marksTableBody"></tbody>
+            </table>
+          </div>
 
-    <table class="data-table">
-      <thead><tr><th>Roll No</th><th>Student Name</th><th>Marks Obtained (Max: 100)</th><th>Grade</th><th>Remarks</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>1</td>
-          <td>Aditya Patel</td>
-          <td><input type="number" class="form-control" style="width:80px;" value="95" onchange="App.showToast('Aditya grade auto-updated to A+')"></td>
-          <td><b>A+</b></td>
-          <td><input type="text" class="form-control" value="Excellent Performance"></td>
-        </tr>
-        <tr>
-          <td>2</td>
-          <td>Arun Das</td>
-          <td><input type="number" class="form-control" style="width:80px;" value="42"></td>
-          <td><b>C</b></td>
-          <td><input type="text" class="form-control" value="Needs improvement"></td>
-        </tr>
-      </tbody>
-    </table>
-    
-    <button class="btn btn-success" style="margin-top:15px;" onclick="App.showToast('Academic marks ledger published!')">Publish Grades</button>
-  </div>
-
+          <div style="margin-top:18px;display:flex;gap:12px;">
+            <button class="btn btn-success" onclick="saveAllMarks()">💾 Save & Publish Grades</button>
+            <button class="btn btn-outline" onclick="autoFillMarks()">🎲 Auto-Fill (Demo)</button>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -113,7 +102,115 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    let marksStudents = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const teacherId = localStorage.getItem('userId') || 'TCH001';
+      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
+      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
+      const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+
+      const myClasses = classes.filter(c => c.teacherId === teacherId);
+      const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 8);
+
+      const classSelect = document.getElementById('examClass');
+      showClasses.forEach(c => {
+        c.sections.forEach(sec => {
+          classSelect.innerHTML += `<option value="${c.name}|${sec}">${c.name} — Sec ${sec}</option>`;
+        });
+      });
+
+      // Populate subjects
+      const subjSelect = document.getElementById('examSubject');
+      const uniqueSubjects = [...new Set(subjects.map(s => s.name))];
+      if (uniqueSubjects.length === 0) {
+        ['Mathematics','Science','English Language','Social Science','Computer Science','Hindi Language']
+          .forEach(n => subjSelect.innerHTML += `<option>${n}</option>`);
+      } else {
+        uniqueSubjects.forEach(n => subjSelect.innerHTML += `<option>${n}</option>`);
+      }
+
+      loadStudentsMarks();
+    });
+
+    function loadStudentsMarks() {
+      const val = document.getElementById('examClass').value;
+      if (!val) return;
+      const [className, section] = val.split('|');
+      const allStudents = JSON.parse(localStorage.getItem('lms_students') || '[]');
+      marksStudents = allStudents.filter(s => s.class === className && s.section === section);
+
+      const tbody = document.getElementById('marksTableBody');
+      tbody.innerHTML = '';
+      if (marksStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No students in this class-section.</td></tr>';
+        return;
+      }
+      marksStudents.forEach((s, i) => {
+        tbody.innerHTML += `<tr>
+          <td>${i+1}</td>
+          <td>${s.id}</td>
+          <td><b>${s.name}</b></td>
+          <td><input type="number" class="form-control marks-input" id="marks_${s.id}" min="0" max="200" placeholder="—" oninput="calcGrade('${s.id}')"></td>
+          <td class="grade-cell" id="grade_${s.id}">—</td>
+          <td><input type="text" class="form-control" id="remark_${s.id}" placeholder="Remarks..." style="max-width:180px;"></td>
+        </tr>`;
+      });
+    }
+
+    function calcGrade(stuId) {
+      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
+      const obtained = parseInt(document.getElementById('marks_' + stuId).value);
+      if (isNaN(obtained)) { document.getElementById('grade_' + stuId).textContent = '—'; return; }
+      const pct = (obtained / maxM) * 100;
+      let g, cls;
+      if (pct >= 90) { g='A+'; cls='g-Ap'; }
+      else if (pct >= 80) { g='A'; cls='g-A'; }
+      else if (pct >= 70) { g='B+'; cls='g-Bp'; }
+      else if (pct >= 60) { g='B'; cls='g-B'; }
+      else if (pct >= 50) { g='C'; cls='g-C'; }
+      else if (pct >= 35) { g='D'; cls='g-D'; }
+      else { g='F'; cls='g-F'; }
+      const el = document.getElementById('grade_' + stuId);
+      el.textContent = g;
+      el.className = 'grade-cell ' + cls;
+    }
+
+    function autoFillMarks() {
+      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
+      marksStudents.forEach(s => {
+        const val = Math.floor(Math.random() * (maxM - Math.floor(maxM * 0.4)) + Math.floor(maxM * 0.4));
+        document.getElementById('marks_' + s.id).value = val;
+        calcGrade(s.id);
+      });
+    }
+
+    function saveAllMarks() {
+      const subject = document.getElementById('examSubject').value;
+      const examName = document.getElementById('examName').value;
+      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
+
+      const allResults = JSON.parse(localStorage.getItem('lms_results') || '[]');
+      let saved = 0;
+      marksStudents.forEach(s => {
+        const obtainedEl = document.getElementById('marks_' + s.id);
+        const obtained = parseInt(obtainedEl.value);
+        if (isNaN(obtained)) return;
+        const grade = document.getElementById('grade_' + s.id).textContent;
+        const remarks = document.getElementById('remark_' + s.id).value || 'Good';
+
+        // Remove old entry if exists
+        const idx = allResults.findIndex(r => r.stuId === s.id && r.subject === subject && r.exam === examName);
+        const entry = { stuId: s.id, subject, exam: examName, max: maxM, obtained, grade, remarks };
+        if (idx >= 0) allResults[idx] = entry;
+        else allResults.push(entry);
+        saved++;
+      });
+
+      localStorage.setItem('lms_results', JSON.stringify(allResults));
+      AppState.addNotice(`${examName} marks published for ${subject}`);
+      App.showToast(`✅ Marks saved for ${saved} students!`, 'success');
+    }
   </script>
 </body>
 </html>

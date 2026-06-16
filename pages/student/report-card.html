@@ -2,95 +2,208 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Progress Report Card - Amala HSS eVarsity</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Term Report Card - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
   <style>
-    body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.5; background-color:#F8FAFC; }
-    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-    .title { font-size: 24px; font-weight: bold; margin:0; }
-    .subtitle { font-size: 14px; margin-top:5px; text-transform:uppercase; color:#64748B; }
-    .stu-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 30px; font-size: 14px; }
-    .data-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background-color:#FFF; }
-    .data-table th, .data-table td { border: 1px solid #CBD5E1; padding: 10px; text-align: left; }
-    .data-table th { background-color: #F1F5F9; }
-    .summary { display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; border-top: 2px solid #333; padding-top: 15px; }
-    .print-btn { background-color: #4F46E5; color: #FFF; border: none; padding: 10px 20px; font-size: 14px; border-radius: 4px; cursor: pointer; display: inline-block; margin-bottom: 20px; text-decoration: none; }
+    .report-wrapper { max-width: 820px; margin: 30px auto; padding: 20px; }
+    .report-actions { display:flex; justify-content:space-between; margin-bottom:20px; }
+    .report-doc { background:#fff; border:1px solid #CBD5E1; border-radius:8px; padding:36px; box-shadow:0 4px 20px rgba(0,0,0,0.06); }
+    .rpt-header { text-align:center; border-bottom:3px double #1E3A8A; padding-bottom:16px; margin-bottom:24px; }
+    .rpt-school-name { font-size:22px; font-weight:900; color:#1E3A8A; letter-spacing:1px; }
+    .rpt-subtitle { font-size:13px; color:#64748B; text-transform:uppercase; margin-top:4px; }
+    .rpt-badge { display:inline-block; background:#4F46E5; color:#fff; padding:3px 12px; border-radius:20px; font-size:11px; margin-top:6px; }
+    .stu-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px 30px; margin-bottom:24px; font-size:14px; }
+    .stu-meta-item { border-bottom:1px dashed #CBD5E1; padding-bottom:6px; }
+    .stu-meta-item span { font-weight:700; color:#1E1B4B; }
+    .rpt-table { width:100%; border-collapse:collapse; margin-bottom:24px; font-size:14px; }
+    .rpt-table th { background:#1E3A8A; color:#fff; padding:10px 12px; text-align:left; }
+    .rpt-table td { border:1px solid #E2E8F0; padding:10px 12px; }
+    .rpt-table tbody tr:nth-child(even) { background:#F8FAFC; }
+    .rpt-table .grade-A { color:#059669; font-weight:700; }
+    .rpt-table .grade-B { color:#2563EB; font-weight:700; }
+    .rpt-table .grade-C { color:#D97706; font-weight:700; }
+    .rpt-table .grade-D { color:#DC2626; font-weight:700; }
+    .rpt-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:24px; }
+    .rpt-sum-card { background:#F1F5F9; border-radius:6px; padding:14px; text-align:center; }
+    .rpt-sum-card .val { font-size:22px; font-weight:800; color:#1E3A8A; }
+    .rpt-sum-card .lbl { font-size:12px; color:#64748B; margin-top:2px; }
+    .rpt-footer { display:flex; justify-content:space-between; margin-top:30px; border-top:2px solid #CBD5E1; padding-top:16px; font-size:13px; color:#64748B; }
+    .rpt-sign { text-align:center; }
+    .rpt-sign-line { border-top:1px solid #64748B; margin-top:30px; padding-top:4px; font-size:11px; }
     @media print {
-      .print-btn { display: none; }
-      body { padding: 0; background-color:#FFF; }
+      .report-actions, .no-print { display:none !important; }
+      .report-wrapper { margin:0; padding:0; max-width:100%; }
+      .report-doc { border:none; box-shadow:none; padding:20px; }
+      body { background:#fff !important; }
     }
   </style>
 </head>
 <body>
-  <div style="max-width: 800px; margin: 0 auto;">
-    <a href="dashboard.html" class="print-btn">⬅️ Back to Portal</a>
-    <button onclick="window.print()" class="print-btn" style="float: right;">🖨️ Print Report Card</button>
-
-    <div class="header">
-      <div class="title">AMALA HIGHER SECONDARY SCHOOL</div>
-      <div class="subtitle">eVarsity® Academic Progress Report Card</div>
+  <div class="report-wrapper">
+    <div class="report-actions no-print">
+      <a href="dashboard.html" class="btn btn-outline">⬅️ Back to Portal</a>
+      <button onclick="window.print()" class="btn btn-primary">🖨️ Print Report Card</button>
     </div>
 
-    <div class="stu-details">
-      <div>👤 <b>Student Name:</b> <span id="stuName">--</span></div>
-      <div>🔑 <b>Admission ID:</b> <span id="stuId">--</span></div>
-      <div>🏫 <b>Class & Section:</b> <span id="stuClass">--</span></div>
-      <div>📅 <b>Academic Session:</b> 2026 - 2027</div>
-    </div>
+    <div class="report-doc" id="reportDoc">
+      <div class="rpt-header">
+        <div class="rpt-school-name">AMALA HIGHER SECONDARY SCHOOL</div>
+        <div class="rpt-subtitle">Affiliated to Tamil Nadu State Board — ESTD 1977</div>
+        <div class="rpt-badge">eVarsity® Academic Progress Report Card — 2026–2027</div>
+      </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Subject Name</th>
-          <th>Max Marks</th>
-          <th>Marks Obtained</th>
-          <th>Grade</th>
-        </tr>
-      </thead>
-      <tbody id="reportCardTable"></tbody>
-    </table>
+      <div class="stu-meta">
+        <div class="stu-meta-item">Student Name: <span id="stuName">—</span></div>
+        <div class="stu-meta-item">Admission No: <span id="stuId">—</span></div>
+        <div class="stu-meta-item">Class &amp; Section: <span id="stuClass">—</span></div>
+        <div class="stu-meta-item">Academic Session: <span>2026 – 2027</span></div>
+        <div class="stu-meta-item">Attendance: <span id="stuAttendance">—</span></div>
+        <div class="stu-meta-item">Fee Status: <span id="stuFee">—</span></div>
+      </div>
 
-    <div class="summary">
-      <div>Overall Term Percentage: <span id="avgPercentage">--</span></div>
-      <div>Class Teacher Status: PASS</div>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Subject Name</th>
+            <th>Max Marks</th>
+            <th>Marks Obtained</th>
+            <th>Percentage</th>
+            <th>Grade</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody id="reportCardTable">
+          <tr><td colspan="7" style="text-align:center; color:#64748B; padding:20px;">Loading results…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="rpt-summary">
+        <div class="rpt-sum-card">
+          <div class="val" id="totalObtained">—</div>
+          <div class="lbl">Total Marks Obtained</div>
+        </div>
+        <div class="rpt-sum-card">
+          <div class="val" id="overallPercent">—</div>
+          <div class="lbl">Overall Percentage</div>
+        </div>
+        <div class="rpt-sum-card">
+          <div class="val" id="overallGrade">—</div>
+          <div class="lbl">Overall Grade</div>
+        </div>
+      </div>
+
+      <div class="rpt-footer">
+        <div class="rpt-sign">
+          <div class="rpt-sign-line">Class Teacher's Signature</div>
+        </div>
+        <div style="text-align:center; font-size:12px; color:#94A3B8;">
+          This is a computer-generated report card.<br>No signature required for digital copy.
+        </div>
+        <div class="rpt-sign">
+          <div class="rpt-sign-line">Principal's Signature</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    window.addEventListener('load', () => {
+    document.addEventListener('DOMContentLoaded', () => {
+      AppState.init();
       const stuId = localStorage.getItem('userId') || 'STU001';
-      const students = AppState.getData('lms_students');
+      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
       const currentS = students.find(s => s.id === stuId) || students[0];
 
-      document.getElementById('stuName').innerText = currentS.name;
-      document.getElementById('stuId').innerText = currentS.id;
-      document.getElementById('stuClass').innerText = currentS.class + ' (' + currentS.section + ')';
-      
-      const results = AppState.getData('lms_results').filter(r => r.stuId === currentS.id);
-      const table = document.getElementById('reportCardTable');
-      table.innerHTML = '';
-      
-      if (results.length === 0) {
-        table.innerHTML = '<tr><td colspan="4" style="text-align:center;">No results published yet.</td></tr>';
+      if (!currentS) {
+        document.getElementById('reportCardTable').innerHTML =
+          '<tr><td colspan="7" style="text-align:center;color:#DC2626;">Student record not found.</td></tr>';
         return;
       }
 
-      let totalMax = 0;
-      let totalObtained = 0;
-      results.forEach(r => {
-        totalMax += r.max;
-        totalObtained += r.obtained;
-        table.innerHTML += `<tr>
-          <td><b>${r.subject}</b></td>
-          <td>${r.max}</td>
-          <td>${r.obtained}</td>
-          <td><b>${r.grade}</b></td>
-        </tr>`;
-      });
+      document.getElementById('stuName').textContent = currentS.name;
+      document.getElementById('stuId').textContent = currentS.id;
+      document.getElementById('stuClass').textContent = currentS.class + ' — Section ' + currentS.section;
+      document.getElementById('stuAttendance').textContent = (currentS.attendance || 92) + '%';
+      document.getElementById('stuFee').textContent = currentS.fee || 'Paid';
 
-      const percentage = ((totalObtained / totalMax) * 100).toFixed(2);
-      document.getElementById('avgPercentage').innerText = percentage + '%';
+      const allResults = JSON.parse(localStorage.getItem('lms_results') || '[]');
+      const myResults = allResults.filter(r => r.stuId === currentS.id);
+      const table = document.getElementById('reportCardTable');
+
+      function getGrade(pct) {
+        if (pct >= 90) return { g: 'A+', cls: 'grade-A', remark: 'Outstanding' };
+        if (pct >= 80) return { g: 'A',  cls: 'grade-A', remark: 'Excellent' };
+        if (pct >= 70) return { g: 'B+', cls: 'grade-B', remark: 'Very Good' };
+        if (pct >= 60) return { g: 'B',  cls: 'grade-B', remark: 'Good' };
+        if (pct >= 50) return { g: 'C',  cls: 'grade-C', remark: 'Average' };
+        if (pct >= 35) return { g: 'D',  cls: 'grade-D', remark: 'Below Average' };
+        return { g: 'F', cls: 'grade-D', remark: 'Fail' };
+      }
+
+      if (myResults.length === 0) {
+        // Generate demo results from subjects
+        const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+        const classSubjects = subjects.filter(s => s.class === currentS.class).slice(0, 6);
+        const demoData = classSubjects.length > 0 ? classSubjects : [
+          { name: 'Mathematics' }, { name: 'Science' }, { name: 'English Language' },
+          { name: 'Social Science' }, { name: 'Computer Science' }, { name: 'Hindi Language' }
+        ];
+
+        let totalMax = 0, totalObtained = 0;
+        table.innerHTML = '';
+        demoData.forEach((sub, idx) => {
+          const max = 100;
+          const obtained = Math.floor(Math.random() * 30 + 65);
+          totalMax += max;
+          totalObtained += obtained;
+          const pct = (obtained / max * 100).toFixed(1);
+          const { g, cls, remark } = getGrade(parseFloat(pct));
+          table.innerHTML += `<tr>
+            <td>${idx + 1}</td>
+            <td><b>${sub.name || sub}</b></td>
+            <td>${max}</td>
+            <td>${obtained}</td>
+            <td>${pct}%</td>
+            <td class="${cls}">${g}</td>
+            <td>${remark}</td>
+          </tr>`;
+        });
+
+        const overallPct = (totalObtained / totalMax * 100).toFixed(2);
+        const { g: og, cls: ocls } = getGrade(parseFloat(overallPct));
+        document.getElementById('totalObtained').textContent = totalObtained + ' / ' + totalMax;
+        document.getElementById('overallPercent').textContent = overallPct + '%';
+        document.getElementById('overallGrade').textContent = og;
+        document.getElementById('overallGrade').className = 'val ' + ocls;
+      } else {
+        let totalMax = 0, totalObtained = 0;
+        table.innerHTML = '';
+        myResults.forEach((r, idx) => {
+          totalMax += r.max;
+          totalObtained += r.obtained;
+          const pct = (r.obtained / r.max * 100).toFixed(1);
+          const { g, cls, remark } = getGrade(parseFloat(pct));
+          table.innerHTML += `<tr>
+            <td>${idx + 1}</td>
+            <td><b>${r.subject}</b></td>
+            <td>${r.max}</td>
+            <td>${r.obtained}</td>
+            <td>${pct}%</td>
+            <td class="${cls}">${g}</td>
+            <td>${remark}</td>
+          </tr>`;
+        });
+
+        const overallPct = (totalObtained / totalMax * 100).toFixed(2);
+        const { g: og, cls: ocls } = getGrade(parseFloat(overallPct));
+        document.getElementById('totalObtained').textContent = totalObtained + ' / ' + totalMax;
+        document.getElementById('overallPercent').textContent = overallPct + '%';
+        document.getElementById('overallGrade').textContent = og;
+        document.getElementById('overallGrade').className = 'val ' + ocls;
+      }
     });
   </script>
 </body>

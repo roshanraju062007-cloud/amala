@@ -3,99 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coursework & Submissions - Amala HSS EduSphere</title>
+  <title>Assignments - EduSphere Teacher Portal</title>
   <link rel="stylesheet" href="../../css/main.css">
-  <style>
-    :root {
-      --primary: #10B981;
-      --primary-dark: #059669;
-      --primary-light: #ECFDF5;
-    }
-  </style>
+  <style>:root{--primary:#10B981;--primary-dark:#059669;--primary-light:#ECFDF5;}</style>
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
           <circle cx="250" cy="250" r="230" fill="#FFF"/>
-          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <circle cx="250" cy="250" r="180" fill="#10B981"/>
           <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
         </svg>
-        <div class="sidebar-title">
-          AMALA HSS
-          <span>EduSphere LMS</span>
-        </div>
+        <div class="sidebar-title">AMALA HSS<span>Teacher Portal</span></div>
       </div>
       <ul class="sidebar-menu">
-        
-      <li class="menu-header">Teacher</li>
-      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-      <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
-      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
-      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-      <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
-      <li class="sidebar-item"><a href="exams.html">✍️ Exams & Marks</a></li>
-      <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
-      <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
-    
-        <li style="margin-top: 20px;" class="sidebar-item">
-          <a href="#" onclick="App.logout()">🚪 Logout</a>
-        </li>
+        <li class="menu-header">Teacher</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+        <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
-
-    <!-- Main Content -->
     <main class="main-content">
       <header class="header">
         <div class="header-left">
           <button class="hamburger" id="hamburger">☰</button>
-          <h1 class="page-title">Coursework & Submissions</h1>
+          <h1 class="page-title">Assignments</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search anything...">
-          </div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
-          <div class="user-chip">
-            <div class="avatar-circle">MRK</div>
-            <div style="font-weight: 600;">Mr. Rajesh Kumar</div>
-          </div>
+          <div class="user-chip"><div class="avatar-circle" id="userAvatar">T</div><div style="font-weight:600;" id="userDisplayName">Teacher</div></div>
         </div>
       </header>
-
       <div class="content-area">
-        
-  <div class="grid-2">
-    <div class="card">
-      <h3 class="card-title">Create Coursework Assignment</h3>
-      <form onsubmit="event.preventDefault(); App.showToast('Assignment uploaded successfully!');">
-        <div class="form-group"><label class="form-label">Assignment Title</label><input type="text" class="form-control" required></div>
-        <div class="form-group">
-          <label class="form-label">Target Class</label>
-          <select class="form-control"><option>Class 10-A</option><option>Class 12-A</option></select>
+        <div class="grid-2">
+          <div class="card">
+            <h3 class="card-title">➕ Create Assignment</h3>
+            <form id="assignmentForm" onsubmit="saveAssignment(event)">
+              <div class="form-group">
+                <label class="form-label">Assignment Title *</label>
+                <input type="text" class="form-control" id="asnTitle" required placeholder="e.g. Chapter 5 Exercises">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Target Class *</label>
+                <select class="form-control" id="asnClass"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Subject *</label>
+                <select class="form-control" id="asnSubject"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Due Date *</label>
+                <input type="date" class="form-control" id="asnDue" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Marks</label>
+                <input type="number" class="form-control" id="asnMarks" value="50" min="5" max="200">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Instructions</label>
+                <textarea class="form-control" id="asnInstructions" rows="3" placeholder="Describe the task..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-success" style="width:100%;">📤 Post Assignment</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title">📋 Active Assignments</h3>
+            <div id="assignmentsList"></div>
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-control" required></div>
-        <div class="form-group"><label class="form-label">Instructions</label><textarea class="form-control" rows="3"></textarea></div>
-        <button type="submit" class="btn btn-success" style="width:100%;">Post Assignment</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">Active Homework Tracker</h3>
-      <table class="data-table">
-        <thead><tr><th>Topic</th><th>Due Date</th><th>Submissions</th></tr></thead>
-        <tbody>
-          <tr><td>Worksheet 3 - Equations</td><td>20 Jun 2026</td><td>28 / 35</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
       </div>
     </main>
   </div>
@@ -103,7 +87,92 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    document.addEventListener('DOMContentLoaded', () => {
+      const teacherId = localStorage.getItem('userId') || 'TCH001';
+      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
+      const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+      const myClasses = classes.filter(c => c.teacherId === teacherId);
+      const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 6);
+
+      const classSelect = document.getElementById('asnClass');
+      showClasses.forEach(c => {
+        c.sections.forEach(sec => {
+          classSelect.innerHTML += `<option value="${c.name}|${sec}">${c.name} — Sec ${sec}</option>`;
+        });
+      });
+
+      const subjSelect = document.getElementById('asnSubject');
+      const uniqueSubjects = [...new Set(subjects.map(s => s.name))];
+      const subList = uniqueSubjects.length > 0 ? uniqueSubjects :
+        ['Mathematics','Science','English Language','Social Science','Computer Science','Hindi'];
+      subList.forEach(n => subjSelect.innerHTML += `<option>${n}</option>`);
+
+      // Default due date: 7 days from today
+      const due = new Date();
+      due.setDate(due.getDate() + 7);
+      document.getElementById('asnDue').value = due.toISOString().split('T')[0];
+
+      loadAssignments();
+    });
+
+    function saveAssignment(e) {
+      e.preventDefault();
+      const title = document.getElementById('asnTitle').value.trim();
+      const classVal = document.getElementById('asnClass').value;
+      const subject = document.getElementById('asnSubject').value;
+      const due = document.getElementById('asnDue').value;
+      const marks = parseInt(document.getElementById('asnMarks').value) || 50;
+      const instructions = document.getElementById('asnInstructions').value.trim();
+      const [className, section] = classVal.split('|');
+
+      const assignments = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
+      const id = 'ASN' + String(assignments.length + 1).padStart(3, '0');
+      assignments.push({ id, title, class: className, section, subject, due, marks, instructions, submissions: 0, teacherId: localStorage.getItem('userId') });
+      localStorage.setItem('lms_assignments', JSON.stringify(assignments));
+
+      AppState.addNotice(`New assignment posted: ${title} for ${className}`);
+      App.showToast('Assignment posted successfully!', 'success');
+      document.getElementById('assignmentForm').reset();
+      const dueDate = new Date(); dueDate.setDate(dueDate.getDate() + 7);
+      document.getElementById('asnDue').value = dueDate.toISOString().split('T')[0];
+      loadAssignments();
+    }
+
+    function loadAssignments() {
+      const assignments = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
+      const teacherId = localStorage.getItem('userId');
+      const myAsns = assignments.filter(a => !a.teacherId || a.teacherId === teacherId);
+      const box = document.getElementById('assignmentsList');
+      box.innerHTML = '';
+      if (myAsns.length === 0) {
+        box.innerHTML = '<p style="color:var(--text-muted);">No assignments posted yet.</p>';
+        return;
+      }
+      myAsns.slice().reverse().forEach(a => {
+        const today = new Date().toISOString().split('T')[0];
+        const overdue = a.due < today;
+        box.innerHTML += `<div class="card" style="border-left:4px solid ${overdue ? 'var(--danger)' : 'var(--success)'};padding:12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <h4 style="margin-bottom:4px;">${a.title}</h4>
+              <small style="color:var(--text-muted);">${a.class} — Sec ${a.section || 'All'} | ${a.subject}</small>
+            </div>
+            <span class="badge ${overdue ? 'badge-danger' : 'badge-success'}">${overdue ? 'Overdue' : 'Active'}</span>
+          </div>
+          <p style="margin:8px 0 4px;font-size:13px;">📅 Due: <b>${a.due}</b> &nbsp; 📊 Marks: <b>${a.marks}</b> &nbsp; 📬 Submissions: <b>${a.submissions || 0}</b></p>
+          <button class="btn btn-outline" style="padding:3px 8px;font-size:12px;color:var(--danger);" onclick="deleteAssignment('${a.id}')">🗑️ Remove</button>
+        </div>`;
+      });
+    }
+
+    function deleteAssignment(id) {
+      if (!confirm('Delete this assignment?')) return;
+      let asns = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
+      asns = asns.filter(a => a.id !== id);
+      localStorage.setItem('lms_assignments', JSON.stringify(asns));
+      loadAssignments();
+      App.showToast('Assignment removed.', 'success');
+    }
   </script>
 </body>
 </html>
