@@ -62,8 +62,7 @@
             🔔 <span class="badge-dot"></span>
           </button>
           <div class="user-chip">
-            <div class="avatar-circle">MRK</div>
-            <div style="font-weight: 600;">Mr. Rajesh Kumar</div>
+            <div class="avatar-circle" id="userAvatar">T</div><div style="font-weight: 600;" id="userDisplayName">Teacher</div>
           </div>
         </div>
       </header>
@@ -73,26 +72,24 @@
   <div class="grid-2">
     <div class="card">
       <h3 class="card-title">Upload Lecture Note / Video Link</h3>
-      <form onsubmit="event.preventDefault(); App.showToast('Shared successfully!');">
-        <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" required></div>
+      <form id="materialForm" onsubmit="saveMaterial(event)">
+        <div class="form-group"><label class="form-label">Title *</label><input type="text" class="form-control" id="matTitle" required placeholder="e.g. Chapter 5 Notes"></div>
         <div class="form-group">
-          <label class="form-label">Material Format Type</label>
-          <select class="form-control"><option>PDF</option><option>PPT Slide</option><option>YouTube Video Link</option></select>
+          <label class="form-label">Material Type</label>
+          <select class="form-control" id="matType"><option>PDF</option><option>PPT Slide</option><option>YouTube Video Link</option><option>Word Doc</option><option>Image</option></select>
         </div>
-        <div class="form-group"><label class="form-label">Subject</label><input type="text" class="form-control" value="Mathematics"></div>
-        <div class="form-group"><label class="form-label">Link or File Details</label><input type="text" class="form-control" placeholder="URL or file name"></div>
-        <button type="submit" class="btn btn-success" style="width:100%;">Share Material</button>
+        <div class="form-group"><label class="form-label">Subject</label><select class="form-control" id="matSubject"></select></div>
+        <div class="form-group"><label class="form-label">For Class</label><select class="form-control" id="matClass"><option value="All">All Classes</option></select></div>
+        <div class="form-group"><label class="form-label">Link / File Name</label><input type="text" class="form-control" id="matLink" placeholder="https://... or filename.pdf"></div>
+        <button type="submit" class="btn btn-success" style="width:100%;">📤 Share Material</button>
       </form>
     </div>
 
     <div class="card">
       <h3 class="card-title">Shared Course Materials</h3>
       <table class="data-table">
-        <thead><tr><th>Title</th><th>Type</th><th>Upload Date</th></tr></thead>
-        <tbody>
-          <tr><td>Trigonometry Lecture Notes</td><td><span class="badge badge-purple">PDF</span></td><td>10 Jun 2026</td></tr>
-          <tr><td>Pythagoras Theorem Proof Video</td><td><span class="badge badge-info">Video</span></td><td>08 Jun 2026</td></tr>
-        </tbody>
+        <thead><tr><th>Title</th><th>Type</th><th>Subject</th><th>Uploaded</th><th>Action</th></tr></thead>
+        <tbody id="materialsTableBody"></tbody>
       </table>
     </div>
   </div>
@@ -103,8 +100,88 @@
 
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
+  
   <script>
-    // Local script code injected per page
+    document.addEventListener('DOMContentLoaded', () => {
+      const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
+      const teacherId = localStorage.getItem('userId') || 'TCH001';
+
+      // Populate subjects dropdown
+      const subjSelect = document.getElementById('matSubject');
+      if (subjSelect) {
+        const uniqueSubjects = [...new Set(subjects.map(s => s.name))];
+        const subList = uniqueSubjects.length > 0 ? uniqueSubjects :
+          ['Mathematics','Science','English Language','Social Science','Computer Science','Hindi'];
+        subList.forEach(n => subjSelect.innerHTML += '<option>' + n + '</option>');
+      }
+
+      // Populate class dropdown
+      const classSelect = document.getElementById('matClass');
+      if (classSelect) {
+        const myClasses = classes.filter(c => c.teacherId === teacherId);
+        const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 6);
+        showClasses.forEach(c => {
+          classSelect.innerHTML += '<option value="' + c.name + '">' + c.name + '</option>';
+        });
+      }
+
+      loadMaterials();
+    });
+
+    function saveMaterial(e) {
+      e.preventDefault();
+      const title = document.getElementById('matTitle').value.trim();
+      const type = document.getElementById('matType').value;
+      const subject = document.getElementById('matSubject').value;
+      const classVal = document.getElementById('matClass') ? document.getElementById('matClass').value : 'All';
+      const link = document.getElementById('matLink').value.trim();
+
+      const materials = JSON.parse(localStorage.getItem('lms_materials') || '[]');
+      materials.unshift({
+        id: 'MAT' + String(materials.length + 1).padStart(3, '0'),
+        title, type, subject, class: classVal, link,
+        date: new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}),
+        teacherId: localStorage.getItem('userId')
+      });
+      localStorage.setItem('lms_materials', JSON.stringify(materials));
+      AppState.addNotice('Study material shared: ' + title);
+      App.showToast('Material shared successfully!', 'success');
+      document.getElementById('materialForm').reset();
+      loadMaterials();
+    }
+
+    function loadMaterials() {
+      const materials = JSON.parse(localStorage.getItem('lms_materials') || '[]');
+      const teacherId = localStorage.getItem('userId');
+      const myMats = materials.filter(m => !m.teacherId || m.teacherId === teacherId);
+      const tbody = document.getElementById('materialsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (myMats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No materials shared yet.</td></tr>';
+        return;
+      }
+      const typeColors = { 'PDF':'badge-danger', 'PPT Slide':'badge-warning', 'YouTube Video Link':'badge-info', 'Word Doc':'badge-primary', 'Image':'badge-success' };
+      myMats.forEach(m => {
+        tbody.innerHTML += '<tr>' +
+          '<td><b>' + m.title + '</b></td>' +
+          '<td><span class="badge ' + (typeColors[m.type] || 'badge-primary') + '">' + m.type + '</span></td>' +
+          '<td>' + m.subject + '</td>' +
+          '<td>' + m.date + '</td>' +
+          '<td><button class="btn btn-outline" style="padding:3px 8px;font-size:12px;color:var(--danger);" onclick="deleteMaterial('' + m.id + '')">🗑️</button></td>' +
+        '</tr>';
+      });
+    }
+
+    function deleteMaterial(id) {
+      if (!confirm('Delete this material?')) return;
+      let mats = JSON.parse(localStorage.getItem('lms_materials') || '[]');
+      mats = mats.filter(m => m.id !== id);
+      localStorage.setItem('lms_materials', JSON.stringify(mats));
+      loadMaterials();
+      App.showToast('Material removed.', 'success');
+    }
   </script>
 </body>
 </html>
