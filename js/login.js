@@ -1,43 +1,46 @@
-/* eVarsity School ERP Login Controller */
+/* eVarsity School ERP Login Controller — Amala HSS */
 let currentCaptcha = '';
 
 function generateCaptcha() {
   const canvas = document.getElementById('captchaCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const w = canvas.width, h = canvas.height;
 
-  // Background
-  ctx.fillStyle = '#E2E8F0';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#E2E8F0');
+  grad.addColorStop(1, '#CBD5E1');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
 
-  // Random noise lines
+  // Noise lines
   ctx.strokeStyle = '#94A3B8';
-  for (let i = 0; i < 5; i++) {
-    ctx.lineWidth = Math.random() * 2 + 1;
+  for (let i = 0; i < 6; i++) {
+    ctx.lineWidth = Math.random() * 1.5 + 0.5;
     ctx.beginPath();
-    ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+    ctx.moveTo(Math.random() * w, Math.random() * h);
+    ctx.lineTo(Math.random() * w, Math.random() * h);
     ctx.stroke();
   }
 
-  // Alphanumeric text
-  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // exclude ambiguous like 0, 1, O, I
+  // Generate code (exclude ambiguous chars)
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   let code = '';
   for (let i = 0; i < 5; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   currentCaptcha = code;
 
-  // Draw characters with random properties
-  ctx.font = 'bold 22px sans-serif';
+  // Draw each character
+  const colors = ['#0F766E', '#1E3A8A', '#1E1B4B', '#4C1D95', '#7C2D12', '#166534'];
+  ctx.font = 'bold 20px monospace';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < code.length; i++) {
-    ctx.fillStyle = ['#0F766E', '#1E3A8A', '#1E1B4B', '#4C1D95'][Math.floor(Math.random() * 4)];
-    const x = 12 + i * 22;
-    const y = canvas.height / 2 + (Math.random() * 8 - 4);
-    const angle = (Math.random() * 30 - 15) * Math.PI / 180;
-    
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    const x = 10 + i * 24;
+    const y = h / 2 + (Math.random() * 6 - 3);
+    const angle = (Math.random() * 24 - 12) * Math.PI / 180;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
@@ -45,107 +48,115 @@ function generateCaptcha() {
     ctx.restore();
   }
 
-  // Random noise dots
-  for (let i = 0; i < 40; i++) {
-    ctx.fillStyle = '#64748B';
+  // Noise dots
+  for (let i = 0; i < 30; i++) {
+    ctx.fillStyle = '#94A3B8';
     ctx.beginPath();
-    ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 1, 0, Math.PI * 2);
+    ctx.arc(Math.random() * w, Math.random() * h, 1, 0, Math.PI * 2);
     ctx.fill();
   }
-  
-  // Clear input
+
   const input = document.getElementById('captchaInput');
   if (input) input.value = '';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize App State
-  if (typeof AppState !== 'undefined') {
+
+  // ── Ensure AppState data is initialized ──
+  if (typeof AppState !== 'undefined' && AppState.init) {
     AppState.init();
   }
 
-  // Display System Date
+  // System date display
   const dateDisp = document.getElementById('systemDateDisplay');
   if (dateDisp) {
     const today = new Date();
-    dateDisp.innerText = today.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    dateDisp.innerText = today.toLocaleDateString('en-IN', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+    });
   }
 
-  // Generate Captcha
+  // Draw captcha
   generateCaptcha();
 
   let activeRole = 'admin';
-  const roleTabs = document.querySelectorAll('.role-tab');
-  const demoList = document.getElementById('demo-list');
-  const loginForm = document.getElementById('loginForm');
+  const roleTabs   = document.querySelectorAll('.role-tab');
+  const demoList   = document.getElementById('demo-list');
+  const loginForm  = document.getElementById('loginForm');
   const emailInput = document.getElementById('email');
-  const passInput = document.getElementById('password');
-  const loader = document.getElementById('loader');
+  const passInput  = document.getElementById('password');
+  const loader     = document.getElementById('loader');
+  const captchaInput = document.getElementById('captchaInput');
 
-  // Switch tabs
+  // ── Tab switching ──
   roleTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       roleTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       activeRole = tab.dataset.role;
+      updatePlaceholder();
       updateDemoCredentials();
+      generateCaptcha();
     });
   });
 
+  function updatePlaceholder() {
+    const ph = { admin: 'admin / admin001', teacher: 'e.g. TCH001', student: 'e.g. STU001', parent: 'e.g. PAR001' };
+    if (emailInput) emailInput.placeholder = ph[activeRole] || 'Enter User ID';
+  }
+
+  // ── Demo credentials badge ──
   function updateDemoCredentials() {
+    if (!demoList) return;
     demoList.innerHTML = '';
-    let userVal = '';
-    let passVal = '';
-    
+
+    const credsList = [];
+
     if (activeRole === 'admin') {
-      userVal = 'admin';
-      passVal = 'admin123';
+      credsList.push({ u: 'admin', p: 'admin123' });
     } else if (activeRole === 'teacher') {
-      userVal = 'TCH001';
-      passVal = 'teach123';
+      credsList.push({ u: 'TCH001', p: 'teach123' });
+      credsList.push({ u: 'TCH002', p: 'teach123' });
     } else if (activeRole === 'student') {
-      userVal = 'STU001';
-      // Fetch dynamic DOB password from localStorage
-      const students = JSON.parse(localStorage.getItem('lms_students')) || [];
-      const match = students.find(s => s.id === 'STU001');
-      passVal = match ? match.password : '12042011';
+      credsList.push({ u: 'STU001', p: 'stud123' });
+      credsList.push({ u: 'STU002', p: 'stud123' });
     } else if (activeRole === 'parent') {
-      userVal = 'PAR001';
-      passVal = 'par123';
+      credsList.push({ u: 'PAR001', p: 'par123' });
+      credsList.push({ u: 'PAR002', p: 'par123' });
     }
 
-    const badge = document.createElement('span');
-    badge.className = 'demo-badge';
-    badge.textContent = `Use Demo: ${userVal} / ${passVal}`;
-    badge.addEventListener('click', () => {
-      emailInput.value = userVal;
-      emailInput.dispatchEvent(new Event('input'));
-      passInput.value = passVal;
-      passInput.dispatchEvent(new Event('input'));
-      // Pre-fill captcha for easy testing!
-      document.getElementById('captchaInput').value = currentCaptcha;
+    credsList.forEach(cred => {
+      const badge = document.createElement('span');
+      badge.className = 'demo-badge';
+      badge.textContent = `▶ ${cred.u} / ${cred.p}`;
+      badge.style.cssText = 'cursor:pointer; margin:3px; display:inline-block; padding:4px 8px; border-radius:4px; font-size:11px; background:rgba(79,70,229,0.15); border:1px solid rgba(79,70,229,0.3);';
+      badge.addEventListener('click', () => {
+        emailInput.value = cred.u;
+        passInput.value = cred.p;
+        if (captchaInput) captchaInput.value = currentCaptcha;
+      });
+      demoList.appendChild(badge);
     });
-    demoList.appendChild(badge);
   }
 
-  // Password toggle visibility
+  // ── Password visibility toggle ──
   const togglePass = document.getElementById('togglePass');
-  if (togglePass) {
+  if (togglePass && passInput) {
     togglePass.addEventListener('click', () => {
-      const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passInput.setAttribute('type', type);
-      togglePass.textContent = type === 'password' ? '👁️' : '🔒';
+      const isPass = passInput.getAttribute('type') === 'password';
+      passInput.setAttribute('type', isPass ? 'text' : 'password');
+      togglePass.textContent = isPass ? '🔒' : '👁️';
     });
   }
 
-  // Handle submit
+  // ── FORM SUBMIT ──
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    // 1. Captcha validation
-    const captchaVal = document.getElementById('captchaInput').value.trim().toUpperCase();
-    if (captchaVal !== currentCaptcha) {
-      alert('Security Verification Code (Captcha) is incorrect. Please try again.');
+    // Captcha check
+    const captchaVal = captchaInput ? captchaInput.value.trim().toUpperCase() : '';
+    if (!currentCaptcha || captchaVal !== currentCaptcha) {
+      showError('Security code is incorrect. Please re-enter the captcha.');
       generateCaptcha();
       return;
     }
@@ -154,72 +165,105 @@ document.addEventListener('DOMContentLoaded', () => {
     const passVal = passInput.value.trim();
 
     if (!userVal || !passVal) {
-      alert('Please enter both credentials.');
+      showError('Please enter User ID and Password.');
       return;
     }
 
     let authenticated = false;
-    let redirectRole = '';
-    let displayName = '';
+    let redirectRole  = '';
 
+    // ── ADMIN ──
     if (activeRole === 'admin') {
-      if ((userVal === 'admin001' || userVal === 'admin') && passVal === 'admin123') {
+      if ((userVal === 'admin' || userVal === 'admin001') && passVal === 'admin123') {
         authenticated = true;
-        redirectRole = 'admin';
-        displayName = 'Administrator';
+        redirectRole  = 'admin';
         localStorage.setItem('userId', userVal);
         localStorage.setItem('userName', 'Administrator');
+        localStorage.setItem('userRole', 'admin');
       }
+
+    // ── TEACHER ──
     } else if (activeRole === 'teacher') {
-      const teachers = JSON.parse(localStorage.getItem('lms_teachers')) || [];
-      const match = teachers.find(t => t.id === userVal && (t.password || 'teach123') === passVal);
+      // Always init before reading
+      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
+      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
+      const match = teachers.find(t =>
+        t.id.toUpperCase() === userVal.toUpperCase() &&
+        ((t.password && t.password === passVal) || passVal === 'teach123')
+      );
       if (match) {
         authenticated = true;
-        redirectRole = 'teacher';
-        displayName = match.name;
+        redirectRole  = 'teacher';
         localStorage.setItem('userId', match.id);
         localStorage.setItem('userName', match.name);
+        localStorage.setItem('userRole', 'teacher');
       }
+
+    // ── STUDENT ──
     } else if (activeRole === 'student') {
-      const students = JSON.parse(localStorage.getItem('lms_students')) || [];
-      const match = students.find(s => s.id === userVal && (s.password === passVal || passVal === 'stud123'));
+      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
+      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
+      const match = students.find(s =>
+        s.id.toUpperCase() === userVal.toUpperCase() &&
+        ((s.password && s.password === passVal) || passVal === 'stud123')
+      );
       if (match) {
         authenticated = true;
-        redirectRole = 'student';
-        displayName = match.name;
+        redirectRole  = 'student';
         localStorage.setItem('userId', match.id);
         localStorage.setItem('userName', match.name);
+        localStorage.setItem('userRole', 'student');
       }
+
+    // ── PARENT ──
     } else if (activeRole === 'parent') {
-      const students = JSON.parse(localStorage.getItem('lms_students')) || [];
-      const match = students.find(s => s.parentUsername === userVal && (s.parentPassword === passVal || s.password === passVal || passVal === 'par123'));
+      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
+      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
+      const match = students.find(s => {
+        const usernameMatch = s.parentUsername &&
+          s.parentUsername.toUpperCase() === userVal.toUpperCase();
+        const passwordMatch =
+          passVal === 'par123' ||
+          (s.parentPassword && s.parentPassword === passVal);
+        return usernameMatch && passwordMatch;
+      });
       if (match) {
         authenticated = true;
-        redirectRole = 'parent';
-        displayName = match.parent;
+        redirectRole  = 'parent';
         localStorage.setItem('userId', match.parentUsername);
-        localStorage.setItem('userName', match.parent);
+        localStorage.setItem('userName', match.parent || 'Parent');
+        localStorage.setItem('userRole', 'parent');
         localStorage.setItem('childId', match.id);
       }
     }
 
     if (authenticated) {
-      const loaderText = document.getElementById('loaderText');
-      if (loaderText) {
-        loaderText.innerText = 'Connecting to eVarsity® School database...';
-      }
-      loader.classList.add('active');
+      // Show loading overlay
+      if (loader) loader.classList.add('active');
       setTimeout(() => {
-        loader.classList.remove('active');
-        localStorage.setItem('userRole', redirectRole);
+        if (loader) loader.classList.remove('active');
         window.location.href = `pages/${redirectRole}/dashboard.html`;
-      }, 1200);
+      }, 1000);
     } else {
-      alert('Invalid ID or Password. Check credentials and selected role.');
+      showError('Invalid credentials. Please check your User ID, Password, and selected Role tab.');
       generateCaptcha();
     }
   });
 
-  // Init
+  function showError(msg) {
+    let errBox = document.getElementById('loginErrorBox');
+    if (!errBox) {
+      errBox = document.createElement('div');
+      errBox.id = 'loginErrorBox';
+      errBox.style.cssText = 'background:#FEE2E2; color:#B91C1C; padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:14px; border:1px solid #FECACA;';
+      loginForm.insertBefore(errBox, loginForm.firstChild);
+    }
+    errBox.textContent = '⚠️ ' + msg;
+    errBox.style.display = 'block';
+    setTimeout(() => { if (errBox) errBox.style.display = 'none'; }, 5000);
+  }
+
+  // ── Initialize ──
+  updatePlaceholder();
   updateDemoCredentials();
 });
