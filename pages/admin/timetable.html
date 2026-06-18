@@ -171,6 +171,13 @@
     });
   });
 
+  window.addEventListener('lms-sync-classes', () => {
+    loadClassesDropdown(() => {
+      loadTimetable();
+      loadSlotDropdowns();
+    });
+  });
+
   function loadClassesDropdown(callback) {
     const classes = AppState.getData('lms_classes');
     const select = document.getElementById('ttClassSelect');

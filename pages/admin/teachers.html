@@ -113,7 +113,31 @@
         <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-control" id="tchPhone" required></div>
         <div class="form-group">
           <label class="form-label">Class Assigned</label>
-          <select class="form-control" id="tchClassAssigned"></select>
+          <select class="form-control" id="tchClassAssigned">
+            <option value="">None</option>
+            <option>LKG</option>
+            <option>UKG</option>
+            <option>1st Standard</option>
+            <option>2nd Standard</option>
+            <option>3rd Standard</option>
+            <option>4th Standard</option>
+            <option>5th Standard</option>
+            <option>6th Standard</option>
+            <option>7th Standard</option>
+            <option>8th Standard</option>
+            <option>9th Standard</option>
+            <option>10th Standard</option>
+            <option>11th Standard - Computer Science with Mathematics</option>
+            <option>11th Standard - Biology with Mathematics</option>
+            <option>11th Standard - Pure Science</option>
+            <option>11th Standard - Commerce with Computer Application</option>
+            <option>11th Standard - Commerce with Business Maths</option>
+            <option>12th Standard - Computer Science with Mathematics</option>
+            <option>12th Standard - Biology with Mathematics</option>
+            <option>12th Standard - Pure Science</option>
+            <option>12th Standard - Commerce with Computer Application</option>
+            <option>12th Standard - Commerce with Business Maths</option>
+          </select>
         </div>
         <div class="form-group"><label class="form-label">Custom Teacher ID (Optional)</label><input type="text" class="form-control" id="tchCustomId" placeholder="e.g. TCH001"></div>
         <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="tchPassword" value="teach123" required></div>
@@ -142,9 +166,18 @@
     loadClassesDropdown();
   });
 
+  window.addEventListener('lms-sync-teachers', () => {
+    loadTeachers();
+  });
+
+  window.addEventListener('lms-sync-classes', () => {
+    loadClassesDropdown();
+  });
+
   function loadClassesDropdown() {
     const classes = AppState.getData('lms_classes');
     const select = document.getElementById('tchClassAssigned');
+    if (!select) return;
     select.innerHTML = '<option value="None">None</option>';
     classes.forEach(c => {
       select.innerHTML += `<option value="${c.name}">${c.name}</option>`;

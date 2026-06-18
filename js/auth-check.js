@@ -1,69 +1,87 @@
-/* EduSphere LMS — Auth Guard + Portal Initialization
-   Include AFTER app.js on every portal page */
+/**
+ * EduSphere LMS — Real Auth Check (PostgreSQL + JWT)
+ * Validates session via /api/auth/me on every protected page
+ */
 
-(function() {
-  'use strict';
-
-  // ── Auth guard: redirect to login if not authenticated ──
+(async function() {
+  // Get basic info from localStorage (fast check)
   const role   = localStorage.getItem('userRole');
   const userId = localStorage.getItem('userId');
+  const name   = localStorage.getItem('userName');
+  const token  = localStorage.getItem('authToken');
 
-  if (!role || !userId) {
-    window.location.replace('../../index.html');
-    throw new Error('Not authenticated — redirecting to login');
+  // Determine expected role from URL path
+  const path = window.location.pathname;
+  let expectedRole = null;
+  if (path.includes('/admin/'))   expectedRole = 'admin';
+  if (path.includes('/teacher/')) expectedRole = 'teacher';
+  if (path.includes('/student/')) expectedRole = 'student';
+  if (path.includes('/parent/'))  expectedRole = 'parent';
+
+  // Quick local check first
+  if (!role || !userId || !token) {
+    redirectToLogin();
+    return;
   }
 
-  // ── Check the page belongs to the right role ──
-  const currentPath = window.location.pathname.toLowerCase();
-  const pathRole =
-    currentPath.includes('/admin/')   ? 'admin'   :
-    currentPath.includes('/teacher/') ? 'teacher' :
-    currentPath.includes('/student/') ? 'student' :
-    currentPath.includes('/parent/')  ? 'parent'  : null;
+  if (expectedRole && role !== expectedRole) {
+    redirectToLogin();
+    return;
+  }
 
-  // If page role doesn't match user role, send back to login
-  if (pathRole && pathRole !== role) {
+  // Validate token with the server (verify against PostgreSQL)
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token },
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      redirectToLogin();
+      return;
+    }
+
+    const data = await res.json();
+    if (!data.success) {
+      redirectToLogin();
+      return;
+    }
+
+    // Update displayed user name in header
+    const nameEl   = document.getElementById('userDisplayName');
+    const avatarEl = document.getElementById('userAvatar');
+    const displayName = data.user.name || name || userId;
+
+    if (nameEl) nameEl.textContent = displayName;
+    if (avatarEl) {
+      const parts = displayName.split(' ');
+      avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+    }
+
+    // Keep localStorage in sync
+    localStorage.setItem('userName', data.user.name);
+
+  } catch (err) {
+    // If server is unreachable but we have a token, allow through (offline mode)
+    console.warn('Auth check failed - server unreachable. Using cached session.', err.message);
+    // Still update UI with cached name
+    const nameEl   = document.getElementById('userDisplayName');
+    const avatarEl = document.getElementById('userAvatar');
+    if (nameEl) nameEl.textContent = name || userId;
+    if (avatarEl) {
+      const parts = (name || userId).split(' ');
+      avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+    }
+  }
+
+  function redirectToLogin() {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
-    window.location.replace('../../index.html');
-    throw new Error('Role mismatch — redirecting to login');
+    localStorage.removeItem('authToken');
+    // Calculate correct depth for redirect
+    const depth = (window.location.pathname.match(/\//g) || []).length - 1;
+    const prefix = depth > 1 ? '../'.repeat(depth - 1) : '';
+    window.location.href = prefix + 'index.html';
   }
-
-  // ── Run after DOM is ready ──
-  document.addEventListener('DOMContentLoaded', () => {
-
-    // Ensure AppState data is seeded
-    if (typeof AppState !== 'undefined' && AppState.init) {
-      AppState.init();
-    }
-
-    // Dark mode
-    if (typeof App !== 'undefined' && App.initDark) App.initDark();
-    if (typeof App !== 'undefined' && App.initSidebar) App.initSidebar();
-
-    // Update user name chip
-    const userName = localStorage.getItem('userName') || userId;
-    const displayEl = document.getElementById('userDisplayName');
-    const avatarEl  = document.getElementById('userAvatar');
-    if (displayEl) displayEl.textContent = userName;
-    if (avatarEl)  avatarEl.textContent  = userName.charAt(0).toUpperCase();
-
-    // Update greeting in page title
-    const pageTitleEl = document.querySelector('.page-title');
-    if (pageTitleEl && pageTitleEl.textContent.includes('Welcome back')) {
-      pageTitleEl.textContent = 'Welcome back, ' + userName;
-    }
-
-    // Highlight active sidebar link
-    const currentFile = window.location.pathname.split('/').pop();
-    document.querySelectorAll('.sidebar-item a').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      if (href === currentFile || href.endsWith('/' + currentFile)) {
-        link.parentElement.classList.add('active');
-      } else {
-        link.parentElement.classList.remove('active');
-      }
-    });
-  });
 })();

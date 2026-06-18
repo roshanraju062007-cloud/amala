@@ -134,6 +134,18 @@
     loadTeacherDropdown();
   });
 
+  window.addEventListener('lms-sync-subjects', () => {
+    loadSubjects();
+  });
+
+  window.addEventListener('lms-sync-classes', () => {
+    loadClassesDropdown();
+  });
+
+  window.addEventListener('lms-sync-teachers', () => {
+    loadTeacherDropdown();
+  });
+
   function loadTeacherDropdown() {
     const tchs = AppState.getData('lms_teachers');
     const select = document.getElementById('subTeacher');

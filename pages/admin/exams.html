@@ -159,6 +159,10 @@
     loadClassesDropdown();
   });
 
+  window.addEventListener('lms-sync-classes', () => {
+    loadClassesDropdown();
+  });
+
   function loadExams() {
     const list = AppState.getData('lms_exams');
     const body = document.getElementById('examTableBody');
