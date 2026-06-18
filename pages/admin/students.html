@@ -157,7 +157,30 @@
         <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-control" id="stuName" required></div>
         <div class="form-group">
           <label class="form-label">Class</label>
-          <select class="form-control" id="stuClass"></select>
+          <select class="form-control" id="stuClass">
+            <option>LKG</option>
+            <option>UKG</option>
+            <option>1st Standard</option>
+            <option>2nd Standard</option>
+            <option>3rd Standard</option>
+            <option>4th Standard</option>
+            <option>5th Standard</option>
+            <option>6th Standard</option>
+            <option>7th Standard</option>
+            <option>8th Standard</option>
+            <option>9th Standard</option>
+            <option>10th Standard</option>
+            <option>11th Standard - Computer Science with Mathematics</option>
+            <option>11th Standard - Biology with Mathematics</option>
+            <option>11th Standard - Pure Science</option>
+            <option>11th Standard - Commerce with Computer Application</option>
+            <option>11th Standard - Commerce with Business Maths</option>
+            <option>12th Standard - Computer Science with Mathematics</option>
+            <option>12th Standard - Biology with Mathematics</option>
+            <option>12th Standard - Pure Science</option>
+            <option>12th Standard - Commerce with Computer Application</option>
+            <option>12th Standard - Commerce with Business Maths</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Section</label>
@@ -192,6 +215,14 @@
     loadClassesDropdown();
   });
 
+  window.addEventListener('lms-sync-students', () => {
+    loadStudents();
+  });
+
+  window.addEventListener('lms-sync-classes', () => {
+    loadClassesDropdown();
+  });
+
   function loadStudents() {
     const students = AppState.getData('lms_students');
     renderTable(students);
@@ -200,6 +231,7 @@
   function loadClassesDropdown() {
     const classes = AppState.getData('lms_classes');
     const select = document.getElementById('stuClass');
+    if (!select) return;
     select.innerHTML = '';
     classes.forEach(c => {
       select.innerHTML += `<option value="${c.name}">${c.name}</option>`;

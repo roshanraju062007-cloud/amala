@@ -5,10 +5,11 @@
 ![EduSphere Banner](https://img.shields.io/badge/EduSphere-LMS%20v1.0-4F46E5?style=for-the-badge&logo=graduation-cap)
 ![Node.js](https://img.shields.io/badge/Node.js-v22+-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-v5-000000?style=for-the-badge&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-v4-010101?style=for-the-badge&logo=socket.io&logoColor=white)
 ![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)
 
-**A full-stack, role-based Learning Management System for Amala Higher Secondary School (LKG–12th Standard)**
+**A secure, production-ready Learning Management System with PostgreSQL database + HTTP-only JWT sessions + bcrypt encryption.**
 
 </div>
 
@@ -16,9 +17,13 @@
 
 ## 📖 Overview
 
-**EduSphere LMS** is a complete, production-ready Learning Management System built for **Amala Higher Secondary School** (Estd. 1977). It covers all school operations — from LKG to 12th Standard — with dedicated portals for **Admins**, **Teachers**, **Students**, and **Parents**.
+**EduSphere LMS** is a full-stack, secure, and production-ready Learning Management System built for **Amala Higher Secondary School** (Estd. 1977). It covers all school operations — from LKG to 12th Standard — with dedicated portals for **Admins**, **Teachers**, **Students**, and **Parents**.
 
-The system uses a **localStorage-first architecture** for instant data persistence in the browser with a **Node.js + Express + Socket.IO** backend server for static file serving and real-time notifications.
+The system has been fully migrated from a demo client-side mock to a real backend architecture powered by:
+- **PostgreSQL** (with a self-contained embedded database option for easy zero-config launching)
+- **JWT (JSON Web Tokens)** stored in secure, **HTTP-only cookies** for robust session management
+- **bcryptjs** for hashing and verifying passwords on the server side
+- **Express + Socket.IO** for static asset serving, real-time messaging, and notifications
 
 ---
 
@@ -27,66 +32,65 @@ The system uses a **localStorage-first architecture** for instant data persisten
 ### 🛡️ Admin Portal
 | Feature | Description |
 |---------|-------------|
-| 📊 Dashboard | Live stats — students, teachers, fees, and notices |
-| 🎓 Student Registry | Add, search, and manage all students (LKG–12th) |
-| 👨‍🏫 Faculty Directory | Register teachers, assign classes, manage credentials |
-| 👪 Parent Management | View all parent records linked to students |
-| 🏫 Classes & Sections | Manage class structure with sections (A–D) |
-| 📚 Subjects | Subject assignment per class and teacher |
-| 📅 Timetable | Academic schedule management |
-| 📝 Attendance | School-wide attendance overview |
-| ✍️ Exams | Exam schedule and configuration |
-| 📎 Assignments | Monitor all assignments across classes |
-| 🏆 Results | View and manage student results |
-| 💳 Fee Management | Track fee status (Paid / Partial / Unpaid) |
-| 📖 Library | Library records management |
-| 🚌 Transport | School bus and route management |
-| 🔔 Notifications | Broadcast school-wide announcements |
-| 📈 Analytics | Academic performance analytics with charts |
-| 🤖 AI Tools | AI-powered academic tools |
-| ⚙️ Settings | System-wide configuration |
+| 📊 Dashboard | Live stats queried directly from PostgreSQL |
+| 🎓 Student Registry | Register, update, and manage student accounts |
+| 👨‍🏫 Faculty Directory | Add, update, and assign teachers to classes/subjects |
+| 👪 Parent Console | View and edit parent records linked to students |
+| 🏫 Classes & Sections | Manage standard structure (LKG to 12th) and sections |
+| 📚 Subjects | Map curriculum subjects to classes and assign teachers |
+| 📅 Timetable | Define period-by-period schedules |
+| 📝 Attendance | Review school-wide attendance records |
+| ✍️ Exams | Manage academic examination schedules |
+| 📎 Assignments | Monitor student coursework submissions |
+| 🏆 Results | Publish exam grades and marks |
+| 💳 Fee Management | Track due, paid, and outstanding balances |
+| 📖 Library | Manage catalog and book issue logs |
+| 🚌 Transport | Define bus routes and register passenger students |
+| 🔔 Notifications | Broadcast school-wide notices |
+| 📈 Analytics | Render performance trend charts from real data |
+| 🤖 AI Tools | AI-powered assistant tools |
+| ⚙️ Settings | Global application configurations |
 
 ### 👨‍🏫 Teacher Portal
 | Feature | Description |
 |---------|-------------|
-| 📊 Dashboard | Personal stats — my classes, students, assignments |
-| 🏫 My Classes | View assigned classes and student rosters |
-| 📝 Attendance | Mark daily attendance (Present / Absent / Leave) |
-| 📎 Assignments | Create and manage homework assignments |
-| 📚 Study Materials | Upload and share lecture notes, PDFs, video links |
-| ✍️ Exams & Marks | Enter exam marks, auto-calculate grades, publish results |
-| 💬 Messages | Faculty communication inbox |
-| 👤 Profile | Teacher profile and account settings |
+| 📊 Dashboard | View teaching assignments, class rosters, and alerts |
+| 🏫 My Classes | Access list of assigned classes and student details |
+| 📝 Attendance | Mark daily student attendance (Present / Absent / Leave) |
+| 📎 Assignments | Create homework assignments with due dates and marks |
+| 📚 Study Materials | Share files, notes, and external reference links with students |
+| ✍️ Exams & Marks | Input exam scores, auto-assign grades, and publish results |
+| 💬 Messages | Read and write messages to other portal users |
+| 👤 Profile | Manage password and contact details |
 
 ### 🎓 Student Portal
 | Feature | Description |
 |---------|-------------|
-| 📊 Dashboard | Overview of attendance, subjects, and pending homework |
-| 📚 Curriculum Subjects | View all subjects for enrolled class |
-| 📖 Study Materials | Access teacher-shared notes and resources |
-| 📎 Assignments | Submit homework and view task details |
-| ✍️ Online Tests | Take online tests and quizzes |
-| 📅 Class Timetable | View weekly class schedule |
-| 📝 Attendance Log | Personal attendance record |
-| 🏆 Results & Internals | View exam marks and CIA scores |
-| 📄 Term Report Card | Printable academic progress report with grades |
-| 🤖 AI Study Assistant | AI-powered study help |
-| 💬 Chat Inbox | Message faculty and peers |
-| 👤 Student Profile | Personal academic profile |
+| 📊 Dashboard | View personal attendance trend, subjects, and announcements |
+| 📚 Curriculum | View list of courses and assigned subject teachers |
+| 📖 Study Materials | Access notes and files shared by teachers |
+| 📎 Assignments | View coursework details and submit homework |
+| ✍️ Online Tests | Participate in online quizzes and practice assessments |
+| 📅 Timetable | View weekly class periods |
+| 📝 Attendance | Review date-wise attendance records |
+| 🏆 Results | View published exam report cards and GPA grades |
+| 📄 Report Card | Generate a printable report card |
+| 🤖 AI Study Buddy | Leverage AI study tools |
+| 💬 Chat Inbox | Communicate with teachers and classmates |
+| 👤 Profile | View profile and edit settings |
 
 ### 👪 Parent Portal
 | Feature | Description |
 |---------|-------------|
-| 📊 Dashboard | Ward's academic overview |
-| 📝 Attendance Log | Child's daily attendance records |
-| 🏆 Results & CIA | Exam marks and internal assessment scores |
-| 📎 Ward Homework | Monitor pending and completed assignments |
-| 💳 Fee Account | Fee status and payment history |
-| 📅 Class Timetable | Child's class schedule |
-| 📚 Curriculum Subjects | Enrolled subjects overview |
-| 📖 Study Materials | Access shared resources |
-| 💬 Faculty Inbox | Communicate with teachers |
-| 👤 Profile Console | Parent and child profile management |
+| 📊 Dashboard | Comprehensive overview of child's stats (attendance, marks, homework) |
+| 📝 Attendance | Track child's daily presence and absence logs |
+| 🏆 Results | View child's report cards and grades |
+| 📎 Homework Tracker | Monitor pending and completed assignments for the child |
+| 💳 Fee Account | View billing logs, amount paid, and pay outstanding balances |
+| 📅 Timetable | View child's daily school schedule |
+| 📚 Coursework | Check standard subjects and teachers |
+| 💬 Teacher Inbox | Message child's class and subject teachers directly |
+| 👤 Profile Console | Manage parent contact info and view child details |
 
 ---
 
@@ -94,44 +98,34 @@ The system uses a **localStorage-first architecture** for instant data persisten
 
 ```
 amala/
-├── index.html                    # Login page (all 4 roles)
+├── start.js                      # Auto-start script (launches embedded Postgres + Express)
+├── index.html                    # Unified login page
 ├── backend/
-│   └── server.js                 # Express + Socket.IO server
-├── css/
-│   ├── main.css                  # Global stylesheet (dark mode, components)
-│   └── login.css                 # Login page styles
+│   ├── server.js                 # Express + Socket.IO server config
+│   ├── db.js                     # PostgreSQL connection pool using 'pg'
+│   ├── middleware/
+│   │   └── auth.js               # JWT verification & role validation middleware
+│   └── routes/
+│       ├── auth.js               # Real session auth (login, logout, session verify)
+│       ├── api.js                # Integrated database APIs (classes, subjects, results...)
+│       ├── students.js           # Student REST CRUD endpoints
+│       └── teachers.js           # Teacher REST CRUD endpoints
+├── database/
+│   ├── schema.sql                # Full PostgreSQL table definitions
+│   └── setup.js                  # Database setup and full LMS seeder script
 ├── js/
-│   ├── app.js                    # Shared utilities + AppState (localStorage seeder)
-│   ├── login.js                  # Login controller (4-role auth)
-│   └── auth-check.js             # Auth guard (injected into all portal pages)
-├── pages/
-│   ├── admin/                    # 18 admin portal pages
-│   ├── teacher/                  # 8 teacher portal pages
-│   ├── student/                  # 12 student portal pages
-│   └── parent/                   # 10 parent portal pages
-└── package.json
+│   ├── app.js                    # Core client API wrapper (fetch client + theme helper)
+│   ├── login.js                  # Login form handler (real API verification)
+│   └── auth-check.js             # Client-side router auth-guard (on every portal page)
+├── css/
+│   ├── main.css                  # Global stylesheet (dark mode, grids, forms)
+│   └── login.css                 # Login page aesthetics
+└── pages/
+    ├── admin/                    # Admin portal console pages
+    ├── teacher/                  # Faculty workspace pages
+    ├── student/                  # Learner cockpit pages
+    └── parent/                   # Guardian observer pages
 ```
-
-### Data Architecture (localStorage Keys)
-
-| Key | Description |
-|-----|-------------|
-| `lms_classes` | Class list (LKG–12th with sections) |
-| `lms_teachers` | Teacher records (ID, name, dept, password) |
-| `lms_students` | Student records (ID, name, class, parent, passwords) |
-| `lms_subjects` | Subject list per class |
-| `lms_attendance` | Attendance records by date/class/section |
-| `lms_assignments` | Assignment list |
-| `lms_submissions` | Student homework submissions |
-| `lms_materials` | Study materials shared by teachers |
-| `lms_results` | Exam results and grades |
-| `lms_exams` | Exam schedule |
-| `lms_notices` | School announcements |
-| `lms_chat` | Internal messages |
-| `userRole` | Logged-in user's role |
-| `userId` | Logged-in user's ID |
-| `userName` | Logged-in user's display name |
-| `childId` | Child student ID (for parent login) |
 
 ---
 
@@ -139,7 +133,7 @@ amala/
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) v18 or higher
-- npm (comes with Node.js)
+- npm (installed with Node.js)
 
 ### 1. Clone the Repository
 ```bash
@@ -152,107 +146,66 @@ cd amala-edusphere
 npm install
 ```
 
-### 3. Start the Server
+### 3. Start the Server (with Auto-Start Embedded PostgreSQL)
+To start the application with a zero-config, embedded PostgreSQL server that starts up automatically in the background:
 ```bash
-node backend/server.js
+node start.js
 ```
-The server starts at **http://localhost:3000**
+The start script will:
+1. Initialize a localized PostgreSQL database cluster in the `./.pgdata` directory (if running for the first time).
+2. Start the embedded PostgreSQL server on port **5433** (so it won't conflict with any existing PostgreSQL servers running on port 5432).
+3. Auto-apply the database schema from `database/schema.sql`.
+4. Seed the default Admin user.
+5. Launch the Express server at [http://localhost:3000](http://localhost:3000).
 
-### 4. Open in Browser
-Navigate to [http://localhost:3000](http://localhost:3000)
-
-> 📝 **First Launch:** On first visit, `AppState.init()` automatically seeds all localStorage data — classes, teachers, students, subjects, and sample results.
+### 4. Seed Full Demo Dataset
+To populate the database with the full test dataset (classes, teachers, students, parents, timetables, and notice boards):
+```bash
+node database/setup.js
+```
+This will seed:
+- **22 classes** (LKG to 12th standard with different groups/streams)
+- **22 teachers** (TCH001 to TCH022)
+- **110 students** (STU001 to STU110)
+- **110 parents** (PAR001 to PAR110)
+- Subjects mapped to classes and teachers
+- Academic schedules, timetable entries, and notices
 
 ---
 
-## 🔐 Login Credentials
+## 🔐 Credentials for Testing
 
 | Role | User ID | Password | Notes |
 |------|---------|----------|-------|
-| 🛡️ **Admin** | `admin` | `admin123` | Full system access |
-| 👨‍🏫 **Teacher** | `TCH001` | `teach123` | First teacher in directory |
-| 🎓 **Student** | `STU001` | `stud123` | First student (LKG) |
-| 👪 **Parent** | `PAR001` | `par123` | Parent of STU001 |
+| 🛡️ **Admin** | `admin` | `admin123` | System configuration and directory administration |
+| 👨‍🏫 **Teacher** | `TCH001` | `teach123` | Assigned to LKG |
+| 🎓 **Student** | `STU001` | `stud123` | Enrolled in LKG Section A |
+| 👪 **Parent** | `PAR001` | `par123` | Linked to student STU001 |
 
-> 💡 **Quick Fill:** Click the **"▶ Demo"** badge on the login page to auto-fill credentials and the CAPTCHA in one click!
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | HTML5, Vanilla CSS, Vanilla JavaScript |
-| **Backend** | Node.js, Express v5 |
-| **Real-time** | Socket.IO v4 |
-| **Data Store** | Browser localStorage (client-side) |
-| **Charts** | Custom Canvas API bar/line charts |
-| **Authentication** | Role-based session via localStorage |
-| **Styling** | CSS custom properties, Dark mode support |
-
----
-
-## 📦 Seeded Data (on first launch)
-
-| Entity | Count | Details |
-|--------|-------|---------|
-| Classes | 21 | LKG, UKG, 1st–10th, 11th & 12th (5 streams each) |
-| Teachers | 21 | One per class, IDs TCH001–TCH021, password: teach123 |
-| Students | 840+ | ~40 per class, IDs STU001+, password: stud123 |
-| Parents | 840+ | One per student, IDs PAR001+, password: par123 |
-| Subjects | 100+ | 5–6 per class based on curriculum stream |
-| Notices | 4 | Welcome announcements |
-| Assignments | 1 | Sample math assignment |
+> 💡 **Quick Fill:** Click the **"Use Demo"** badge under the login form to automatically select the role tab, fill in the correct User ID and password, and automatically fill in the security CAPTCHA code!
 
 ---
 
 ## 🌐 Public Access via Tunnel
 
-To share the site over the internet during development:
-
+To expose the server to the internet (e.g. for testing on mobile or sharing with parents/students):
 ```bash
 npx localtunnel --port 3000
 ```
-
-This generates a public URL like `https://your-name.loca.lt`
-
-> ⚠️ First-time visitors must click **"Click to Submit"** on the localtunnel splash page before accessing the site.
-
----
-
-## 📁 Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `backend/server.js` | Express static server + Socket.IO setup |
-| `js/app.js` | AppState data seeder + shared utilities (App object) |
-| `js/login.js` | 4-role authentication controller with CAPTCHA |
-| `js/auth-check.js` | Auth guard injected in all 48 portal pages |
-| `index.html` | Main login page |
-| `css/main.css` | Global design system + dark mode + all components |
-
----
-
-## 🔒 Security Notes
-
-> This system uses **localStorage** for client-side data persistence and is designed for **school intranet / demonstration use**. For production with sensitive data:
-> - Migrate to a proper backend database (MongoDB, PostgreSQL)
-> - Implement server-side JWT authentication
-> - Use HTTPS with SSL certificates
-> - Hash passwords with bcrypt on the server side
+This generates a public URL like `https://xxxx.loca.lt` that maps to your local server.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **ISC License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **ISC License**.
 
 ---
 
 ## 🙏 Acknowledgements
 
 - **Amala Higher Secondary School** — Estd. 1977
-- Built with ❤️ using Node.js, Express, Socket.IO, and Vanilla JavaScript
+- Built with ❤️ using Node.js, Express, PostgreSQL, Socket.IO, and Vanilla Web Stack.
 
 ---
 

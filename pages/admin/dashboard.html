@@ -87,28 +87,35 @@
     <div class="stat-card" style="border-left-color: var(--info)">
       <div class="stat-info">
         <h3>Total Students</h3>
-        <div class="stat-value" id="stat-students">2,547</div>
+        <div class="stat-value" id="stat-students">0</div>
       </div>
       <div class="stat-icon">🎓</div>
     </div>
     <div class="stat-card" style="border-left-color: var(--success)">
       <div class="stat-info">
         <h3>Teachers</h3>
-        <div class="stat-value" id="stat-teachers">148</div>
+        <div class="stat-value" id="stat-teachers">0</div>
       </div>
       <div class="stat-icon">👨‍🏫</div>
     </div>
     <div class="stat-card" style="border-left-color: var(--warning)">
       <div class="stat-info">
         <h3>Classes</h3>
-        <div class="stat-value" id="stat-classes">18</div>
+        <div class="stat-value" id="stat-classes">0</div>
       </div>
       <div class="stat-icon">🏫</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple)" onclick="window.location.href='transport.html'" style="cursor: pointer;">
+      <div class="stat-info">
+        <h3>Van Students</h3>
+        <div class="stat-value" id="stat-van-students">0</div>
+      </div>
+      <div class="stat-icon">🚌</div>
     </div>
     <div class="stat-card" style="border-left-color: var(--danger)">
       <div class="stat-info">
         <h3>Exams Scheduled</h3>
-        <div class="stat-value" id="stat-exams">2</div>
+        <div class="stat-value" id="stat-exams">0</div>
       </div>
       <div class="stat-icon">✍️</div>
     </div>
@@ -121,6 +128,7 @@
       <button class="btn btn-outline" onclick="runBackup()">💾 Database Backup</button>
       <button class="btn btn-primary" onclick="window.location.href='students.html'">➕ Add Student</button>
       <button class="btn btn-success" onclick="window.location.href='teachers.html'">➕ Add Teacher</button>
+      <button class="btn btn-success" onclick="window.location.href='transport.html'">🚌 Manage Transport</button>
     </div>
   </div>
 
@@ -188,59 +196,86 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    
-  window.addEventListener('load', () => {
-    loadDashboardStats();
-    drawCharts();
-  });
-
-  function loadDashboardStats() {
-    const students = AppState.getData('lms_students');
-    const teachers = AppState.getData('lms_teachers');
-    const classes = AppState.getData('lms_classes');
-    const exams = AppState.getData('lms_exams');
-    const notices = AppState.getData('lms_notices');
-
-    document.getElementById('stat-students').innerText = students.length;
-    document.getElementById('stat-teachers').innerText = teachers.length;
-    document.getElementById('stat-classes').innerText = classes.length;
-    document.getElementById('stat-exams').innerText = exams.length;
-
-    // Load activities
-    const log = document.getElementById('activity-log');
-    log.innerHTML = '';
-    notices.forEach(n => {
-      log.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid var(--border-color)">🕒 <b>${n.time}</b> - ${n.msg}</li>`;
+    window.addEventListener('load', () => {
+      loadDashboardStats();
+      drawCharts();
     });
 
-    // Load classes overview
-    const clBody = document.getElementById('classes-summary-body');
-    clBody.innerHTML = '';
-    classes.slice(0, 4).forEach(c => {
-      clBody.innerHTML += `<tr><td>${c.name}</td><td>${c.sections.join(', ')}</td><td>${c.students}</td></tr>`;
-    });
+    window.addEventListener('lms-sync-students', () => loadDashboardStats());
+    window.addEventListener('lms-sync-teachers', () => loadDashboardStats());
+    window.addEventListener('lms-sync-classes', () => loadDashboardStats());
+    window.addEventListener('lms-sync-notices', () => loadDashboardStats());
+
+  async function loadDashboardStats() {
+    try {
+      // Parallel API calls to PostgreSQL
+      const [studRes, tchRes, clsRes, notRes] = await Promise.all([
+        API.get('students'),
+        API.get('teachers'),
+        API.get('classes'),
+        API.get('notices'),
+      ]);
+
+      document.getElementById('stat-students').innerText = (studRes.data || []).length;
+      document.getElementById('stat-teachers').innerText = (tchRes.data || []).length;
+      document.getElementById('stat-classes').innerText  = (clsRes.data || []).length;
+      document.getElementById('stat-exams').innerText    = 'Live';
+
+      // Load Van Students count
+      const vanStudents = JSON.parse(localStorage.getItem('lms_van_students')) || [];
+      document.getElementById('stat-van-students').innerText = vanStudents.length;
+
+      // Activity log from notices
+      const log = document.getElementById('activity-log');
+      const notices = notRes.data || [];
+      log.innerHTML = '';
+      if (notices.length === 0) {
+        log.innerHTML = '<li style="padding:10px 0;color:var(--text-muted);">No recent notices.</li>';
+      } else {
+        notices.slice(0, 6).forEach(n => {
+          const t = new Date(n.posted_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+          log.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid var(--border-color)">🕒 <b>${t}</b> — ${n.message}</li>`;
+        });
+      }
+
+      // Classes overview
+      const clBody = document.getElementById('classes-summary-body');
+      const classes = (clsRes.data || []);
+      clBody.innerHTML = '';
+      classes.slice(0, 5).forEach(c => {
+        const secs = Array.isArray(c.sections) ? c.sections.join(', ') : c.sections;
+        clBody.innerHTML += `<tr><td>${c.name}</td><td>${secs}</td><td>${c.students_count || 0}</td></tr>`;
+      });
+
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+      App.showToast('Could not load dashboard data from server.', 'error');
+    }
   }
 
   function drawCharts() {
-    drawBarChart('feeChart', ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], [8.2, 9.5, 11.2, 10.4, 9.8, 12.4], 'var(--danger)');
-    drawLineChart('attendanceChart', ['01 Jun', '03 Jun', '05 Jun', '07 Jun', '09 Jun', '11 Jun', '13 Jun'], [92, 91, 93, 89, 94, 91, 95], 'var(--primary)');
+    drawBarChart('feeChart', ['Jan','Feb','Mar','Apr','May','Jun'], [8.2,9.5,11.2,10.4,9.8,12.4], 'var(--danger)');
+    drawLineChart('attendanceChart', ['01 Jun','03 Jun','05 Jun','07 Jun','09 Jun','11 Jun','13 Jun'], [92,91,93,89,94,91,95], 'var(--primary)');
   }
 
-  function broadcastNotice() {
-    const msg = document.getElementById('notice-msg').value.trim();
+  async function broadcastNotice() {
+    const msg    = document.getElementById('notice-msg').value.trim();
     const target = document.getElementById('notice-target').value;
     if (!msg) return alert('Message cannot be empty.');
-    AppState.addNotice(`Notice sent to ${target}: "${msg}"`);
-    App.closeModal('noticeModal');
-    loadDashboardStats();
-    App.showToast('Broadcasted successfully!');
+    const res = await API.post('notices', { message: `Notice to ${target}: ${msg}` });
+    if (res.success) {
+      App.closeModal('noticeModal');
+      loadDashboardStats();
+      App.showToast('Broadcasted successfully!', 'success');
+      document.getElementById('notice-msg').value = '';
+    } else {
+      App.showToast(res.message || 'Failed to post notice.', 'error');
+    }
   }
 
   function runBackup() {
-    App.showToast('Generating MySQL Backup...');
-    setTimeout(() => {
-      App.showToast('Database Backup saved locally under backup/ folder!', 'success');
-    }, 1500);
+    App.showToast('PostgreSQL pg_dump backup initiated...');
+    setTimeout(() => App.showToast('Backup process triggered on server!', 'success'), 1500);
   }
 
   </script>

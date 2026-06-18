@@ -1,16 +1,28 @@
 {
-  "name": "amala",
-  "version": "1.0.0",
-  "description": "",
-  "main": "generate-lms.js",
+  "name": "amala-edusphere-lms",
+  "version": "2.0.0",
+  "description": "EduSphere LMS - Amala Higher Secondary School (PostgreSQL + JWT Auth)",
+  "main": "backend/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node backend/server.js",
+    "setup": "node database/setup.js",
+    "reset": "node database/reset_with_pg.js",
+    "clean-db": "node database/delete_pgdata.js",
+    "dev": "node backend/server.js",
+    "test": "echo \"No tests configured\" && exit 0"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["lms", "school", "education", "postgresql"],
+  "author": "Amala HSS",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "embedded-postgres": "^18.4.0-beta.17",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.0",
     "socket.io": "^4.8.3"
   }
 }

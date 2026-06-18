@@ -29,31 +29,29 @@
         </div>
       </div>
       <ul class="sidebar-menu">
-        
-      <li class="menu-header">Main</li>
-      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
-      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
-      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
-      <li class="menu-header">Academics</li>
-      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
-      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
-      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
-      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
-      <li class="menu-header">Assessment</li>
-      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
-      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
-      <li class="menu-header">Administration</li>
-      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
-      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
-      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
-      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
-      <li class="menu-header">System</li>
-      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
-      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
-      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
-    
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+        <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+        <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+        <li class="menu-header">Academics</li>
+        <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="menu-header">Assessment</li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+        <li class="menu-header">Administration</li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+        <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+        <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+        <li class="menu-header">System</li>
+        <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+        <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+        <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
         <li style="margin-top: 20px;" class="sidebar-item">
           <a href="#" onclick="App.logout()">🚪 Logout</a>
         </li>
@@ -68,34 +66,167 @@
           <h1 class="page-title">School Bus Fleet & Routes</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search anything...">
-          </div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
           <div class="user-chip">
-            <div class="avatar-circle" id="userAvatar">A</div><div style="font-weight: 600;" id="userDisplayName">Administrator</div>
+            <div class="avatar-circle" id="userAvatar">A</div>
+            <div style="font-weight: 600;" id="userDisplayName">Administrator</div>
           </div>
         </div>
       </header>
 
       <div class="content-area">
-        
-  <div class="card">
-    <h3 class="card-title">Active Fleet Status</h3>
-    <table class="data-table">
-      <thead>
-        <tr><th>Route No</th><th>Area Coverage</th><th>Stops</th><th>Assigned Driver</th><th>Vehicle ID</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Route 3</td><td>Gandhi Nagar, Central Sector</td><td>8 Stops</td><td>Hari Das (+91 91234 56789)</td><td>TN-37-AB-1234</td></tr>
-        <tr><td>Route 5</td><td>Lakeside Colony, Ring Road</td><td>5 Stops</td><td>Murali M. (+91 92345 67890)</td><td>TN-37-CD-5678</td></tr>
-      </tbody>
-    </table>
-  </div>
+        <!-- Route / Fleet Management Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>Active Bus & Van Routes</span>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-outline" onclick="App.openModal('driverModal')">👨‍✈️ Driver Roster</button>
+              <button class="btn btn-primary" onclick="App.openModal('addRouteModal')">➕ Add Route</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Route No</th>
+                  <th>Area Coverage</th>
+                  <th>Stops</th>
+                  <th>Assigned Driver</th>
+                  <th>Vehicle ID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="routesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
 
+        <!-- Van Students Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>Van Registered Students</span>
+            <button class="btn btn-success" onclick="openRegisterStudentModal()">➕ Register Student to Van</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Route Assigned</th>
+                  <th>Pick-up Stop</th>
+                  <th>Monthly Fee (₹)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="vanStudentsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Add Route -->
+      <div class="modal-overlay" id="addRouteModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 class="modal-title">Add New Van/Bus Route</h3>
+            <button class="modal-close" onclick="App.closeModal('addRouteModal')">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Route Designation</label>
+              <input type="text" class="form-control" id="routeNo" placeholder="e.g. Route 7 / Van B" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Area Coverage</label>
+              <input type="text" class="form-control" id="routeArea" placeholder="e.g. Gandhi Nagar, Central Sector" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stops Count</label>
+              <input type="text" class="form-control" id="routeStops" placeholder="e.g. 6 Stops" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vehicle Registration ID</label>
+              <input type="text" class="form-control" id="routeVehicle" placeholder="e.g. TN-37-AB-1234" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Select Driver</label>
+              <select class="form-control" id="routeDriverSelect"></select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" onclick="App.closeModal('addRouteModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveRoute()">Save Route</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Driver Roster Console -->
+      <div class="modal-overlay" id="driverModal">
+        <div class="modal" style="max-width: 800px;">
+          <div class="modal-header">
+            <h3 class="modal-title">Driver Directory & Roster</h3>
+            <button class="modal-close" onclick="App.closeModal('driverModal')">×</button>
+          </div>
+          <div class="modal-body">
+            <!-- Add Driver Form inline inside modal -->
+            <div style="background-color: var(--gray-100); padding: 15px; border-radius: var(--radius); margin-bottom: 20px; border: 1px solid var(--border-color);">
+              <h4 style="margin-bottom: 10px; font-size: 13px; font-weight: 600;">➕ Add New Driver</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <input type="text" class="form-control" id="drvName" placeholder="Driver Name">
+                <input type="text" class="form-control" id="drvPhone" placeholder="Phone Number">
+                <input type="text" class="form-control" id="drvLicense" placeholder="License Number">
+              </div>
+              <button class="btn btn-primary" style="margin-top: 10px; width: 100%;" onclick="saveDriver()">Register Driver</button>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>License No</th>
+                  <th>Assigned Route</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="driverTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Register Student to Van -->
+      <div class="modal-overlay" id="registerStudentModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 class="modal-title">Register Student to School Van</h3>
+            <button class="modal-close" onclick="App.closeModal('registerStudentModal')">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Select Student</label>
+              <select class="form-control" id="vanStudentSelect"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Select Route</label>
+              <select class="form-control" id="vanRouteSelect" onchange="updateRegisterStopsHint()"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pick-up / Drop-off Stop</label>
+              <input type="text" class="form-control" id="vanStopName" placeholder="e.g. Central Park Crossing" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Monthly Charge (₹)</label>
+              <input type="number" class="form-control" id="vanFeeAmount" value="2000" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" onclick="App.closeModal('registerStudentModal')">Cancel</button>
+            <button class="btn btn-success" onclick="saveVanStudent()">Register Student</button>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -103,7 +234,290 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    const defaultRoutes = [
+      { route: 'Route 3', area: 'Gandhi Nagar, Central Sector', stops: '8 Stops', driver: 'Hari Das', phone: '+91 91234 56789', vehicle: 'TN-37-AB-1234' },
+      { route: 'Route 5', area: 'Lakeside Colony, Ring Road', stops: '5 Stops', driver: 'Murali M.', phone: '+91 92345 67890', vehicle: 'TN-37-CD-5678' }
+    ];
+
+    const defaultDrivers = [
+      { name: 'Hari Das', phone: '+91 91234 56789', license: 'DL-20261234', route: 'Route 3' },
+      { name: 'Murali M.', phone: '+91 92345 67890', license: 'DL-20265678', route: 'Route 5' }
+    ];
+
+    const defaultVanStudents = [
+      { id: 'STU001', name: 'Aditya Patel', class: '10th Standard', route: 'Route 3', stop: 'Central Park Stop', fee: '2000' },
+      { id: 'STU002', name: 'Pooja Sharma', class: '12th Standard - Computer Science with Mathematics', route: 'Route 5', stop: 'Lake View Apartments', fee: '2500' }
+    ];
+
+    window.addEventListener('load', () => {
+      initTransportData();
+      loadRoutes();
+      loadDrivers();
+      loadVanStudents();
+    });
+
+    window.addEventListener('lms-sync-students', () => {
+      const select = document.getElementById('vanStudentSelect');
+      if (select) {
+        const currentVal = select.value;
+        const students = AppState.getData('lms_students') || [];
+        select.innerHTML = '<option value="">-- Choose Student --</option>';
+        students.forEach(s => {
+          select.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-class="${s.class}">${s.name} (${s.id} - ${s.class})</option>`;
+        });
+        select.value = currentVal;
+      }
+    });
+
+    function initTransportData() {
+      if (!localStorage.getItem('lms_routes')) {
+        localStorage.setItem('lms_routes', JSON.stringify(defaultRoutes));
+      }
+      if (!localStorage.getItem('lms_drivers')) {
+        localStorage.setItem('lms_drivers', JSON.stringify(defaultDrivers));
+      }
+      if (!localStorage.getItem('lms_van_students')) {
+        localStorage.setItem('lms_van_students', JSON.stringify(defaultVanStudents));
+      }
+    }
+
+    // ── ROUTES ───────────────────────────────────────────────────────────
+    function loadRoutes() {
+      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
+      const body = document.getElementById('routesTableBody');
+      body.innerHTML = '';
+      routes.forEach((r, idx) => {
+        body.innerHTML += `<tr>
+          <td><b>${r.route}</b></td>
+          <td>${r.area}</td>
+          <td><span class="badge badge-info">${r.stops}</span></td>
+          <td>${r.driver} <br><small style="color:var(--text-muted)">${r.phone}</small></td>
+          <td><code>${r.vehicle}</code></td>
+          <td>
+            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteRoute(${idx})">🗑️</button>
+          </td>
+        </tr>`;
+      });
+
+      // Populate routes select in student modal
+      const routeSelect = document.getElementById('vanRouteSelect');
+      if (routeSelect) {
+        routeSelect.innerHTML = '';
+        routes.forEach(r => {
+          routeSelect.innerHTML += `<option value="${r.route}">${r.route} (${r.area})</option>`;
+        });
+      }
+    }
+
+    function saveRoute() {
+      const route = document.getElementById('routeNo').value.trim();
+      const area = document.getElementById('routeArea').value.trim();
+      const stops = document.getElementById('routeStops').value.trim();
+      const vehicle = document.getElementById('routeVehicle').value.trim();
+      const driverName = document.getElementById('routeDriverSelect').value;
+
+      if (!route || !area || !stops || !vehicle || !driverName) {
+        return alert('Please fill in all fields.');
+      }
+
+      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
+      const driver = drivers.find(d => d.name === driverName) || { phone: 'None' };
+
+      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
+      routes.push({
+        route,
+        area,
+        stops,
+        driver: driverName,
+        phone: driver.phone,
+        vehicle
+      });
+
+      // Update driver record route assignment
+      const updatedDrivers = drivers.map(d => {
+        if (d.name === driverName) d.route = route;
+        return d;
+      });
+      localStorage.setItem('lms_drivers', JSON.stringify(updatedDrivers));
+      localStorage.setItem('lms_routes', JSON.stringify(routes));
+
+      // Clean inputs
+      document.getElementById('routeNo').value = '';
+      document.getElementById('routeArea').value = '';
+      document.getElementById('routeStops').value = '';
+      document.getElementById('routeVehicle').value = '';
+
+      App.closeModal('addRouteModal');
+      loadRoutes();
+      loadDrivers();
+      App.showToast('Route added successfully!');
+    }
+
+    function deleteRoute(idx) {
+      if (!confirm('Are you sure you want to delete this route?')) return;
+      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
+      const deleted = routes.splice(idx, 1)[0];
+
+      // Remove assignment from drivers
+      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
+      const updatedDrivers = drivers.map(d => {
+        if (d.route === deleted.route) d.route = 'Unassigned';
+        return d;
+      });
+
+      localStorage.setItem('lms_drivers', JSON.stringify(updatedDrivers));
+      localStorage.setItem('lms_routes', JSON.stringify(routes));
+      loadRoutes();
+      loadDrivers();
+      App.showToast('Route deleted.');
+    }
+
+    // ── DRIVERS ──────────────────────────────────────────────────────────
+    function loadDrivers() {
+      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
+      const body = document.getElementById('driverTableBody');
+      body.innerHTML = '';
+      drivers.forEach((d, idx) => {
+        body.innerHTML += `<tr>
+          <td><b>${d.name}</b></td>
+          <td>${d.phone}</td>
+          <td><code>${d.license}</code></td>
+          <td><span class="badge ${d.route && d.route !== 'Unassigned' ? 'badge-success' : 'badge-gray'}">${d.route || 'Unassigned'}</span></td>
+          <td>
+            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteDriver(${idx})">🗑️</button>
+          </td>
+        </tr>`;
+      });
+
+      // Populate driver select in Route Modal
+      const drvSelect = document.getElementById('routeDriverSelect');
+      if (drvSelect) {
+        drvSelect.innerHTML = '<option value="">-- Choose Driver --</option>';
+        drivers.forEach(d => {
+          drvSelect.innerHTML += `<option value="${d.name}">${d.name} (${d.route || 'Unassigned'})</option>`;
+        });
+      }
+    }
+
+    function saveDriver() {
+      const name = document.getElementById('drvName').value.trim();
+      const phone = document.getElementById('drvPhone').value.trim();
+      const license = document.getElementById('drvLicense').value.trim();
+
+      if (!name || !phone || !license) return alert('Please enter name, phone and license.');
+
+      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
+      drivers.push({ name, phone, license, route: 'Unassigned' });
+      localStorage.setItem('lms_drivers', JSON.stringify(drivers));
+
+      // Clear inputs
+      document.getElementById('drvName').value = '';
+      document.getElementById('drvPhone').value = '';
+      document.getElementById('drvLicense').value = '';
+
+      loadDrivers();
+      App.showToast('Driver registered successfully!');
+    }
+
+    function deleteDriver(idx) {
+      if (!confirm('Are you sure you want to remove this driver?')) return;
+      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
+      const deleted = drivers.splice(idx, 1)[0];
+
+      // Remove from route assignment
+      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
+      const updatedRoutes = routes.map(r => {
+        if (r.driver === deleted.name) {
+          r.driver = 'None';
+          r.phone = 'N/A';
+        }
+        return r;
+      });
+
+      localStorage.setItem('lms_routes', JSON.stringify(updatedRoutes));
+      localStorage.setItem('lms_drivers', JSON.stringify(drivers));
+      loadDrivers();
+      loadRoutes();
+      App.showToast('Driver removed.');
+    }
+
+    // ── VAN STUDENTS ──────────────────────────────────────────────────────
+    function loadVanStudents() {
+      const list = JSON.parse(localStorage.getItem('lms_van_students')) || [];
+      const body = document.getElementById('vanStudentsTableBody');
+      body.innerHTML = '';
+      list.forEach((vs, idx) => {
+        body.innerHTML += `<tr>
+          <td><code>${vs.id}</code></td>
+          <td><b>${vs.name}</b></td>
+          <td>${vs.class}</td>
+          <td><span class="badge badge-purple">${vs.route}</span></td>
+          <td>${vs.stop}</td>
+          <td><b>₹${vs.fee}</b></td>
+          <td>
+            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteVanStudent(${idx})">🗑️</button>
+          </td>
+        </tr>`;
+      });
+    }
+
+    function openRegisterStudentModal() {
+      // Populate student select from AppState
+      const students = AppState.getData('lms_students') || [];
+      const select = document.getElementById('vanStudentSelect');
+      select.innerHTML = '<option value="">-- Choose Student --</option>';
+      students.forEach(s => {
+        select.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-class="${s.class}">${s.name} (${s.id} - ${s.class})</option>`;
+      });
+
+      App.openModal('registerStudentModal');
+    }
+
+    function saveVanStudent() {
+      const stuSelect = document.getElementById('vanStudentSelect');
+      const opt = stuSelect.options[stuSelect.selectedIndex];
+      const route = document.getElementById('vanRouteSelect').value;
+      const stop = document.getElementById('vanStopName').value.trim();
+      const fee = document.getElementById('vanFeeAmount').value.trim();
+
+      if (!opt.value || !route || !stop || !fee) {
+        return alert('Please select a student and fill in all fields.');
+      }
+
+      const vanStudents = JSON.parse(localStorage.getItem('lms_van_students')) || [];
+      
+      // Prevent duplicate registrations
+      if (vanStudents.some(s => s.id === opt.value)) {
+        return alert('This student is already registered to a route.');
+      }
+
+      vanStudents.push({
+        id: opt.value,
+        name: opt.dataset.name,
+        class: opt.dataset.class,
+        route,
+        stop,
+        fee
+      });
+
+      localStorage.setItem('lms_van_students', JSON.stringify(vanStudents));
+
+      document.getElementById('vanStopName').value = '';
+      document.getElementById('vanFeeAmount').value = '2000';
+
+      App.closeModal('registerStudentModal');
+      loadVanStudents();
+      App.showToast('Student registered to van successfully!');
+    }
+
+    function deleteVanStudent(idx) {
+      if (!confirm('Are you sure you want to cancel this student\'s van registration?')) return;
+      const list = JSON.parse(localStorage.getItem('lms_van_students')) || [];
+      list.splice(idx, 1);
+      localStorage.setItem('lms_van_students', JSON.stringify(list));
+      loadVanStudents();
+      App.showToast('Van registration cancelled.');
+    }
   </script>
 </body>
 </html>

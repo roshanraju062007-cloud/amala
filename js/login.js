@@ -1,30 +1,31 @@
-/* eVarsity School ERP Login Controller — Amala HSS */
+/**
+ * EduSphere LMS — Real Authentication (PostgreSQL + JWT)
+ * Replaces old localStorage-based login
+ */
+
 let currentCaptcha = '';
 
 function generateCaptcha() {
   const canvas = document.getElementById('captchaCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Background gradient
-  const grad = ctx.createLinearGradient(0, 0, w, h);
-  grad.addColorStop(0, '#E2E8F0');
-  grad.addColorStop(1, '#CBD5E1');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
+  // Background
+  ctx.fillStyle = '#E2E8F0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Noise lines
+  // Random noise lines
   ctx.strokeStyle = '#94A3B8';
-  for (let i = 0; i < 6; i++) {
-    ctx.lineWidth = Math.random() * 1.5 + 0.5;
+  for (let i = 0; i < 5; i++) {
+    ctx.lineWidth = Math.random() * 2 + 1;
     ctx.beginPath();
-    ctx.moveTo(Math.random() * w, Math.random() * h);
-    ctx.lineTo(Math.random() * w, Math.random() * h);
+    ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
     ctx.stroke();
   }
 
-  // Generate code (exclude ambiguous chars)
+  // Alphanumeric text
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   let code = '';
   for (let i = 0; i < 5; i++) {
@@ -32,15 +33,15 @@ function generateCaptcha() {
   }
   currentCaptcha = code;
 
-  // Draw each character
-  const colors = ['#0F766E', '#1E3A8A', '#1E1B4B', '#4C1D95', '#7C2D12', '#166534'];
-  ctx.font = 'bold 20px monospace';
+  // Draw characters with random properties
+  ctx.font = 'bold 22px sans-serif';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < code.length; i++) {
-    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-    const x = 10 + i * 24;
-    const y = h / 2 + (Math.random() * 6 - 3);
-    const angle = (Math.random() * 24 - 12) * Math.PI / 180;
+    ctx.fillStyle = ['#0F766E', '#1E3A8A', '#1E1B4B', '#4C1D95'][Math.floor(Math.random() * 4)];
+    const x = 12 + i * 22;
+    const y = canvas.height / 2 + (Math.random() * 8 - 4);
+    const angle = (Math.random() * 30 - 15) * Math.PI / 180;
+    
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(angle);
@@ -48,222 +49,160 @@ function generateCaptcha() {
     ctx.restore();
   }
 
-  // Noise dots
-  for (let i = 0; i < 30; i++) {
-    ctx.fillStyle = '#94A3B8';
+  // Random noise dots
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = '#64748B';
     ctx.beginPath();
-    ctx.arc(Math.random() * w, Math.random() * h, 1, 0, Math.PI * 2);
+    ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 1, 0, Math.PI * 2);
     ctx.fill();
   }
-
+  
+  // Clear input
   const input = document.getElementById('captchaInput');
   if (input) input.value = '';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  // ── Ensure AppState data is initialized ──
-  if (typeof AppState !== 'undefined' && AppState.init) {
-    AppState.init();
-  }
-
-  // System date display
-  const dateDisp = document.getElementById('systemDateDisplay');
-  if (dateDisp) {
-    const today = new Date();
-    dateDisp.innerText = today.toLocaleDateString('en-IN', {
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
-    });
-  }
-
-  // Draw captcha
+  // Generate initial Captcha
   generateCaptcha();
 
+  // Role selection tabs
+  const tabs = document.querySelectorAll('.role-tab');
   let activeRole = 'admin';
-  const roleTabs   = document.querySelectorAll('.role-tab');
-  const demoList   = document.getElementById('demo-list');
-  const loginForm  = document.getElementById('loginForm');
+  const demoList = document.getElementById('demo-list');
   const emailInput = document.getElementById('email');
-  const passInput  = document.getElementById('password');
-  const loader     = document.getElementById('loader');
-  const captchaInput = document.getElementById('captchaInput');
+  const passInput = document.getElementById('password');
+  const loader = document.getElementById('loader');
+  const loginForm = document.getElementById('loginForm');
 
-  // ── Tab switching ──
-  roleTabs.forEach(tab => {
+  tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      roleTabs.forEach(t => t.classList.remove('active'));
+      tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       activeRole = tab.dataset.role;
-      updatePlaceholder();
+
+      // Update placeholders
+      const placeholderMap = {
+        admin:   'admin',
+        teacher: 'TCH001',
+        student: 'STU001',
+        parent:  'PAR001'
+      };
+      if (emailInput) emailInput.placeholder = 'Enter ' + (placeholderMap[activeRole] || 'User ID');
+      
       updateDemoCredentials();
-      generateCaptcha();
     });
   });
 
-  function updatePlaceholder() {
-    const ph = { admin: 'admin / admin001', teacher: 'e.g. TCH001', student: 'e.g. STU001', parent: 'e.g. PAR001' };
-    if (emailInput) emailInput.placeholder = ph[activeRole] || 'Enter User ID';
-  }
-
-  // ── Demo credentials badge ──
   function updateDemoCredentials() {
     if (!demoList) return;
     demoList.innerHTML = '';
+    
+    const credMap = {
+      admin:   { id: 'admin',  pw: 'admin123' },
+      teacher: { id: 'TCH001', pw: 'teach123' },
+      student: { id: 'STU001', pw: 'stud123'  },
+      parent:  { id: 'PAR001', pw: 'par123'   },
+    };
+    
+    const cred = credMap[activeRole];
+    if (!cred) return;
 
-    const credsList = [];
-
-    if (activeRole === 'admin') {
-      credsList.push({ u: 'admin', p: 'admin123' });
-    } else if (activeRole === 'teacher') {
-      credsList.push({ u: 'TCH001', p: 'teach123' });
-      credsList.push({ u: 'TCH002', p: 'teach123' });
-    } else if (activeRole === 'student') {
-      credsList.push({ u: 'STU001', p: 'stud123' });
-      credsList.push({ u: 'STU002', p: 'stud123' });
-    } else if (activeRole === 'parent') {
-      credsList.push({ u: 'PAR001', p: 'par123' });
-      credsList.push({ u: 'PAR002', p: 'par123' });
-    }
-
-    credsList.forEach(cred => {
-      const badge = document.createElement('span');
-      badge.className = 'demo-badge';
-      badge.textContent = `▶ ${cred.u} / ${cred.p}`;
-      badge.style.cssText = 'cursor:pointer; margin:3px; display:inline-block; padding:4px 8px; border-radius:4px; font-size:11px; background:rgba(79,70,229,0.15); border:1px solid rgba(79,70,229,0.3);';
-      badge.addEventListener('click', () => {
-        emailInput.value = cred.u;
-        passInput.value = cred.p;
-        if (captchaInput) captchaInput.value = currentCaptcha;
-      });
-      demoList.appendChild(badge);
+    const badge = document.createElement('span');
+    badge.className = 'demo-badge';
+    badge.style.cursor = 'pointer';
+    badge.textContent = `Use Demo: ${cred.id} / ${cred.pw}`;
+    badge.addEventListener('click', () => {
+      if (emailInput) emailInput.value = cred.id;
+      if (passInput) passInput.value = cred.pw;
+      
+      // Auto-fill Captcha for easy demo testing
+      const captchaInput = document.getElementById('captchaInput');
+      if (captchaInput) captchaInput.value = currentCaptcha;
     });
+    demoList.appendChild(badge);
   }
 
-  // ── Password visibility toggle ──
+  // Initialize demo badge
+  updateDemoCredentials();
+
+  // Password toggle visibility
   const togglePass = document.getElementById('togglePass');
   if (togglePass && passInput) {
     togglePass.addEventListener('click', () => {
-      const isPass = passInput.getAttribute('type') === 'password';
-      passInput.setAttribute('type', isPass ? 'text' : 'password');
-      togglePass.textContent = isPass ? '🔒' : '👁️';
+      const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passInput.setAttribute('type', type);
+      togglePass.textContent = type === 'password' ? '👁️' : '🔒';
     });
   }
 
-  // ── FORM SUBMIT ──
-  loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+  // Handle Form Submission
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    // Captcha check
-    const captchaVal = captchaInput ? captchaInput.value.trim().toUpperCase() : '';
-    if (!currentCaptcha || captchaVal !== currentCaptcha) {
-      showError('Security code is incorrect. Please re-enter the captcha.');
-      generateCaptcha();
-      return;
-    }
-
-    const userVal = emailInput.value.trim();
-    const passVal = passInput.value.trim();
-
-    if (!userVal || !passVal) {
-      showError('Please enter User ID and Password.');
-      return;
-    }
-
-    let authenticated = false;
-    let redirectRole  = '';
-
-    // ── ADMIN ──
-    if (activeRole === 'admin') {
-      if ((userVal === 'admin' || userVal === 'admin001') && passVal === 'admin123') {
-        authenticated = true;
-        redirectRole  = 'admin';
-        localStorage.setItem('userId', userVal);
-        localStorage.setItem('userName', 'Administrator');
-        localStorage.setItem('userRole', 'admin');
+      // Validate Captcha
+      const captchaVal = (document.getElementById('captchaInput')?.value || '').trim().toUpperCase();
+      if (captchaVal !== currentCaptcha) {
+        alert('Incorrect Security Verification Code (Captcha). Please try again.');
+        generateCaptcha();
+        return;
       }
 
-    // ── TEACHER ──
-    } else if (activeRole === 'teacher') {
-      // Always init before reading
-      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
-      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
-      const match = teachers.find(t =>
-        t.id.toUpperCase() === userVal.toUpperCase() &&
-        ((t.password && t.password === passVal) || passVal === 'teach123')
-      );
-      if (match) {
-        authenticated = true;
-        redirectRole  = 'teacher';
-        localStorage.setItem('userId', match.id);
-        localStorage.setItem('userName', match.name);
-        localStorage.setItem('userRole', 'teacher');
+      const userId = (emailInput?.value || '').trim();
+      const password = passInput?.value || '';
+
+      if (!userId || !password) {
+        alert('Please enter both User ID and Password.');
+        return;
       }
 
-    // ── STUDENT ──
-    } else if (activeRole === 'student') {
-      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
-      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
-      const match = students.find(s =>
-        s.id.toUpperCase() === userVal.toUpperCase() &&
-        ((s.password && s.password === passVal) || passVal === 'stud123')
-      );
-      if (match) {
-        authenticated = true;
-        redirectRole  = 'student';
-        localStorage.setItem('userId', match.id);
-        localStorage.setItem('userName', match.name);
-        localStorage.setItem('userRole', 'student');
+      // Show loader
+      if (loader) loader.style.display = 'flex';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // Include cookie
+          body: JSON.stringify({ user_id: userId, password, role: activeRole }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Authentication failed.');
+        }
+
+        // Store session info
+        sessionStorage.setItem('userRole', data.user.role);
+        sessionStorage.setItem('userId', data.user.userId);
+        sessionStorage.setItem('userName', data.user.name);
+        if (data.user.childId) sessionStorage.setItem('childId', data.user.childId);
+
+        // Backup to localStorage for older static pages
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userId', data.user.userId);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('authToken', data.token);
+        if (data.user.childId) localStorage.setItem('childId', data.user.childId);
+
+        // Redirect to portal dashboard
+        const redirectMap = {
+          admin:   'pages/admin/dashboard.html',
+          teacher: 'pages/teacher/dashboard.html',
+          student: 'pages/student/dashboard.html',
+          parent:  'pages/parent/dashboard.html',
+        };
+        const dest = redirectMap[data.user.role] || 'pages/admin/dashboard.html';
+
+        setTimeout(() => { window.location.href = dest; }, 500);
+
+      } catch (err) {
+        if (loader) loader.style.display = 'none';
+        alert(err.message || 'An error occurred during authentication.');
+        generateCaptcha();
       }
-
-    // ── PARENT ──
-    } else if (activeRole === 'parent') {
-      if (typeof AppState !== 'undefined' && AppState.init) AppState.init();
-      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
-      const match = students.find(s => {
-        const usernameMatch = s.parentUsername &&
-          s.parentUsername.toUpperCase() === userVal.toUpperCase();
-        const passwordMatch =
-          passVal === 'par123' ||
-          (s.parentPassword && s.parentPassword === passVal);
-        return usernameMatch && passwordMatch;
-      });
-      if (match) {
-        authenticated = true;
-        redirectRole  = 'parent';
-        localStorage.setItem('userId', match.parentUsername);
-        localStorage.setItem('userName', match.parent || 'Parent');
-        localStorage.setItem('userRole', 'parent');
-        localStorage.setItem('childId', match.id);
-      }
-    }
-
-    if (authenticated) {
-      // Show loading overlay
-      if (loader) loader.classList.add('active');
-      setTimeout(() => {
-        if (loader) loader.classList.remove('active');
-        window.location.href = `pages/${redirectRole}/dashboard.html`;
-      }, 1000);
-    } else {
-      showError('Invalid credentials. Please check your User ID, Password, and selected Role tab.');
-      generateCaptcha();
-    }
-  });
-
-  function showError(msg) {
-    let errBox = document.getElementById('loginErrorBox');
-    if (!errBox) {
-      errBox = document.createElement('div');
-      errBox.id = 'loginErrorBox';
-      errBox.style.cssText = 'background:#FEE2E2; color:#B91C1C; padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:14px; border:1px solid #FECACA;';
-      loginForm.insertBefore(errBox, loginForm.firstChild);
-    }
-    errBox.textContent = '⚠️ ' + msg;
-    errBox.style.display = 'block';
-    setTimeout(() => { if (errBox) errBox.style.display = 'none'; }, 5000);
+    });
   }
-
-  // ── Initialize ──
-  updatePlaceholder();
-  updateDemoCredentials();
 });
