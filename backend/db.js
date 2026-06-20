@@ -34,9 +34,9 @@ const query = async (text, params) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`SET LOCAL app.current_user_id = $1`, [userContext.userId || '']);
-    await client.query(`SET LOCAL app.current_user_role = $2`, [userContext.role || '']);
-    await client.query(`SET LOCAL app.current_db_id = $3`, [String(userContext.dbId || 0)]);
+    await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [userContext.userId || '']);
+    await client.query(`SELECT set_config('app.current_user_role', $1, true)`, [userContext.role || '']);
+    await client.query(`SELECT set_config('app.current_db_id', $1, true)`, [String(userContext.dbId || 0)]);
     const res = await client.query(text, params);
     await client.query('COMMIT');
     return res;

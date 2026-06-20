@@ -80,8 +80,9 @@
     localStorage.removeItem('userName');
     localStorage.removeItem('authToken');
     // Calculate correct depth for redirect
-    const depth = (window.location.pathname.match(/\//g) || []).length - 1;
-    const prefix = depth > 1 ? '../'.repeat(depth - 1) : '';
+    const parts = window.location.pathname.split('/');
+    const depth = parts.length - 2;
+    const prefix = depth > 0 ? '../'.repeat(depth) : '';
     window.location.href = prefix + 'index.html';
   }
 })();

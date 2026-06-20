@@ -270,11 +270,14 @@ ALTER TABLE timetable FORCE ROW LEVEL SECURITY;
 -- ── RLS POLICIES ───────────────────────────────────────────────────────────
 
 -- 1. USERS POLICIES
+CREATE POLICY user_select_all ON users FOR SELECT TO edusphere_app
+  USING (true);
+
 CREATE POLICY user_admin_all ON users FOR ALL TO edusphere_app
   USING (current_setting('app.current_user_role', true) = 'admin')
   WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
 
-CREATE POLICY user_self_select_update ON users FOR ALL TO edusphere_app
+CREATE POLICY user_self_update ON users FOR UPDATE TO edusphere_app
   USING (user_id = current_setting('app.current_user_id', true))
   WITH CHECK (user_id = current_setting('app.current_user_id', true));
 

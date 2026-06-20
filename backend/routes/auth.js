@@ -2,7 +2,7 @@
 const express  = require('express');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
-const { queryOne } = require('../db');
+const { queryOne, authStorage } = require('../db');
 
 const router = express.Router();
 const JWT_SECRET  = process.env.JWT_SECRET  || 'edusphere_secret_key';
@@ -41,12 +41,14 @@ router.post('/login', async (req, res) => {
     // For parent role: get child student ID
     let childId = null;
     if (role === 'parent') {
-      const parent = await queryOne(
-        `SELECT p.student_id, s.student_id AS student_code
-         FROM parents p
-         JOIN students s ON p.student_id = s.id
-         WHERE p.user_id = $1`,
-        [user.id]
+      const parent = await authStorage.run({ userId: user.user_id, role: user.role, dbId: user.id }, () =>
+        queryOne(
+          `SELECT p.student_id, s.student_id AS student_code
+           FROM parents p
+           JOIN students s ON p.student_id = s.id
+           WHERE p.user_id = $1`,
+          [user.id]
+        )
       );
       if (parent) childId = parent.student_code;
     }
