@@ -28,16 +28,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Redirect legacy/cached buggy redirects to the root login page
+app.get([
+  '/pages/index.html',
+  '/pages/admin/index.html',
+  '/pages/teacher/index.html',
+  '/pages/student/index.html',
+  '/pages/parent/index.html'
+], (req, res) => {
+  res.redirect('/index.html');
+});
+
 // ── STATIC FILES ──────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '..'), {
   maxAge: '1d',
   etag: true,
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      // Never cache HTML so updates are immediate
+    if (filePath.endsWith('.html') || filePath.endsWith('.js')) {
+      // Never cache HTML or JS so updates are immediate
       res.setHeader('Cache-Control', 'no-cache');
     } else {
-      // Cache CSS, JS, fonts, images for 1 day
+      // Cache CSS, fonts, images for 1 day
       res.setHeader('Cache-Control', 'public, max-age=86400');
     }
   }

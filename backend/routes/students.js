@@ -30,7 +30,15 @@ router.get('/', async (req, res) => {
         LEFT JOIN parents p ON p.student_id = s.id
         WHERE p.user_id = $1`, [req.user.dbId]);
     }
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(s => ({
+      ...s,
+      id: s.student_id,
+      db_id: s.id,
+      class: s.class_name,
+      fee: s.fee_status,
+      attendance: parseFloat(s.attendance_pct || 100)
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch students.' });
@@ -42,7 +50,15 @@ router.get('/:id', async (req, res) => {
   try {
     const row = await queryOne(`SELECT s.*, u.email FROM students s LEFT JOIN users u ON s.user_id = u.id WHERE s.student_id = $1`, [req.params.id]);
     if (!row) return res.status(404).json({ success: false, message: 'Student not found.' });
-    res.json({ success: true, data: row });
+    const mapped = {
+      ...row,
+      id: row.student_id,
+      db_id: row.id,
+      class: row.class_name,
+      fee: row.fee_status,
+      attendance: parseFloat(row.attendance_pct || 100)
+    };
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error fetching student.' });
   }

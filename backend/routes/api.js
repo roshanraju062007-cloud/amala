@@ -10,7 +10,11 @@ classRouter.use(authMiddleware);
 classRouter.get('/', async (req, res) => {
   try {
     const rows = await queryAll(`SELECT * FROM classes ORDER BY id`);
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(c => ({
+      ...c,
+      studentsCount: c.students_count || 0
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch classes.' });
   }
@@ -47,7 +51,13 @@ subjectRouter.get('/', async (req, res) => {
     if (class_name) { params.push(class_name); sql += ` WHERE class_name = $1`; }
     sql += ' ORDER BY class_name, name';
     const rows = await queryAll(sql, params);
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(sub => ({
+      ...sub,
+      class: sub.class_name,
+      teacherId: sub.teacher_id,
+      periods: sub.periods_week
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch subjects.' });
   }
@@ -147,7 +157,14 @@ resultsRouter.get('/', async (req, res) => {
     }
     sql += ' ORDER BY r.created_at DESC';
     const rows = await queryAll(sql, params);
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(r => ({
+      ...r,
+      stuId: r.student_code,
+      exam: r.exam_name,
+      max: r.max_marks,
+      obtained: r.obtained
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch results.' });
   }
@@ -258,7 +275,17 @@ assignmentsRouter.get('/', async (req, res) => {
     if (req.user.role === 'teacher') { params.push(req.user.userId); sql += ` AND teacher_id = $${params.length}`; }
     sql += ' ORDER BY created_at DESC';
     const rows = await queryAll(sql, params);
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(a => ({
+      ...a,
+      id: a.asn_id,
+      class: a.class_name,
+      dueDate: a.due_date,
+      due: a.due_date,
+      maxMarks: a.max_marks,
+      marks: a.max_marks,
+      teacherId: a.teacher_id
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch assignments.' });
   }
@@ -301,7 +328,13 @@ materialsRouter.get('/', async (req, res) => {
     if (class_name) { params.push(class_name); sql += ` AND (class_name = $${params.length} OR class_name = 'All')`; }
     sql += ' ORDER BY created_at DESC';
     const rows = await queryAll(sql, params);
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(m => ({
+      ...m,
+      id: m.mat_id,
+      class: m.class_name,
+      teacherId: m.teacher_id
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch materials.' });
   }
