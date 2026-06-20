@@ -13,7 +13,15 @@ router.get('/', async (req, res) => {
     const rows = await queryAll(
       `SELECT t.*, u.email FROM teachers t LEFT JOIN users u ON t.user_id = u.id ORDER BY t.teacher_id`
     );
-    res.json({ success: true, data: rows });
+    const mapped = rows.map(t => ({
+      ...t,
+      id: t.teacher_id,
+      db_id: t.id,
+      classAssigned: t.class_assigned,
+      dept: t.department,
+      password: 'teach123'
+    }));
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch teachers.' });
   }
@@ -27,7 +35,15 @@ router.get('/:id', async (req, res) => {
       [req.params.id]
     );
     if (!row) return res.status(404).json({ success: false, message: 'Teacher not found.' });
-    res.json({ success: true, data: row });
+    const mapped = {
+      ...row,
+      id: row.teacher_id,
+      db_id: row.id,
+      classAssigned: row.class_assigned,
+      dept: row.department,
+      password: 'teach123'
+    };
+    res.json({ success: true, data: mapped });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Error fetching teacher.' });
   }

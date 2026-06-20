@@ -334,7 +334,9 @@ const AppState = {
         section: a.section,
         subject: a.subject,
         dueDate: a.due_date,
+        due: a.due_date,
         maxMarks: a.max_marks,
+        marks: a.max_marks,
         instructions: a.instructions,
         teacherId: a.teacher_id
       }));
