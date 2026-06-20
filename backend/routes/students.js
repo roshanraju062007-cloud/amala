@@ -51,7 +51,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/students — add new student (admin only)
 router.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { name, class_name, section, phone, fee_status } = req.body;
+    const { name, class_name, section, phone, fee_status, parent_name } = req.body;
     if (!name || !class_name) return res.status(400).json({ success: false, message: 'Name and class are required.' });
 
     // Generate IDs
@@ -74,15 +74,32 @@ router.post('/', requireRole('admin'), async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
       [studentId, uId, name, class_name, section || 'A', phone || '', fee_status || 'Unpaid']
     );
+    const sDbId = sRes.rows[0].id;
+
+    // Create parent user
+    const parentName = parent_name || `Parent of ${name}`;
+    const pHash = await bcrypt.hash('par123', 10);
+    const puRes = await query(
+      `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'parent', $3) RETURNING id`,
+      [parentId, pHash, parentName]
+    );
+    const puId = puRes.rows[0].id;
+
+    // Create parent record
+    await query(
+      `INSERT INTO parents (parent_id, user_id, student_id, name, phone, email)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [parentId, puId, sDbId, parentName, phone || '', `${parentId.toLowerCase()}@example.com`]
+    );
 
     // Create fee record
     await query(
       `INSERT INTO fees (student_id, academic_year, term, amount_due, amount_paid, status)
        VALUES ($1, '2026-2027', 'Annual', 25000, 0, 'Unpaid')`,
-      [sRes.rows[0].id]
+      [sDbId]
     );
 
-    res.json({ success: true, message: `Student ${studentId} registered. Default password: stud123`, data: sRes.rows[0] });
+    res.json({ success: true, message: `Student ${studentId} and Parent ${parentId} registered. Default passwords: stud123 / par123`, data: sRes.rows[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to add student.' });
@@ -106,12 +123,26 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
 // DELETE /api/students/:id
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
-    const stu = await queryOne(`SELECT user_id FROM students WHERE student_id = $1`, [req.params.id]);
+    const stu = await queryOne(`SELECT id, user_id FROM students WHERE student_id = $1`, [req.params.id]);
     if (!stu) return res.status(404).json({ success: false, message: 'Student not found.' });
+
+    // Find parent user_id associated with this student
+    const parent = await queryOne(`SELECT user_id FROM parents WHERE student_id = $1`, [stu.id]);
+
+    // Delete student record (which will cascade delete parent record in parents table)
     await query(`DELETE FROM students WHERE student_id = $1`, [req.params.id]);
+    
+    // Delete student user in users table
     await query(`DELETE FROM users WHERE id = $1`, [stu.user_id]);
-    res.json({ success: true, message: 'Student deleted.' });
+
+    // Delete parent user in users table if exists
+    if (parent && parent.user_id) {
+      await query(`DELETE FROM users WHERE id = $1`, [parent.user_id]);
+    }
+
+    res.json({ success: true, message: 'Student and associated parent deleted.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: 'Failed to delete.' });
   }
 });

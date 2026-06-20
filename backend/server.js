@@ -66,6 +66,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── RATE LIMITING ─────────────────────────────────────────────────────────────
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // limit each IP to 5 login attempts per 10 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts from this IP, please try again after 10 minutes.' }
+});
+
+app.use('/api/auth/login', loginLimiter);
+app.use('/api', apiLimiter);
+
 // ── API ROUTES ────────────────────────────────────────────────────────────────
 const authRoutes    = require('./routes/auth');
 const studentRoutes = require('./routes/students');

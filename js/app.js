@@ -118,8 +118,9 @@ const App = {
       localStorage.removeItem('authToken');
       sessionStorage.clear();
       // Navigate to login page — works from any subdirectory depth
-      const depth = (window.location.pathname.match(/\//g) || []).length - 1;
-      const prefix = depth > 1 ? '../'.repeat(depth - 1) : '';
+      const parts = window.location.pathname.split('/');
+      const depth = parts.length - 2;
+      const prefix = depth > 0 ? '../'.repeat(depth) : '';
       window.location.href = prefix + 'index.html';
     }
   },
@@ -399,7 +400,8 @@ const AppState = {
               class_name: added.class,
               section: added.section,
               phone: added.phone,
-              fee_status: added.fee
+              fee_status: added.fee,
+              parent_name: added.parent
             });
             this.syncDatabaseToLocal();
           }
