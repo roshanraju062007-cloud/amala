@@ -11,6 +11,8 @@ const cookieParser = require('cookie-parser');
 const cors         = require('cors');
 const path         = require('path');
 
+const compression  = require('compression');
+
 const app    = express();
 const server = http.createServer(app);
 const io     = socketIo(server, {
@@ -20,13 +22,49 @@ const io     = socketIo(server, {
 const PORT = process.env.PORT || 3000;
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────────────────
+app.use(compression()); // Compress all responses
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ── STATIC FILES ──────────────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '..'), {
+  maxAge: '1d',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      // Never cache HTML so updates are immediate
+      res.setHeader('Cache-Control', 'no-cache');
+    } else {
+      // Cache CSS, JS, fonts, images for 1 day
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+}));
+
+// ── USER CONTEXT MIDDLEWARE (FOR ROW LEVEL SECURITY) ──────────────────────────
+const jwt = require('jsonwebtoken');
+const { authStorage } = require('./db');
+const JWT_SECRET = process.env.JWT_SECRET || 'edusphere_secret_key';
+
+app.use((req, res, next) => {
+  const token =
+    req.cookies?.edusphere_token ||
+    (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded; // Populate globally
+      authStorage.run(decoded, next);
+      return;
+    } catch (err) {
+      // Ignore: routers will handle invalid sessions themselves
+    }
+  }
+  next();
+});
 
 // ── API ROUTES ────────────────────────────────────────────────────────────────
 const authRoutes    = require('./routes/auth');

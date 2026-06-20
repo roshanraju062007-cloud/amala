@@ -217,3 +217,217 @@ COMMENT ON TABLE users IS 'Authentication table for all portal users';
 COMMENT ON TABLE students IS 'Student records (LKG to 12th Standard)';
 COMMENT ON TABLE teachers IS 'Faculty directory';
 COMMENT ON TABLE parents IS 'Parent/guardian records linked to students';
+
+-- ── ROLE CREATION AND PRIVILEGES ───────────────────────────────────────────
+-- Create the non-superuser application role if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'edusphere_app') THEN
+    CREATE ROLE edusphere_app WITH LOGIN PASSWORD 'edusphere_password';
+  END IF;
+END
+$$;
+
+-- Grant permissions to the application role
+GRANT CONNECT ON DATABASE edusphere_db TO edusphere_app;
+GRANT USAGE ON SCHEMA public TO edusphere_app;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO edusphere_app;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO edusphere_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO edusphere_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO edusphere_app;
+
+-- ── ENABLE ROW LEVEL SECURITY ─────────────────────────────────────────────
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE students ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timetable ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+ALTER TABLE classes FORCE ROW LEVEL SECURITY;
+ALTER TABLE teachers FORCE ROW LEVEL SECURITY;
+ALTER TABLE students FORCE ROW LEVEL SECURITY;
+ALTER TABLE parents FORCE ROW LEVEL SECURITY;
+ALTER TABLE subjects FORCE ROW LEVEL SECURITY;
+ALTER TABLE attendance FORCE ROW LEVEL SECURITY;
+ALTER TABLE fees FORCE ROW LEVEL SECURITY;
+ALTER TABLE assignments FORCE ROW LEVEL SECURITY;
+ALTER TABLE submissions FORCE ROW LEVEL SECURITY;
+ALTER TABLE results FORCE ROW LEVEL SECURITY;
+ALTER TABLE notices FORCE ROW LEVEL SECURITY;
+ALTER TABLE materials FORCE ROW LEVEL SECURITY;
+ALTER TABLE timetable FORCE ROW LEVEL SECURITY;
+
+-- ── RLS POLICIES ───────────────────────────────────────────────────────────
+
+-- 1. USERS POLICIES
+CREATE POLICY user_admin_all ON users FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY user_self_select_update ON users FOR ALL TO edusphere_app
+  USING (user_id = current_setting('app.current_user_id', true))
+  WITH CHECK (user_id = current_setting('app.current_user_id', true));
+
+-- 2. CLASSES POLICIES
+CREATE POLICY class_admin_all ON classes FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY class_auth_select ON classes FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 3. TEACHERS POLICIES
+CREATE POLICY teacher_admin_all ON teachers FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY teacher_auth_select ON teachers FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 4. STUDENTS POLICIES
+CREATE POLICY student_staff_all ON students FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY student_self_select ON students FOR SELECT TO edusphere_app
+  USING (student_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY student_parent_select ON students FOR SELECT TO edusphere_app
+  USING (id IN (
+    SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+-- 5. PARENTS POLICIES
+CREATE POLICY parent_staff_all ON parents FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY parent_self_select_update ON parents FOR ALL TO edusphere_app
+  USING (user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer)
+  WITH CHECK (user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer);
+
+-- 6. SUBJECTS POLICIES
+CREATE POLICY subject_admin_all ON subjects FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY subject_auth_select ON subjects FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 7. ATTENDANCE POLICIES
+CREATE POLICY attendance_staff_all ON attendance FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY attendance_student_select ON attendance FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT id FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+CREATE POLICY attendance_parent_select ON attendance FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+-- 8. FEES POLICIES
+CREATE POLICY fee_admin_all ON fees FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY fee_student_select ON fees FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT id FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+CREATE POLICY fee_parent_select ON fees FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+-- 9. ASSIGNMENTS POLICIES
+CREATE POLICY assignment_admin_all ON assignments FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY assignment_teacher_all ON assignments FOR ALL TO edusphere_app
+  USING (teacher_id = current_setting('app.current_user_id', true))
+  WITH CHECK (teacher_id = current_setting('app.current_user_id', true));
+
+CREATE POLICY assignment_student_select ON assignments FOR SELECT TO edusphere_app
+  USING (class_name = (
+    SELECT class_name FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+CREATE POLICY assignment_parent_select ON assignments FOR SELECT TO edusphere_app
+  USING (class_name = (
+    SELECT class_name FROM students WHERE id = (
+      SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+    )
+  ));
+
+-- 10. SUBMISSIONS POLICIES
+CREATE POLICY submission_staff_all ON submissions FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY submission_student_all ON submissions FOR ALL TO edusphere_app
+  USING (student_id IN (
+    SELECT id FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ))
+  WITH CHECK (student_id IN (
+    SELECT id FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+CREATE POLICY submission_parent_select ON submissions FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+-- 11. RESULTS POLICIES
+CREATE POLICY result_staff_all ON results FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY result_student_select ON results FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT id FROM students WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+CREATE POLICY result_parent_select ON results FOR SELECT TO edusphere_app
+  USING (student_id IN (
+    SELECT student_id FROM parents WHERE user_id = NULLIF(current_setting('app.current_db_id', true), '')::integer
+  ));
+
+-- 12. NOTICES POLICIES
+CREATE POLICY notice_admin_all ON notices FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY notice_auth_select ON notices FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 13. MATERIALS POLICIES
+CREATE POLICY material_staff_all ON materials FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IN ('admin', 'teacher'))
+  WITH CHECK (current_setting('app.current_user_role', true) IN ('admin', 'teacher'));
+
+CREATE POLICY material_auth_select ON materials FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 14. TIMETABLE POLICIES
+CREATE POLICY timetable_admin_all ON timetable FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY timetable_auth_select ON timetable FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);

@@ -35,8 +35,16 @@ async function main() {
     console.log(`✅ PostgreSQL started on port ${PG_PORT}`);
 
     // Create database if it doesn't exist
-    await pg.createDatabase(DB_NAME);
-    console.log(`✅ Database "${DB_NAME}" ready`);
+    try {
+      await pg.createDatabase(DB_NAME);
+      console.log(`✅ Database "${DB_NAME}" ready`);
+    } catch (dbCreateErr) {
+      if (dbCreateErr && dbCreateErr.message && dbCreateErr.message.includes('already exists')) {
+        console.log(`✅ Database "${DB_NAME}" already exists`);
+      } else {
+        throw dbCreateErr;
+      }
+    }
 
     // Step 2: Run schema + seed if first time
     const { pool } = require('./backend/db');
