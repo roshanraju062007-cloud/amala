@@ -107,4 +107,41 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password — secure password change for logged-in user
+const { authMiddleware } = require('../middleware/auth');
+const { query } = require('../db');
+
+router.post('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Old and new passwords are required.' });
+    }
+
+    // Retrieve user password hash
+    const user = await queryOne(`SELECT password FROM users WHERE user_id = $1`, [req.user.userId]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    // Compare old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect current password.' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Save new password
+    await query(`UPDATE users SET password = $1 WHERE user_id = $2`, [hashedPassword, req.user.userId]);
+
+    res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Password update failed:', err);
+    res.status(500).json({ success: false, message: 'Failed to change password. Server error.' });
+  }
+});
+
 module.exports = router;

@@ -92,15 +92,26 @@
 
   <div class="card">
     <h3 class="card-title">School Preferences</h3>
-    <form onsubmit="event.preventDefault(); App.showToast('Configuration settings updated!');">
+    <form id="settingsForm" onsubmit="saveSettings(event)">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-        <div class="form-group"><label class="form-label">School Name</label><input type="text" class="form-control" value="AMALA HIGHER SECONDARY SCHOOL"></div>
-        <div class="form-group"><label class="form-label">School Code / License</label><input type="text" class="form-control" value="HSS-CBSE-3701"></div>
-        <div class="form-group"><label class="form-label">Affiliated Education Board</label><select class="form-control"><option>CBSE Board</option><option>State Board</option><option>ICSE Board</option></select></div>
-        <div class="form-group"><label class="form-label">Medium of Instruction</label><input type="text" class="form-control" value="English"></div>
+        <div class="form-group"><label class="form-label">School Name</label><input type="text" id="schoolName" class="form-control" value=""></div>
+        <div class="form-group"><label class="form-label">School Code / License</label><input type="text" id="schoolCode" class="form-control" value=""></div>
+        <div class="form-group"><label class="form-label">Affiliated Education Board</label><select id="schoolBoard" class="form-control"><option value="CBSE Board">CBSE Board</option><option value="State Board">State Board</option><option value="ICSE Board">ICSE Board</option></select></div>
+        <div class="form-group"><label class="form-label">Medium of Instruction</label><input type="text" id="schoolMedium" class="form-control" value=""></div>
       </div>
       
       <button type="submit" class="btn btn-primary" style="margin-top:15px;">Update General settings</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h3 class="card-title">Change Password</h3>
+    <form id="passwordForm" onsubmit="changePassword(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="oldPassword" class="form-control" required placeholder="Enter current password"></div>
+        <div class="form-group"><label class="form-label">New Password</label><input type="password" id="newPassword" class="form-control" required placeholder="Enter new password"></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:15px;">Update Password</button>
     </form>
   </div>
 
@@ -111,7 +122,62 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    async function loadSettings() {
+      try {
+        const res = await API.get('settings');
+        if (res.success && res.data) {
+          document.getElementById('schoolName').value = res.data.school_name || '';
+          document.getElementById('schoolCode').value = res.data.school_code || '';
+          document.getElementById('schoolBoard').value = res.data.board || 'CBSE Board';
+          document.getElementById('schoolMedium').value = res.data.medium || '';
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+        App.showToast('Error loading configuration settings', 'error');
+      }
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const payload = {
+        school_name: document.getElementById('schoolName').value,
+        school_code: document.getElementById('schoolCode').value,
+        board: document.getElementById('schoolBoard').value,
+        medium: document.getElementById('schoolMedium').value
+      };
+      try {
+        const res = await API.put('settings', payload);
+        if (res.success) {
+          App.showToast(res.message || 'Configuration settings updated successfully!');
+        } else {
+          App.showToast(res.message || 'Failed to update configuration settings', 'error');
+        }
+      } catch (err) {
+        console.error('Failed to save settings:', err);
+        App.showToast('Error updating configuration settings', 'error');
+      }
+    }
+
+    async function changePassword(e) {
+      e.preventDefault();
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      
+      try {
+        const res = await API.post('auth/change-password', { oldPassword, newPassword });
+        if (res.success) {
+          App.showToast(res.message || 'Password changed successfully!');
+          document.getElementById('passwordForm').reset();
+        } else {
+          App.showToast(res.message || 'Failed to change password.', 'error');
+        }
+      } catch (err) {
+        console.error('Failed to change password:', err);
+        App.showToast('Error changing password.', 'error');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadSettings);
   </script>
 </body>
 </html>

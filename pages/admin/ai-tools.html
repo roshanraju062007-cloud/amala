@@ -150,43 +150,33 @@
         <pre id="aiOutputBody" style="white-space: pre-wrap; font-family: 'Courier New', Courier, monospace; background-color: var(--gray-100); padding: 15px; border-radius: var(--radius); font-size: 13px; max-height:400px; overflow-y:auto;"></pre>
       </div>
     </div>
-  </div>
 
+  <script src="../../js/app.js"></script>
+  <script src="../../js/auth-check.js"></script>
   <script>
     async function runQpGenerator() {
-      const subject = document.getElementById('qpSub').value;
+      const subject = document.getElementById('qpSub').value.trim();
       const grade = document.getElementById('qpClass').value;
       
       document.getElementById('aiOutputTitle').innerText = 'Generated Question Paper - ' + subject;
-      document.getElementById('aiOutputBody').innerText = 'Generating paper using Claude Sonnet model. Please wait...';
+      document.getElementById('aiOutputBody').innerText = 'Generating paper using Claude model. Please wait...';
       App.openModal('aiOutputModal');
       
-      setTimeout(() => {
-        document.getElementById('aiOutputBody').innerText = `AMALA HIGHER SECONDARY SCHOOL
-ANNUAL EXAMINATION 2026 - GRADE 10
-SUBJECT: ${subject.toUpperCase()}
-TIME: 3 Hours                          MAX MARKS: 80
-
---------------------------------------------------
-SECTION A (MULTIPLE CHOICE QUESTIONS - 1 Mark Each)
---------------------------------------------------
-Q1. Solve for x: 3x - 7 = 14.
-  a) 5       b) 7       c) 6       d) 9
-Q2. What is the value of Sin(30) + Cos(60)?
-  a) 1       b) 0.5     c) 0       d) 2
-
---------------------------------------------------
-SECTION B (SHORT ANSWER QUESTIONS - 3 Marks Each)
---------------------------------------------------
-Q3. Find the roots of the equation x^2 - 5x + 6 = 0.
-Q4. Define Pythagoras theorem and write the formula.
-
---------------------------------------------------
-SECTION C (LONG ANSWER/ESSAY QUESTIONS - 5 Marks Each)
---------------------------------------------------
-Q5. Prove that the lengths of tangents drawn from an external point to a circle are equal.`;
-        App.showToast('Question Paper generated successfully!');
-      }, 1200);
+      try {
+        const prompt = `Generate a board-standard exam question paper for Amala HSS school for class ${grade} in the subject of "${subject}". Include Section A (3 MCQs with options), Section B (2 short answer questions worth 3 marks each), and Section C (1 long answer question worth 5 marks). Provide clear questions.`;
+        const res = await API.post('ai/ask', { message: prompt });
+        if (res.success && res.reply) {
+          document.getElementById('aiOutputBody').innerText = res.reply;
+          App.showToast('Question Paper generated successfully!');
+        } else {
+          document.getElementById('aiOutputBody').innerText = res.message || 'Error: Failed to generate question paper.';
+          App.showToast('Failed to generate paper.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('aiOutputBody').innerText = 'Failed to connect to the AI engine.';
+        App.showToast('Connection error.', 'error');
+      }
     }
 
     async function runQuizGenerator() {
@@ -211,29 +201,47 @@ Q2. Where does photosynthesis take place inside plant cells?
   c) Nucleus
   d) Cell Wall`;
       }, 1000);
+      try {
+        const prompt = `Generate a school-level MCQ quiz with exactly 3 questions on the topic "${topic}". Under each question list options a, b, c, d, and indicate which one is the correct answer and why.`;
+        const res = await API.post('ai/ask', { message: prompt });
+        if (res.success && res.reply) {
+          document.getElementById('aiOutputBody').innerText = res.reply;
+          App.showToast('MCQ Quiz generated successfully!');
+        } else {
+          document.getElementById('aiOutputBody').innerText = res.message || 'Error: Failed to generate quiz.';
+          App.showToast('Failed to generate quiz.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('aiOutputBody').innerText = 'Failed to connect to the AI engine.';
+        App.showToast('Connection error.', 'error');
+      }
     }
 
     async function runHwAssistant() {
-      const hw = document.getElementById('hwQ').value;
+      const hw = document.getElementById('hwQ').value.trim();
       document.getElementById('aiOutputTitle').innerText = 'AI Homework Explanation';
       document.getElementById('aiOutputBody').innerText = 'Explaining...';
       App.openModal('aiOutputModal');
       
-      setTimeout(() => {
-        document.getElementById('aiOutputBody').innerText = `QUESTION: "${hw}"
-EXPLANATION (Appropriate for Class 8-10):
-
-Imagine throwing a ball straight up. It doesn't fly off into space; it drops back to you. Why? Because of an invisible pulling force called Gravity.
-
-Key Points:
-1. Everything with mass has gravity.
-2. The bigger the object, the stronger the pull (Earth has huge gravity!).
-3. Distance matters: the farther apart things are, the weaker the pull.
-4. Without gravity, we would all float off into space!`;
-      }, 1000);
+      try {
+        const prompt = `Explain the following homework concept/question step-by-step to a school student in clear, encouraging terms: "${hw}".`;
+        const res = await API.post('ai/ask', { message: prompt });
+        if (res.success && res.reply) {
+          document.getElementById('aiOutputBody').innerText = res.reply;
+          App.showToast('Homework explanation loaded!');
+        } else {
+          document.getElementById('aiOutputBody').innerText = res.message || 'Error: Failed to generate explanation.';
+          App.showToast('Failed to load explanation.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('aiOutputBody').innerText = 'Failed to connect to the AI engine.';
+        App.showToast('Connection error.', 'error');
+      }
     }
 
-    function sendToEduBot() {
+    async function sendToEduBot() {
       const chatInput = document.getElementById('chatInput');
       const text = chatInput.value.trim();
       if(!text) return;
@@ -241,22 +249,39 @@ Key Points:
       const chatbox = document.getElementById('chatbox');
       chatbox.innerHTML += `<p style="margin-top:5px; text-align:right;"><b>You:</b> ${text}</p>`;
       chatInput.value = '';
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      // Add a temporary typing indicator
+      const typingId = 'typing-' + Date.now();
+      chatbox.innerHTML += `<p id="${typingId}" style="margin-top:5px; color:var(--text-muted);"><b>EduBot:</b> Thinking...</p>`;
+      chatbox.scrollTop = chatbox.scrollHeight;
       
-      setTimeout(() => {
-        chatbox.innerHTML += `<p style="margin-top:5px; color:var(--primary);"><b>EduBot:</b> That is a great question! In simple terms, we study this concept to understand how the universe stays in balance. Let me know if you want a detailed math explanation!</p>`;
+      try {
+        const res = await API.post('ai/ask', { message: text });
+        const typingElem = document.getElementById(typingId);
+        if (typingElem) typingElem.remove();
+
+        if (res.success && res.reply) {
+          chatbox.innerHTML += `<p style="margin-top:5px; color:var(--primary); line-height:1.4;"><b>EduBot:</b> ${res.reply.replace(/\n/g, '<br>')}</p>`;
+        } else {
+          chatbox.innerHTML += `<p style="margin-top:5px; color:var(--danger);"><b>EduBot:</b> Failed to generate response. ${res.message || ''}</p>`;
+        }
         chatbox.scrollTop = chatbox.scrollHeight;
-      }, 800);
+      } catch (err) {
+        console.error(err);
+        const typingElem = document.getElementById(typingId);
+        if (typingElem) typingElem.remove();
+        chatbox.innerHTML += `<p style="margin-top:5px; color:var(--danger);"><b>EduBot:</b> Connection error.</p>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
     }
-  </script>
 
-      </div>
-    </main>
-  </div>
-
-  <script src="../../js/app.js"></script>
-  <script src="../../js/auth-check.js"></script>
-  <script>
-    // Local script code injected per page
+    // Add submit on press Enter for chatInput
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendToEduBot();
+      }
+    });
   </script>
 </body>
 </html>

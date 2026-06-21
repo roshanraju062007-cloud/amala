@@ -99,6 +99,17 @@
     </table>
   </div>
 
+  <div class="card" style="margin-top:20px;">
+    <h3 class="card-title">Change Password</h3>
+    <form id="passwordForm" onsubmit="changePassword(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="oldPassword" class="form-control" required placeholder="Enter current password"></div>
+        <div class="form-group"><label class="form-label">New Password</label><input type="password" id="newPassword" class="form-control" required placeholder="Enter new password"></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:15px;">Update Password</button>
+    </form>
+  </div>
+
       </div>
     </main>
   </div>
@@ -123,6 +134,25 @@
         document.getElementById('profPhone').innerText = currentT.phone;
         document.getElementById('profSubjects').innerText = currentT.subjects;
       });
+
+      async function changePassword(e) {
+        e.preventDefault();
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        
+        try {
+          const res = await API.post('auth/change-password', { oldPassword, newPassword });
+          if (res.success) {
+            App.showToast(res.message || 'Password changed successfully!');
+            document.getElementById('passwordForm').reset();
+          } else {
+            App.showToast(res.message || 'Failed to change password.', 'error');
+          }
+        } catch (err) {
+          console.error('Failed to change password:', err);
+          App.showToast('Error changing password.', 'error');
+        }
+      }
     </script>
 </body>
 </html>

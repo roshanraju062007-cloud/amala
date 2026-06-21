@@ -2,6 +2,7 @@
 const express = require('express');
 const { query, queryOne, queryAll } = require('../db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 // ── CLASSES ──────────────────────────────────────────────────────────────────
 const classRouter = express.Router();
@@ -316,6 +317,79 @@ assignmentsRouter.delete('/:id', requireRole('admin','teacher'), async (req, res
   }
 });
 
+assignmentsRouter.get('/submissions', async (req, res) => {
+  try {
+    let sql = `
+      SELECT s.*, a.asn_id, a.title as assignment_title, st.student_id as student_code, st.name as student_name
+      FROM submissions s
+      JOIN assignments a ON s.assignment_id = a.id
+      JOIN students st ON s.student_id = st.id
+    `;
+    const params = [];
+    if (req.user.role === 'student') {
+      params.push(req.user.userId);
+      sql += ` WHERE st.student_id = $1`;
+    }
+    const rows = await queryAll(sql, params);
+    const mapped = rows.map(r => ({
+      id: r.id,
+      assignmentId: r.asn_id,
+      assignmentTitle: r.assignment_title,
+      studentId: r.student_code,
+      studentName: r.student_name,
+      fileName: r.content ? r.content.split('/').pop() : '',
+      fileData: r.content,
+      submittedAt: r.submitted_at,
+      status: r.status,
+      marksObtained: r.marks_obtained,
+      feedback: r.feedback
+    }));
+    res.json({ success: true, data: mapped });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch submissions.' });
+  }
+});
+
+// POST /api/assignments/:id/submit — submit assignment (student only)
+assignmentsRouter.post('/:id/submit', requireRole('student'), upload.single('file'), async (req, res) => {
+  try {
+    const asnId = req.params.id;
+    const { content } = req.body;
+    let finalContent = content || '';
+    if (req.file) {
+      finalContent = '/uploads/' + req.file.filename;
+    }
+
+    // Resolve assignment serial ID from asn_id
+    const assignment = await queryOne(`SELECT id FROM assignments WHERE asn_id = $1`, [asnId]);
+    if (!assignment) {
+      return res.status(404).json({ success: false, message: 'Assignment not found.' });
+    }
+
+    // Resolve student serial ID from student_id
+    const student = await queryOne(`SELECT id FROM students WHERE student_id = $1`, [req.user.userId]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student profile not found.' });
+    }
+
+    // Upsert submission
+    const row = await query(
+      `INSERT INTO submissions (assignment_id, student_id, content, status, submitted_at)
+       VALUES ($1, $2, $3, 'Submitted', NOW())
+       ON CONFLICT (assignment_id, student_id)
+       DO UPDATE SET content = EXCLUDED.content, status = 'Submitted', submitted_at = NOW()
+       RETURNING *`,
+      [assignment.id, student.id, finalContent]
+    );
+
+    res.json({ success: true, message: 'Assignment submitted successfully.', data: row.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to submit assignment: ' + err.message });
+  }
+});
+
 // ── MATERIALS ─────────────────────────────────────────────────────────────────
 const materialsRouter = express.Router();
 materialsRouter.use(authMiddleware);
@@ -340,19 +414,24 @@ materialsRouter.get('/', async (req, res) => {
   }
 });
 
-materialsRouter.post('/', requireRole('admin','teacher'), async (req, res) => {
+materialsRouter.post('/', requireRole('admin','teacher'), upload.single('file'), async (req, res) => {
   try {
     const { title, type, subject, class_name, link } = req.body;
+    let finalLink = link || '';
+    if (req.file) {
+      finalLink = '/uploads/' + req.file.filename;
+    }
     const countRes = await queryOne(`SELECT COUNT(*) as cnt FROM materials`);
     const matId = 'MAT' + String(parseInt(countRes.cnt) + 1).padStart(3, '0');
     const row = await query(
       `INSERT INTO materials (mat_id, title, type, subject, class_name, link, teacher_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [matId, title, type, subject, class_name || 'All', link, req.user.userId]
+      [matId, title, type, subject, class_name || 'All', finalLink, req.user.userId]
     );
     res.json({ success: true, data: row.rows[0] });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to add material.' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to add material: ' + err.message });
   }
 });
 

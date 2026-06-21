@@ -40,6 +40,7 @@ app.get([
 });
 
 // ── STATIC FILES ──────────────────────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use(express.static(path.join(__dirname, '..'), {
   maxAge: '1d',
   etag: true,
@@ -78,9 +79,15 @@ app.use((req, res, next) => {
 });
 
 // ── API ROUTES ────────────────────────────────────────────────────────────────
-const authRoutes    = require('./routes/auth');
-const studentRoutes = require('./routes/students');
-const teacherRoutes = require('./routes/teachers');
+const authRoutes      = require('./routes/auth');
+const studentRoutes   = require('./routes/students');
+const teacherRoutes   = require('./routes/teachers');
+const libraryRoutes   = require('./routes/library');
+const transportRoutes = require('./routes/transport');
+const analyticsRoutes = require('./routes/analytics');
+const settingsRoutes = require('./routes/settings');
+const aiRoutes        = require('./routes/ai');
+
 const {
   classRouter, subjectRouter, attendanceRouter, resultsRouter,
   feesRouter, noticesRouter, assignmentsRouter, materialsRouter,
@@ -100,6 +107,11 @@ app.use('/api/assignments', assignmentsRouter);
 app.use('/api/materials',   materialsRouter);
 app.use('/api/timetable',   timetableRouter);
 app.use('/api/parents',     parentsRouter);
+app.use('/api/library',     libraryRoutes);
+app.use('/api/transport',   transportRoutes);
+app.use('/api/analytics',   analyticsRoutes);
+app.use('/api/settings',    settingsRoutes);
+app.use('/api/ai',          aiRoutes);
 
 // ── HEALTH CHECK ──────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {

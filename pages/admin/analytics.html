@@ -84,10 +84,30 @@
       <div class="content-area">
         
   <div class="stats-grid">
-    <div class="stat-card" style="border-left-color: var(--primary)"><div class="stat-info"><h3>Avg score</h3><div class="stat-value">78.5%</div></div></div>
-    <div class="stat-card" style="border-left-color: var(--success)"><div class="stat-info"><h3>Pass Rate</h3><div class="stat-value">96.2%</div></div></div>
-    <div class="stat-card" style="border-left-color: var(--warning)"><div class="stat-info"><h3>Avg Attendance</h3><div class="stat-value">91.4%</div></div></div>
-    <div class="stat-card" style="border-left-color: var(--danger)"><div class="stat-info"><h3>Staff Ratio</h3><div class="stat-value">1:17</div></div></div>
+    <div class="stat-card" style="border-left-color: var(--primary)">
+      <div class="stat-info">
+        <h3>Avg score</h3>
+        <div class="stat-value" id="avgScoreValue">78.5%</div>
+      </div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--success)">
+      <div class="stat-info">
+        <h3>Pass Rate</h3>
+        <div class="stat-value" id="passRateValue">95.0%</div>
+      </div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--warning)">
+      <div class="stat-info">
+        <h3>Avg Attendance</h3>
+        <div class="stat-value" id="attendanceRateValue">92.5%</div>
+      </div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--danger)">
+      <div class="stat-info">
+        <h3>Staff Ratio</h3>
+        <div class="stat-value" id="staffRatioValue">1:20</div>
+      </div>
+    </div>
   </div>
 
   <div class="grid-2">
@@ -101,20 +121,12 @@
         <thead>
           <tr><th>Rank</th><th>Student</th><th>Grade</th><th>Percentage</th></tr>
         </thead>
-        <tbody>
-          <tr><td>🏆 1</td><td>Aditya Patel</td><td>10-A</td><td>98.2%</td></tr>
-          <tr><td>🥈 2</td><td>Priya Seth</td><td>12-Science</td><td>97.4%</td></tr>
-          <tr><td>🥉 3</td><td>Amit Shah</td><td>9-C</td><td>96.8%</td></tr>
+        <tbody id="performersTableBody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading performers...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
-
-  <script>
-    window.addEventListener('load', () => {
-      drawBarChart('scoresChart', ['Math', 'Science', 'English', 'Social Science', 'Hindi'], [82, 79, 88, 74, 80], 'var(--primary)');
-    });
-  </script>
 
       </div>
     </main>
@@ -123,7 +135,54 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    window.addEventListener('load', () => {
+      loadAnalyticsData();
+    });
+
+    async function loadAnalyticsData() {
+      try {
+        const res = await API.get('analytics/overview');
+        if (!res.success) return;
+
+        const data = res.data;
+
+        // Populate stat cards
+        document.getElementById('avgScoreValue').innerText = data.overallAvgScore + '%';
+        document.getElementById('passRateValue').innerText = data.passRate + '%';
+        document.getElementById('attendanceRateValue').innerText = data.attendanceRate + '%';
+        document.getElementById('staffRatioValue').innerText = data.ratio;
+
+        // Render top performers
+        const perfBody = document.getElementById('performersTableBody');
+        perfBody.innerHTML = '';
+        if (data.topPerformers.length === 0) {
+          perfBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No exam results published yet.</td></tr>';
+        } else {
+          const ranks = ['🏆 1', '🥈 2', '🥉 3', '4', '5'];
+          data.topPerformers.forEach((p, idx) => {
+            perfBody.innerHTML += `<tr>
+              <td>${ranks[idx] || idx + 1}</td>
+              <td><b>${p.name}</b></td>
+              <td>${p.class_name} - ${p.section}</td>
+              <td><b>${p.avg_pct}%</b></td>
+            </tr>`;
+          });
+        }
+
+        // Draw bar chart
+        const chartLabels = data.subjectScores.map(s => s.subject);
+        const chartValues = data.subjectScores.map(s => parseFloat(s.avg_score));
+        
+        const labels = chartLabels.length > 0 ? chartLabels : ['Math', 'Science', 'English', 'Social Science', 'Hindi'];
+        const values = chartValues.length > 0 ? chartValues : [78, 80, 85, 75, 79];
+
+        drawBarChart('scoresChart', labels, values, 'var(--primary)');
+
+      } catch (err) {
+        console.error(err);
+        App.showToast('Failed to fetch analytics metrics.', 'error');
+      }
+    }
   </script>
 </body>
 </html>

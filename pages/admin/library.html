@@ -86,25 +86,61 @@
   <div class="grid-2">
     <div class="card">
       <h3 class="card-title">Book Catalogue</h3>
-      <table class="data-table">
-        <thead>
-          <tr><th>ISBN</th><th>Title</th><th>Author</th><th>Available</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>978-01-234</td><td>Concepts of Physics</td><td>H.C. Verma</td><td>12 / 15</td></tr>
-          <tr><td>978-93-518</td><td>RD Sharma Class 10 Math</td><td>R.D. Sharma</td><td>3 / 10</td></tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr><th>ISBN</th><th>Title</th><th>Author</th><th>Available</th></tr>
+          </thead>
+          <tbody id="booksTableBody">
+            <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Loading catalog...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="card">
-      <h3 class="card-title">Issue Book Card</h3>
-      <form onsubmit="event.preventDefault(); App.showToast('Book issued successfully!');">
-        <div class="form-group"><label class="form-label">Student ID</label><input type="text" class="form-control" placeholder="STU001"></div>
-        <div class="form-group"><label class="form-label">Book ISBN</label><input type="text" class="form-control" placeholder="978-01-234"></div>
-        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-control"></div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Issue Book</button>
-      </form>
+    <div>
+      <div class="card" style="margin-bottom: 20px;">
+        <h3 class="card-title">Issue Book Card</h3>
+        <form id="issueBookForm" onsubmit="issueBook(event)">
+          <div class="form-group"><label class="form-label">Student ID</label><input type="text" class="form-control" id="issueStudentId" placeholder="e.g. STU001" required></div>
+          <div class="form-group"><label class="form-label">Book ISBN</label><input type="text" class="form-control" id="issueIsbn" placeholder="e.g. 978-01-234" required></div>
+          <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-control" id="issueDueDate" required></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Issue Book</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Add New Book</h3>
+        <form id="addBookForm" onsubmit="addBook(event)">
+          <div class="form-group"><label class="form-label">ISBN</label><input type="text" class="form-control" id="addIsbn" placeholder="e.g. 978-01-234" required></div>
+          <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-control" id="addTitle" placeholder="e.g. Concepts of Physics" required></div>
+          <div class="form-group"><label class="form-label">Author</label><input type="text" class="form-control" id="addAuthor" placeholder="e.g. H.C. Verma"></div>
+          <div class="form-group"><label class="form-label">Total Copies</label><input type="number" class="form-control" id="addCopies" value="1" min="1" required></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Add Book</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px;">
+    <h3 class="card-title">Active Book Issues</h3>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Book Title</th>
+            <th>ISBN</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="issuesTableBody">
+          <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No active issues.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -115,7 +151,124 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    window.addEventListener('load', () => {
+      loadBooks();
+      loadIssues();
+    });
+
+    async function loadBooks() {
+      try {
+        const res = await API.get('library/books');
+        const tbody = document.getElementById('booksTableBody');
+        tbody.innerHTML = '';
+        if (res.success && res.data.length > 0) {
+          res.data.forEach(book => {
+            tbody.innerHTML += `<tr>
+              <td><code>${book.isbn}</code></td>
+              <td><b>${book.title}</b></td>
+              <td>${book.author || 'N/A'}</td>
+              <td><span class="badge ${book.available_copies > 0 ? 'badge-success' : 'badge-danger'}">${book.available_copies} / ${book.total_copies}</span></td>
+            </tr>`;
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No books in catalogue.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+        App.showToast('Failed to load books catalog.', 'error');
+      }
+    }
+
+    async function loadIssues() {
+      try {
+        const res = await API.get('library/issues');
+        const tbody = document.getElementById('issuesTableBody');
+        tbody.innerHTML = '';
+        if (res.success && res.data.length > 0) {
+          res.data.forEach(issue => {
+            const issueDate = new Date(issue.issue_date).toLocaleDateString('en-IN');
+            const dueDate = issue.due_date ? new Date(issue.due_date).toLocaleDateString('en-IN') : 'N/A';
+            const isReturned = issue.status === 'returned';
+            const badgeClass = isReturned ? 'badge-success' : (issue.status === 'overdue' ? 'badge-danger' : 'badge-warning');
+            
+            tbody.innerHTML += `<tr>
+              <td><b>${issue.student_name}</b> <br><small style="color:var(--text-muted)">${issue.student_id} (${issue.class_name}-${issue.section})</small></td>
+              <td>${issue.book_title}</td>
+              <td><code>${issue.isbn}</code></td>
+              <td>${issueDate}</td>
+              <td>${dueDate}</td>
+              <td><span class="badge ${badgeClass}">${issue.status.toUpperCase()}</span></td>
+              <td>
+                ${isReturned ? '-' : `<button class="btn btn-outline" style="padding:4px 8px; font-size:12px; color:var(--success);" onclick="returnBook(${issue.id})">🔄 Return</button>`}
+              </td>
+            </tr>`;
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No active book issues.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+        App.showToast('Failed to load issue records.', 'error');
+      }
+    }
+
+    async function addBook(e) {
+      e.preventDefault();
+      const isbn = document.getElementById('addIsbn').value.trim();
+      const title = document.getElementById('addTitle').value.trim();
+      const author = document.getElementById('addAuthor').value.trim();
+      const total_copies = document.getElementById('addCopies').value;
+
+      try {
+        const res = await API.post('library/books', { isbn, title, author, total_copies });
+        if (res.success) {
+          App.showToast('Book added successfully!', 'success');
+          document.getElementById('addBookForm').reset();
+          loadBooks();
+        } else {
+          App.showToast(res.message || 'Failed to add book.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
+    }
+
+    async function issueBook(e) {
+      e.preventDefault();
+      const student_id = document.getElementById('issueStudentId').value.trim();
+      const isbn = document.getElementById('issueIsbn').value.trim();
+      const due_date = document.getElementById('issueDueDate').value;
+
+      try {
+        const res = await API.post('library/issue', { isbn, student_id, due_date });
+        if (res.success) {
+          App.showToast('Book issued successfully!', 'success');
+          document.getElementById('issueBookForm').reset();
+          loadBooks();
+          loadIssues();
+        } else {
+          App.showToast(res.message || 'Failed to issue book.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
+    }
+
+    async function returnBook(issueId) {
+      if (!confirm('Mark this book as returned?')) return;
+      try {
+        const res = await API.post(`library/return/${issueId}`);
+        if (res.success) {
+          App.showToast('Book returned successfully!', 'success');
+          loadBooks();
+          loadIssues();
+        } else {
+          App.showToast(res.message || 'Failed to return book.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
+    }
   </script>
 </body>
 </html>
