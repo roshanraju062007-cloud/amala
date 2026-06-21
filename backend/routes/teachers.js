@@ -52,14 +52,15 @@ router.get('/:id', async (req, res) => {
 // POST /api/teachers — admin only
 router.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { name, department, subjects, phone, class_assigned, status, custom_id } = req.body;
+    const { name, department, subjects, phone, class_assigned, status, custom_id, password } = req.body;
     if (!name || !department) return res.status(400).json({ success: false, message: 'Name and department are required.' });
 
     const countRes = await queryOne(`SELECT COUNT(*) as cnt FROM teachers`);
     const count    = parseInt(countRes.cnt) + 1;
     const teacherId = custom_id || ('TCH' + String(count).padStart(3, '0'));
 
-    const hash = await bcrypt.hash('teach123', 10);
+    const tchPass = (password || 'teach123').trim();
+    const hash = await bcrypt.hash(tchPass, 10);
     const uRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'teacher', $3) RETURNING id`,
       [teacherId, hash, name]

@@ -1,0 +1,9 @@
+node_modules/
+.pgdata/
+uploads/
+amala-project.zip
+.env
+pgpass.txt
+pinggy.log
+pinggy_out.txt
+*.log

@@ -67,9 +67,7 @@
         </div>
       </header>
 
-      <div class="content-area">
-        
-  <div class="grid-2">
+     <div class="grid-2">
     <div class="card">
       <h3 class="card-title">Upload Lecture Note / Video Link</h3>
       <form id="materialForm" onsubmit="saveMaterial(event)">
@@ -80,7 +78,8 @@
         </div>
         <div class="form-group"><label class="form-label">Subject</label><select class="form-control" id="matSubject"></select></div>
         <div class="form-group"><label class="form-label">For Class</label><select class="form-control" id="matClass"><option value="All">All Classes</option></select></div>
-        <div class="form-group"><label class="form-label">Link / File Name</label><input type="text" class="form-control" id="matLink" placeholder="https://... or filename.pdf"></div>
+        <div class="form-group"><label class="form-label">Link (for Video/External link)</label><input type="text" class="form-control" id="matLink" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Or Upload File (PDF, PPT, Doc, Image)</label><input type="file" class="form-control" id="matFile"></div>
         <button type="submit" class="btn btn-success" style="width:100%;">📤 Share Material</button>
       </form>
     </div>
@@ -129,58 +128,90 @@
       loadMaterials();
     });
 
-    function saveMaterial(e) {
+    async function saveMaterial(e) {
       e.preventDefault();
       const title = document.getElementById('matTitle').value.trim();
       const type = document.getElementById('matType').value;
       const subject = document.getElementById('matSubject').value;
       const classVal = document.getElementById('matClass') ? document.getElementById('matClass').value : 'All';
       const link = document.getElementById('matLink').value.trim();
+      const fileInput = document.getElementById('matFile');
 
-      const materials = JSON.parse(localStorage.getItem('lms_materials') || '[]');
-      materials.unshift({
-        id: 'MAT' + String(materials.length + 1).padStart(3, '0'),
-        title, type, subject, class: classVal, link,
-        date: new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}),
-        teacherId: localStorage.getItem('userId')
-      });
-      localStorage.setItem('lms_materials', JSON.stringify(materials));
-      AppState.addNotice('Study material shared: ' + title);
-      App.showToast('Material shared successfully!', 'success');
-      document.getElementById('materialForm').reset();
-      loadMaterials();
-    }
-
-    function loadMaterials() {
-      const materials = JSON.parse(localStorage.getItem('lms_materials') || '[]');
-      const teacherId = localStorage.getItem('userId');
-      const myMats = materials.filter(m => !m.teacherId || m.teacherId === teacherId);
-      const tbody = document.getElementById('materialsTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-      if (myMats.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No materials shared yet.</td></tr>';
-        return;
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('type', type);
+      formData.append('subject', subject);
+      formData.append('class_name', classVal);
+      formData.append('link', link);
+      if (fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
       }
-      const typeColors = { 'PDF':'badge-danger', 'PPT Slide':'badge-warning', 'YouTube Video Link':'badge-info', 'Word Doc':'badge-primary', 'Image':'badge-success' };
-      myMats.forEach(m => {
-        tbody.innerHTML += '<tr>' +
-          '<td><b>' + m.title + '</b></td>' +
-          '<td><span class="badge ' + (typeColors[m.type] || 'badge-primary') + '">' + m.type + '</span></td>' +
-          '<td>' + m.subject + '</td>' +
-          '<td>' + m.date + '</td>' +
-          '<td><button class="btn btn-outline" style="padding:3px 8px;font-size:12px;color:var(--danger);" onclick="deleteMaterial('' + m.id + '')">🗑️</button></td>' +
-        '</tr>';
-      });
+
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await fetch('/api/materials', {
+          method: 'POST',
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          App.showToast('Material shared successfully!', 'success');
+          document.getElementById('materialForm').reset();
+          loadMaterials();
+        } else {
+          App.showToast(data.message || 'Failed to share material', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        App.showToast('Error sharing material', 'error');
+      }
     }
 
-    function deleteMaterial(id) {
+    async function loadMaterials() {
+      try {
+        const res = await API.get('materials');
+        const tbody = document.getElementById('materialsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        
+        if (!res.success || !res.data || res.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No materials shared yet.</td></tr>';
+          return;
+        }
+        
+        const typeColors = { 'PDF':'badge-danger', 'PPT Slide':'badge-warning', 'YouTube Video Link':'badge-info', 'Word Doc':'badge-primary', 'Image':'badge-success' };
+        res.data.forEach(m => {
+          const dateStr = m.created_at ? App.formatDate(m.created_at) : 'Recent';
+          const viewHtml = m.link ? `<a href="${m.link}" target="_blank" class="btn btn-outline" style="padding:2px 6px; font-size:11px; margin-right:8px; text-decoration:none;">👁️ View</a>` : '';
+          
+          tbody.innerHTML += '<tr>' +
+            '<td><b>' + m.title + '</b></td>' +
+            '<td><span class="badge ' + (typeColors[m.type] || 'badge-primary') + '">' + m.type + '</span></td>' +
+            '<td>' + m.subject + '</td>' +
+            '<td>' + dateStr + '</td>' +
+            '<td>' + viewHtml + '<button class="btn btn-outline" style="padding:3px 8px;font-size:12px;color:var(--danger);" onclick="deleteMaterial(\'' + m.id + '\')">🗑️</button></td>' +
+          '</tr>';
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteMaterial(id) {
       if (!confirm('Delete this material?')) return;
-      let mats = JSON.parse(localStorage.getItem('lms_materials') || '[]');
-      mats = mats.filter(m => m.id !== id);
-      localStorage.setItem('lms_materials', JSON.stringify(mats));
-      loadMaterials();
-      App.showToast('Material removed.', 'success');
+      try {
+        const res = await API.delete('materials/' + id);
+        if (res.success) {
+          loadMaterials();
+          App.showToast('Material removed.', 'success');
+        } else {
+          App.showToast(res.message || 'Failed to delete material', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        App.showToast('Error removing material', 'error');
+      }
     }
   </script>
 </body>

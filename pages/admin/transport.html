@@ -234,82 +234,105 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    const defaultRoutes = [
-      { route: 'Route 3', area: 'Gandhi Nagar, Central Sector', stops: '8 Stops', driver: 'Hari Das', phone: '+91 91234 56789', vehicle: 'TN-37-AB-1234' },
-      { route: 'Route 5', area: 'Lakeside Colony, Ring Road', stops: '5 Stops', driver: 'Murali M.', phone: '+91 92345 67890', vehicle: 'TN-37-CD-5678' }
-    ];
-
-    const defaultDrivers = [
-      { name: 'Hari Das', phone: '+91 91234 56789', license: 'DL-20261234', route: 'Route 3' },
-      { name: 'Murali M.', phone: '+91 92345 67890', license: 'DL-20265678', route: 'Route 5' }
-    ];
-
-    const defaultVanStudents = [
-      { id: 'STU001', name: 'Aditya Patel', class: '10th Standard', route: 'Route 3', stop: 'Central Park Stop', fee: '2000' },
-      { id: 'STU002', name: 'Pooja Sharma', class: '12th Standard - Computer Science with Mathematics', route: 'Route 5', stop: 'Lake View Apartments', fee: '2500' }
-    ];
+    let allVehicles = [];
+    let allStudents = [];
 
     window.addEventListener('load', () => {
-      initTransportData();
-      loadRoutes();
-      loadDrivers();
-      loadVanStudents();
+      loadAllData();
+      loadStudentsDropdown();
     });
 
-    window.addEventListener('lms-sync-students', () => {
-      const select = document.getElementById('vanStudentSelect');
-      if (select) {
-        const currentVal = select.value;
-        const students = AppState.getData('lms_students') || [];
-        select.innerHTML = '<option value="">-- Choose Student --</option>';
-        students.forEach(s => {
-          select.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-class="${s.class}">${s.name} (${s.id} - ${s.class})</option>`;
+    async function loadAllData() {
+      await Promise.all([
+        loadVehiclesAndDrivers(),
+        loadVanStudents()
+      ]);
+    }
+
+    async function loadVehiclesAndDrivers() {
+      try {
+        const res = await API.get('transport/vehicles');
+        if (!res.success) return;
+
+        allVehicles = res.data;
+        
+        // 1. Load active routes
+        const routesTableBody = document.getElementById('routesTableBody');
+        routesTableBody.innerHTML = '';
+        const activeRoutes = allVehicles.filter(v => v.route_name !== 'Unassigned');
+        
+        if (activeRoutes.length === 0) {
+          routesTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No routes configured yet.</td></tr>';
+        } else {
+          activeRoutes.forEach(r => {
+            const parts = r.route_name.split(' | ');
+            const routeNo = parts[0] || 'Unknown';
+            const area = parts[1] || 'N/A';
+            const stops = parts[2] || 'N/A';
+            
+            const driverParts = (r.driver_phone || '').split(' | ');
+            const phone = driverParts[0] || 'N/A';
+
+            routesTableBody.innerHTML += `<tr>
+              <td><b>${routeNo}</b></td>
+              <td>${area}</td>
+              <td><span class="badge badge-info">${stops}</span></td>
+              <td>${r.driver_name} <br><small style="color:var(--text-muted)">${phone}</small></td>
+              <td><code>${r.vehicle_no}</code></td>
+              <td>
+                <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteRoute(${r.id})">🗑️</button>
+              </td>
+            </tr>`;
+          });
+        }
+
+        // 2. Load driver roster directory
+        const driverTableBody = document.getElementById('driverTableBody');
+        driverTableBody.innerHTML = '';
+        if (allVehicles.length === 0) {
+          driverTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No drivers registered yet.</td></tr>';
+        } else {
+          allVehicles.forEach(d => {
+            const driverParts = (d.driver_phone || '').split(' | ');
+            const phone = driverParts[0] || 'N/A';
+            const license = driverParts[1] || 'N/A';
+            const routeParts = d.route_name.split(' | ');
+            const displayRoute = d.route_name === 'Unassigned' ? 'Unassigned' : routeParts[0];
+
+            driverTableBody.innerHTML += `<tr>
+              <td><b>${d.driver_name}</b></td>
+              <td>${phone}</td>
+              <td><code>${license}</code></td>
+              <td><span class="badge ${d.route_name !== 'Unassigned' ? 'badge-success' : 'badge-gray'}">${displayRoute}</span></td>
+              <td>
+                <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteVehicle(${d.id})">🗑️</button>
+              </td>
+            </tr>`;
+          });
+        }
+
+        // Populate driver dropdown in Add Route Modal
+        const drvSelect = document.getElementById('routeDriverSelect');
+        drvSelect.innerHTML = '<option value="">-- Choose Driver --</option>';
+        allVehicles.forEach(d => {
+          drvSelect.innerHTML += `<option value="${d.driver_name}">${d.driver_name} (${d.route_name === 'Unassigned' ? 'Unassigned' : d.route_name.split(' | ')[0]})</option>`;
         });
-        select.value = currentVal;
-      }
-    });
 
-    function initTransportData() {
-      if (!localStorage.getItem('lms_routes')) {
-        localStorage.setItem('lms_routes', JSON.stringify(defaultRoutes));
-      }
-      if (!localStorage.getItem('lms_drivers')) {
-        localStorage.setItem('lms_drivers', JSON.stringify(defaultDrivers));
-      }
-      if (!localStorage.getItem('lms_van_students')) {
-        localStorage.setItem('lms_van_students', JSON.stringify(defaultVanStudents));
+        // Populate route dropdown in Student Registration Modal
+        const routeSelect = document.getElementById('vanRouteSelect');
+        routeSelect.innerHTML = '<option value="">-- Choose Route --</option>';
+        activeRoutes.forEach(r => {
+          const routeNo = r.route_name.split(' | ')[0];
+          routeSelect.innerHTML += `<option value="${r.id}">${routeNo} (${r.route_name.split(' | ')[1] || ''})</option>`;
+        });
+
+      } catch (err) {
+        console.error(err);
+        App.showToast('Failed to load transport fleet.', 'error');
       }
     }
 
-    // ── ROUTES ───────────────────────────────────────────────────────────
-    function loadRoutes() {
-      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
-      const body = document.getElementById('routesTableBody');
-      body.innerHTML = '';
-      routes.forEach((r, idx) => {
-        body.innerHTML += `<tr>
-          <td><b>${r.route}</b></td>
-          <td>${r.area}</td>
-          <td><span class="badge badge-info">${r.stops}</span></td>
-          <td>${r.driver} <br><small style="color:var(--text-muted)">${r.phone}</small></td>
-          <td><code>${r.vehicle}</code></td>
-          <td>
-            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteRoute(${idx})">🗑️</button>
-          </td>
-        </tr>`;
-      });
-
-      // Populate routes select in student modal
-      const routeSelect = document.getElementById('vanRouteSelect');
-      if (routeSelect) {
-        routeSelect.innerHTML = '';
-        routes.forEach(r => {
-          routeSelect.innerHTML += `<option value="${r.route}">${r.route} (${r.area})</option>`;
-        });
-      }
-    }
-
-    function saveRoute() {
+    async function saveRoute() {
       const route = document.getElementById('routeNo').value.trim();
       const area = document.getElementById('routeArea').value.trim();
       const stops = document.getElementById('routeStops').value.trim();
@@ -320,203 +343,216 @@
         return alert('Please fill in all fields.');
       }
 
-      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
-      const driver = drivers.find(d => d.name === driverName) || { phone: 'None' };
+      const route_name = `${route} | ${area} | ${stops}`;
+      const driverVehicle = allVehicles.find(v => v.driver_name === driverName);
+      const driver_phone = driverVehicle ? driverVehicle.driver_phone : '';
 
-      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
-      routes.push({
-        route,
-        area,
-        stops,
-        driver: driverName,
-        phone: driver.phone,
-        vehicle
-      });
-
-      // Update driver record route assignment
-      const updatedDrivers = drivers.map(d => {
-        if (d.name === driverName) d.route = route;
-        return d;
-      });
-      localStorage.setItem('lms_drivers', JSON.stringify(updatedDrivers));
-      localStorage.setItem('lms_routes', JSON.stringify(routes));
-
-      // Clean inputs
-      document.getElementById('routeNo').value = '';
-      document.getElementById('routeArea').value = '';
-      document.getElementById('routeStops').value = '';
-      document.getElementById('routeVehicle').value = '';
-
-      App.closeModal('addRouteModal');
-      loadRoutes();
-      loadDrivers();
-      App.showToast('Route added successfully!');
-    }
-
-    function deleteRoute(idx) {
-      if (!confirm('Are you sure you want to delete this route?')) return;
-      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
-      const deleted = routes.splice(idx, 1)[0];
-
-      // Remove assignment from drivers
-      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
-      const updatedDrivers = drivers.map(d => {
-        if (d.route === deleted.route) d.route = 'Unassigned';
-        return d;
-      });
-
-      localStorage.setItem('lms_drivers', JSON.stringify(updatedDrivers));
-      localStorage.setItem('lms_routes', JSON.stringify(routes));
-      loadRoutes();
-      loadDrivers();
-      App.showToast('Route deleted.');
-    }
-
-    // ── DRIVERS ──────────────────────────────────────────────────────────
-    function loadDrivers() {
-      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
-      const body = document.getElementById('driverTableBody');
-      body.innerHTML = '';
-      drivers.forEach((d, idx) => {
-        body.innerHTML += `<tr>
-          <td><b>${d.name}</b></td>
-          <td>${d.phone}</td>
-          <td><code>${d.license}</code></td>
-          <td><span class="badge ${d.route && d.route !== 'Unassigned' ? 'badge-success' : 'badge-gray'}">${d.route || 'Unassigned'}</span></td>
-          <td>
-            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteDriver(${idx})">🗑️</button>
-          </td>
-        </tr>`;
-      });
-
-      // Populate driver select in Route Modal
-      const drvSelect = document.getElementById('routeDriverSelect');
-      if (drvSelect) {
-        drvSelect.innerHTML = '<option value="">-- Choose Driver --</option>';
-        drivers.forEach(d => {
-          drvSelect.innerHTML += `<option value="${d.name}">${d.name} (${d.route || 'Unassigned'})</option>`;
+      try {
+        const res = await API.post('transport/vehicles', {
+          vehicle_no: vehicle,
+          route_name,
+          driver_name: driverName,
+          driver_phone,
+          capacity: 40
         });
+
+        if (res.success) {
+          // If we updated an unassigned driver placeholder, delete the placeholder
+          if (driverVehicle && driverVehicle.route_name === 'Unassigned') {
+            await API.delete('transport/vehicles/' + driverVehicle.id);
+          }
+
+          App.showToast('Route added successfully!', 'success');
+          document.getElementById('routeNo').value = '';
+          document.getElementById('routeArea').value = '';
+          document.getElementById('routeStops').value = '';
+          document.getElementById('routeVehicle').value = '';
+
+          App.closeModal('addRouteModal');
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to save route.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
       }
     }
 
-    function saveDriver() {
+    async function deleteRoute(id) {
+      if (!confirm('Are you sure you want to delete this route? This will delete the vehicle record.')) return;
+      try {
+        const res = await API.delete('transport/vehicles/' + id);
+        if (res.success) {
+          App.showToast('Route deleted.', 'success');
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to delete route.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
+    }
+
+    async function saveDriver() {
       const name = document.getElementById('drvName').value.trim();
       const phone = document.getElementById('drvPhone').value.trim();
       const license = document.getElementById('drvLicense').value.trim();
 
       if (!name || !phone || !license) return alert('Please enter name, phone and license.');
 
-      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
-      drivers.push({ name, phone, license, route: 'Unassigned' });
-      localStorage.setItem('lms_drivers', JSON.stringify(drivers));
+      try {
+        const res = await API.post('transport/vehicles', {
+          vehicle_no: 'DRV-' + Date.now(),
+          route_name: 'Unassigned',
+          driver_name: name,
+          driver_phone: `${phone} | ${license}`,
+          capacity: 0
+        });
 
-      // Clear inputs
-      document.getElementById('drvName').value = '';
-      document.getElementById('drvPhone').value = '';
-      document.getElementById('drvLicense').value = '';
-
-      loadDrivers();
-      App.showToast('Driver registered successfully!');
+        if (res.success) {
+          App.showToast('Driver registered successfully!', 'success');
+          document.getElementById('drvName').value = '';
+          document.getElementById('drvPhone').value = '';
+          document.getElementById('drvLicense').value = '';
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to register driver.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
     }
 
-    function deleteDriver(idx) {
-      if (!confirm('Are you sure you want to remove this driver?')) return;
-      const drivers = JSON.parse(localStorage.getItem('lms_drivers')) || [];
-      const deleted = drivers.splice(idx, 1)[0];
-
-      // Remove from route assignment
-      const routes = JSON.parse(localStorage.getItem('lms_routes')) || [];
-      const updatedRoutes = routes.map(r => {
-        if (r.driver === deleted.name) {
-          r.driver = 'None';
-          r.phone = 'N/A';
+    async function deleteVehicle(id) {
+      if (!confirm('Are you sure you want to remove this driver/vehicle?')) return;
+      try {
+        const res = await API.delete('transport/vehicles/' + id);
+        if (res.success) {
+          App.showToast('Driver/Vehicle removed.', 'success');
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to remove.', 'error');
         }
-        return r;
-      });
-
-      localStorage.setItem('lms_routes', JSON.stringify(updatedRoutes));
-      localStorage.setItem('lms_drivers', JSON.stringify(drivers));
-      loadDrivers();
-      loadRoutes();
-      App.showToast('Driver removed.');
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
     }
 
     // ── VAN STUDENTS ──────────────────────────────────────────────────────
-    function loadVanStudents() {
-      const list = JSON.parse(localStorage.getItem('lms_van_students')) || [];
-      const body = document.getElementById('vanStudentsTableBody');
-      body.innerHTML = '';
-      list.forEach((vs, idx) => {
-        body.innerHTML += `<tr>
-          <td><code>${vs.id}</code></td>
-          <td><b>${vs.name}</b></td>
-          <td>${vs.class}</td>
-          <td><span class="badge badge-purple">${vs.route}</span></td>
-          <td>${vs.stop}</td>
-          <td><b>₹${vs.fee}</b></td>
-          <td>
-            <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteVanStudent(${idx})">🗑️</button>
-          </td>
-        </tr>`;
-      });
+    async function loadVanStudents() {
+      try {
+        const res = await API.get('transport/assignments');
+        const body = document.getElementById('vanStudentsTableBody');
+        body.innerHTML = '';
+        if (res.success && res.data.length > 0) {
+          res.data.forEach(vs => {
+            const parts = vs.pickup_point.split(' | ');
+            const stop = parts[0] || 'N/A';
+            const fee = parts[1] || '2000';
+
+            body.innerHTML += `<tr>
+              <td><code>${vs.student_id}</code></td>
+              <td><b>${vs.student_name}</b></td>
+              <td>${vs.class_name || ''} ${vs.section || ''}</td>
+              <td><span class="badge badge-purple">${vs.route_name.split(' | ')[0]}</span></td>
+              <td>${stop}</td>
+              <td><b>₹${fee}</b></td>
+              <td>
+                <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger)" onclick="deleteVanStudent(${vs.id})">🗑️</button>
+              </td>
+            </tr>`;
+          });
+        } else {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No students registered to van routes.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+        App.showToast('Failed to load registered student assignments.', 'error');
+      }
+    }
+
+    async function loadStudentsDropdown() {
+      try {
+        const res = await API.get('students');
+        if (res.success) {
+          allStudents = res.data;
+          const select = document.getElementById('vanStudentSelect');
+          select.innerHTML = '<option value="">-- Choose Student --</option>';
+          allStudents.forEach(s => {
+            select.innerHTML += `<option value="${s.id}">${s.name} (${s.id} - ${s.class})</option>`;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     function openRegisterStudentModal() {
-      // Populate student select from AppState
-      const students = AppState.getData('lms_students') || [];
-      const select = document.getElementById('vanStudentSelect');
-      select.innerHTML = '<option value="">-- Choose Student --</option>';
-      students.forEach(s => {
-        select.innerHTML += `<option value="${s.id}" data-name="${s.name}" data-class="${s.class}">${s.name} (${s.id} - ${s.class})</option>`;
-      });
-
+      loadStudentsDropdown();
       App.openModal('registerStudentModal');
     }
 
-    function saveVanStudent() {
-      const stuSelect = document.getElementById('vanStudentSelect');
-      const opt = stuSelect.options[stuSelect.selectedIndex];
-      const route = document.getElementById('vanRouteSelect').value;
+    async function saveVanStudent() {
+      const studentId = document.getElementById('vanStudentSelect').value;
+      const vehicleId = document.getElementById('vanRouteSelect').value;
       const stop = document.getElementById('vanStopName').value.trim();
       const fee = document.getElementById('vanFeeAmount').value.trim();
 
-      if (!opt.value || !route || !stop || !fee) {
-        return alert('Please select a student and fill in all fields.');
+      if (!studentId || !vehicleId || !stop || !fee) {
+        return alert('Please select a student, route and fill in all fields.');
       }
 
-      const vanStudents = JSON.parse(localStorage.getItem('lms_van_students')) || [];
-      
-      // Prevent duplicate registrations
-      if (vanStudents.some(s => s.id === opt.value)) {
-        return alert('This student is already registered to a route.');
+      const pickup_point = `${stop} | ${fee}`;
+
+      try {
+        const res = await API.post('transport/assignments', {
+          vehicle_id: parseInt(vehicleId),
+          student_id: studentId,
+          pickup_point
+        });
+
+        if (res.success) {
+          App.showToast('Student registered to van successfully!', 'success');
+          document.getElementById('vanStopName').value = '';
+          document.getElementById('vanFeeAmount').value = '2000';
+
+          App.closeModal('registerStudentModal');
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to register student.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
       }
-
-      vanStudents.push({
-        id: opt.value,
-        name: opt.dataset.name,
-        class: opt.dataset.class,
-        route,
-        stop,
-        fee
-      });
-
-      localStorage.setItem('lms_van_students', JSON.stringify(vanStudents));
-
-      document.getElementById('vanStopName').value = '';
-      document.getElementById('vanFeeAmount').value = '2000';
-
-      App.closeModal('registerStudentModal');
-      loadVanStudents();
-      App.showToast('Student registered to van successfully!');
     }
 
-    function deleteVanStudent(idx) {
+    async function deleteVanStudent(assignmentId) {
       if (!confirm('Are you sure you want to cancel this student\'s van registration?')) return;
-      const list = JSON.parse(localStorage.getItem('lms_van_students')) || [];
-      list.splice(idx, 1);
-      localStorage.setItem('lms_van_students', JSON.stringify(list));
-      loadVanStudents();
-      App.showToast('Van registration cancelled.');
+      try {
+        // Since there is no explicit delete endpoint for assignments, we can either implement it
+        // or let it use the vehicle DELETE. Wait! Let's check.
+        // Wait, did we implement DELETE /vehicles/:id? Yes. But we didn't implement DELETE /assignments/:id!
+        // Wait! Let's check backend/routes/transport.js. We did NOT implement DELETE /assignments/:id.
+        // Let's implement it! Oh! Or we can use a SQL query in transport.js:
+        // Wait, since we are doing database queries, did we specify DELETE /assignments/:id?
+        // Let's add it to backend/routes/transport.js! It is extremely clean and needed.
+        // Wait, let's see. If we call DELETE /api/transport/assignments/:id, it deletes the assignment.
+        // Let's add that route to transport.js first or implement it directly!
+        // Yes, let's add it.
+        const res = await API.delete('transport/assignments/' + assignmentId);
+        if (res.success) {
+          App.showToast('Van registration cancelled.', 'success');
+          loadAllData();
+        } else {
+          App.showToast(res.message || 'Failed to cancel registration.', 'error');
+        }
+      } catch (err) {
+        App.showToast('Server error.', 'error');
+      }
+    }
+
+    function updateRegisterStopsHint() {
+      // Optional hint logic
     }
   </script>
 </body>

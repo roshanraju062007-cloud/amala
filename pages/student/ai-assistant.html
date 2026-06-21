@@ -121,7 +121,7 @@
       sendStudentAiMsg();
     }
 
-    function sendStudentAiMsg() {
+    async function sendStudentAiMsg() {
       const input = document.getElementById('studentChatMsg');
       const val = input.value.trim();
       if(!val) return;
@@ -129,14 +129,38 @@
       const panel = document.getElementById('studentChatPanel');
       panel.innerHTML += `<p style="text-align:right; margin-top:10px;"><b>You:</b> ${val}</p>`;
       input.value = '';
+      panel.scrollTop = panel.scrollHeight;
       
-      panel.innerHTML += `<p style="color:var(--primary); margin-top:10px;"><b>StudyBot:</b> Analyzing doubt. Reading curriculum guides...</p>`;
+      const typingId = 'typing-' + Date.now();
+      panel.innerHTML += `<p id="${typingId}" style="color:var(--primary); margin-top:10px;"><b>StudyBot:</b> Analyzing doubt. Reading curriculum guides...</p>`;
+      panel.scrollTop = panel.scrollHeight;
       
-      setTimeout(() => {
-        panel.innerHTML += `<p style="color:var(--primary); margin-top:5px;"><b>StudyBot:</b> Here is the step-by-step resolution: Photosynthesis is the chemical process by which plants convert sunlight, carbon dioxide, and water into oxygen and glucose. The key component is Chlorophyll. Formula: 6CO2 + 6H2O -> C6H12O6 + 6O2.</p>`;
+      try {
+        const res = await API.post('ai/ask', { message: val });
+        const typingElem = document.getElementById(typingId);
+        if (typingElem) typingElem.remove();
+
+        if (res.success && res.reply) {
+          panel.innerHTML += `<p style="color:var(--primary); margin-top:10px; line-height:1.4;"><b>StudyBot:</b> ${res.reply.replace(/\n/g, '<br>')}</p>`;
+        } else {
+          panel.innerHTML += `<p style="color:var(--danger); margin-top:10px;"><b>StudyBot:</b> Failed to analyze doubt: ${res.message || ''}</p>`;
+        }
         panel.scrollTop = panel.scrollHeight;
-      }, 1000);
+      } catch (err) {
+        console.error(err);
+        const typingElem = document.getElementById(typingId);
+        if (typingElem) typingElem.remove();
+        panel.innerHTML += `<p style="color:var(--danger); margin-top:10px;"><b>StudyBot:</b> Connection error.</p>`;
+        panel.scrollTop = panel.scrollHeight;
+      }
     }
+
+    // Add submit on press Enter for studentChatMsg
+    document.getElementById('studentChatMsg').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendStudentAiMsg();
+      }
+    });
   </script>
 </body>
 </html>

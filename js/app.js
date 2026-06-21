@@ -403,7 +403,11 @@ const AppState = {
               section: added.section,
               phone: added.phone,
               fee_status: added.fee,
-              parent_name: added.parent
+              parent_name: added.parent,
+              custom_student_id: added.id,
+              student_password: added.password,
+              parent_username: added.parentUsername,
+              parent_password: added.parentPassword
             });
             this.syncDatabaseToLocal();
           }
@@ -426,7 +430,9 @@ const AppState = {
               subjects: added.subjects,
               phone: added.phone,
               class_assigned: added.classAssigned,
-              status: added.status
+              status: added.status,
+              custom_id: added.id,
+              password: added.password
             });
             this.syncDatabaseToLocal();
           }

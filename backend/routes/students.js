@@ -67,17 +67,26 @@ router.get('/:id', async (req, res) => {
 // POST /api/students — add new student (admin only)
 router.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { name, class_name, section, phone, fee_status, parent_name } = req.body;
+    const { name, class_name, section, phone, fee_status, parent_name, custom_student_id, student_password, parent_username, parent_password } = req.body;
     if (!name || !class_name) return res.status(400).json({ success: false, message: 'Name and class are required.' });
 
-    // Generate IDs
+    // Generate/Resolve Student ID
+    let studentId = (custom_student_id || '').trim();
     const countRes = await queryOne(`SELECT COUNT(*) as cnt FROM students`);
     const count    = parseInt(countRes.cnt) + 1;
-    const studentId = 'STU' + String(count).padStart(3, '0');
-    const parentId  = 'PAR' + String(count).padStart(3, '0');
+    if (!studentId) {
+      studentId = 'STU' + String(count).padStart(3, '0');
+    }
+
+    // Generate/Resolve Parent ID
+    let parentId = (parent_username || '').trim();
+    if (!parentId) {
+      parentId = 'PAR' + String(count).padStart(3, '0');
+    }
 
     // Create student user
-    const hash = await bcrypt.hash('stud123', 10);
+    const stuPass = (student_password || 'stud123').trim();
+    const hash = await bcrypt.hash(stuPass, 10);
     const uRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'student', $3) RETURNING id`,
       [studentId, hash, name]
@@ -94,7 +103,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
 
     // Create parent user
     const parentName = parent_name || `Parent of ${name}`;
-    const pHash = await bcrypt.hash('par123', 10);
+    const parPass = (parent_password || 'par123').trim();
+    const pHash = await bcrypt.hash(parPass, 10);
     const puRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'parent', $3) RETURNING id`,
       [parentId, pHash, parentName]
@@ -115,10 +125,10 @@ router.post('/', requireRole('admin'), async (req, res) => {
       [sDbId]
     );
 
-    res.json({ success: true, message: `Student ${studentId} and Parent ${parentId} registered. Default passwords: stud123 / par123`, data: sRes.rows[0] });
+    res.json({ success: true, message: `Student ${studentId} and Parent ${parentId} registered.`, data: sRes.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Failed to add student.' });
+    res.status(500).json({ success: false, message: 'Failed to add student: ' + err.message });
   }
 });
 

@@ -128,25 +128,47 @@
       loadSelectedMaterials();
     }
 
-    function loadSelectedMaterials() {
+    async function loadSelectedMaterials() {
       const className = document.getElementById('materialsClassSelect').value;
-      const materials = AppState.getData('lms_materials').filter(m => m.class === className);
       const grid = document.getElementById('materials-grid');
-      grid.innerHTML = '';
-
-      const finalMaterials = materials.length > 0 ? materials : [
-        { title: className + ' Term Curriculum Syllabus', type: 'PDF' },
-        { title: className + ' Recommended General Reference Books', type: 'DOC' }
-      ];
-
-      finalMaterials.forEach(m => {
-        grid.innerHTML += `<div class="card" style="text-align:center;">
-          <div style="font-size:36px; margin-bottom:10px;">📚</div>
-          <h4>${m.title}</h4>
-          <span class="badge badge-purple" style="margin:8px auto; display:inline-block;">${m.type}</span>
-          <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="App.showToast('File downloaded successfully!')">⬇️ Download File</button>
-        </div>`;
-      });
+      grid.innerHTML = '<div style="grid-column: span 3; text-align:center; padding: 20px; color: var(--text-muted);">Loading materials...</div>';
+      
+      try {
+        const res = await API.get('materials', { class_name: className });
+        grid.innerHTML = '';
+        if (res.success && res.data && res.data.length > 0) {
+          res.data.forEach(m => {
+            const downloadAction = m.link ? `window.open('${m.link}', '_blank')` : "App.showToast('No download link available.', 'warning')";
+            grid.innerHTML += `<div class="card" style="text-align:center; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px;">
+              <div>
+                <div style="font-size:36px; margin-bottom:10px;">📚</div>
+                <h4 style="margin:5px 0;">${m.title}</h4>
+                <span class="badge badge-purple" style="margin:8px auto; display:inline-block;">${m.type}</span>
+              </div>
+              <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="${downloadAction}">⬇️ Access Material</button>
+            </div>`;
+          });
+        } else {
+          // fallback default materials
+          const defaultMaterials = [
+            { title: className + ' Term Curriculum Syllabus', type: 'PDF' },
+            { title: className + ' Recommended General Reference Books', type: 'DOC' }
+          ];
+          defaultMaterials.forEach(m => {
+            grid.innerHTML += `<div class="card" style="text-align:center; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px;">
+              <div>
+                <div style="font-size:36px; margin-bottom:10px;">📚</div>
+                <h4 style="margin:5px 0;">${m.title}</h4>
+                <span class="badge badge-purple" style="margin:8px auto; display:inline-block;">${m.type}</span>
+              </div>
+              <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="App.showToast('Default reference document is currently unavailable.', 'info')">⬇️ Access Material</button>
+            </div>`;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div style="grid-column: span 3; text-align:center; padding: 20px; color: var(--danger);">Failed to load study materials.</div>';
+      }
     }
   </script>
 </body>
