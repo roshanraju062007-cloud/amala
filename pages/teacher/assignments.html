@@ -89,9 +89,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const teacherId = localStorage.getItem('userId') || 'TCH001';
-      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
-      const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
-      const myClasses = classes.filter(c => c.teacherId === teacherId);
+      const classes = AppState.getData('lms_classes');
+      const subjects = AppState.getData('lms_subjects');
+      const teachers = AppState.getData('lms_teachers');
+      const teacher = teachers.find(t => t.id === teacherId) || {};
+      const myClasses = classes.filter(c => c.name === teacher.classAssigned);
       const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 6);
 
       const classSelect = document.getElementById('asnClass');
@@ -125,10 +127,10 @@
       const instructions = document.getElementById('asnInstructions').value.trim();
       const [className, section] = classVal.split('|');
 
-      const assignments = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
-      const id = 'ASN' + String(assignments.length + 1).padStart(3, '0');
-      assignments.push({ id, title, class: className, section, subject, due, marks, instructions, submissions: 0, teacherId: localStorage.getItem('userId') });
-      localStorage.setItem('lms_assignments', JSON.stringify(assignments));
+      const list = AppState.getData('lms_assignments');
+      const id = 'ASN' + String(list.length + 1).padStart(3, '0');
+      list.push({ id, title, class: className, section, subject, due, dueDate: due, marks, maxMarks: marks, instructions, submissions: 0, teacherId: localStorage.getItem('userId') });
+      AppState.saveData('lms_assignments', list);
 
       AppState.addNotice(`New assignment posted: ${title} for ${className}`);
       App.showToast('Assignment posted successfully!', 'success');
@@ -139,7 +141,7 @@
     }
 
     function loadAssignments() {
-      const assignments = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
+      const assignments = AppState.getData('lms_assignments');
       const teacherId = localStorage.getItem('userId');
       const myAsns = assignments.filter(a => !a.teacherId || a.teacherId === teacherId);
       const box = document.getElementById('assignmentsList');
@@ -167,9 +169,9 @@
 
     function deleteAssignment(id) {
       if (!confirm('Delete this assignment?')) return;
-      let asns = JSON.parse(localStorage.getItem('lms_assignments') || '[]');
+      let asns = AppState.getData('lms_assignments');
       asns = asns.filter(a => a.id !== id);
-      localStorage.setItem('lms_assignments', JSON.stringify(asns));
+      AppState.saveData('lms_assignments', asns);
       loadAssignments();
       App.showToast('Assignment removed.', 'success');
     }

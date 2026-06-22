@@ -86,10 +86,24 @@
         </div>
 
 
-        <div class="card" style="text-align:center;">
+        <div class="card" style="text-align:center; margin-bottom: 20px;">
           <h3 class="card-title">Overall Cumulative Attendance Rate</h3>
           <div style="font-size: 64px; font-weight: 800; color: var(--success); margin: 20px 0;" id="attValueText">92%</div>
           <p>Minimum required attendance to sit for final Term End Exams: <b>75%</b></p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom:15px;">Recent Attendance Sessions</h3>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr><th>Date</th><th>Session Period</th><th>Status</th><th>Remarks</th></tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No attendance sessions logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>
@@ -142,11 +156,37 @@
   }
 
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
       loadStudentProfile();
       loadStudentInfoCard(currentStudent);
       document.getElementById('attValueText').innerText = (currentStudent.attendance || 85) + '%';
+      await loadAttendanceLog();
     });
+
+    async function loadAttendanceLog() {
+      try {
+        const res = await API.get('attendance', { student_id: currentStudent.id });
+        if (res.success && res.data && res.data.length > 0) {
+          const tbody = document.getElementById('attendanceTableBody');
+          tbody.innerHTML = '';
+          res.data.forEach(row => {
+            const dateStr = App.formatDate(row.date);
+            const statusLabel = row.status === 'P' ? 'Present' : (row.status === 'A' ? 'Absent' : 'Leave');
+            const statusClass = row.status === 'P' ? 'badge-success' : (row.status === 'A' ? 'badge-danger' : 'badge-warning');
+            const remarks = row.status === 'P' ? 'Regular Attendant' : (row.status === 'A' ? 'Excused / Unexcused Absence' : 'Approved Leave');
+
+            tbody.innerHTML += `<tr>
+              <td>${dateStr}</td>
+              <td>Morning & Afternoon</td>
+              <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+              <td>${remarks}</td>
+            </tr>`;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load attendance log:', err);
+      }
+    }
   </script>
 </body>
 </html>

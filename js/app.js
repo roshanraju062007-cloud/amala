@@ -387,6 +387,25 @@ const AppState = {
       });
     }
 
+    if (key === 'lms_cia') {
+      const results = this.getData('lms_results');
+      const subjectsMap = {};
+      results.forEach(r => {
+        const uniqueKey = r.stuId + '_' + r.subject;
+        if (!subjectsMap[uniqueKey]) {
+          subjectsMap[uniqueKey] = { subject: r.subject, ut1: '--', ut2: '--', model: '--', assignment: '--', attendance: '--', total: 0, stuId: r.stuId };
+        }
+        const obj = subjectsMap[uniqueKey];
+        const val = parseInt(r.obtained) || 0;
+        if (r.exam === 'Unit Test 1') { obj.ut1 = val; obj.total += val; }
+        else if (r.exam === 'Unit Test 2') { obj.ut2 = val; obj.total += val; }
+        else if (r.exam === 'Model Exam') { obj.model = val; obj.total += val; }
+        else if (r.exam === 'Assignment') { obj.assignment = val; obj.total += val; }
+        else if (r.exam === 'Attendance') { obj.attendance = val; obj.total += val; }
+      });
+      return Object.values(subjectsMap);
+    }
+
     return data;
   },
 

@@ -9,11 +9,6 @@
 </head>
 <body>
   <div class="login-container">
-    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 11px; text-align: center; border: 1px solid rgba(255,255,255,0.1);">
-      🏫 <b>Amala HSS EduSphere</b><br>
-      All LKG-12th standard portals are fully functional.<br>
-      Select appropriate tab below, then click "Use Demo" or type ID.
-    </div>
     <!-- Left panel (branding) -->
     <div class="login-left">
       <div class="login-left-brand">
@@ -101,9 +96,13 @@
             <input type="checkbox" id="remember" style="cursor: pointer;">
             <label for="remember" style="font-size: 13px; cursor: pointer; user-select: none;">Remember Me</label>
           </div>
-          
           <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Login</button>
         </form>
+
+        <div class="demo-credentials" id="demoCredentialsContainer" style="display: none;">
+          <div class="demo-title">Demo Quick Fill</div>
+          <div id="demo-list"></div>
+        </div>
 
       </div>
     </div>

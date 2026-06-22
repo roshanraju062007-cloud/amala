@@ -95,7 +95,7 @@
       <thead>
         <tr><th>Student Name</th><th>Class</th><th>Marks Scored</th><th>Percentage</th><th>Grade</th><th>Pass Status</th><th>Actions</th></tr>
       </thead>
-      <tbody>
+      <tbody id="resultsTableBody">
         <tr>
           <td>Aditya Patel</td>
           <td>10-A</td>
@@ -116,7 +116,71 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    // Local script code injected per page
+    window.addEventListener('load', () => {
+      loadAllResults();
+    });
+
+    async function loadAllResults() {
+      try {
+        const res = await API.get('results');
+        if (res.success && res.data && res.data.length > 0) {
+          const tbody = document.getElementById('resultsTableBody');
+          tbody.innerHTML = '';
+
+          // Group by student code/id
+          const studentMap = {};
+          res.data.forEach(r => {
+            const key = r.stuId;
+            if (!studentMap[key]) {
+              studentMap[key] = {
+                name: r.student_name,
+                className: r.class_name,
+                obtained: 0,
+                max: 0,
+                grades: []
+              };
+            }
+            // Only aggregate term-end or quarterly examinations for the final report card overview
+            if (r.exam === 'Quarterly Examination' || r.exam_name === 'Quarterly Examination') {
+              studentMap[key].obtained += parseFloat(r.obtained) || 0;
+              studentMap[key].max += parseFloat(r.max) || 100;
+              if (r.grade) studentMap[key].grades.push(r.grade);
+            }
+          });
+
+          const studentsList = Object.values(studentMap).filter(s => s.max > 0);
+          if (studentsList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No term end results published yet.</td></tr>';
+            return;
+          }
+
+          studentsList.forEach(s => {
+            const pct = ((s.obtained / s.max) * 100).toFixed(1);
+            // Deduce average grade
+            let avgGrade = 'B';
+            if (pct >= 90) avgGrade = 'A+';
+            else if (pct >= 80) avgGrade = 'A';
+            else if (pct >= 70) avgGrade = 'B+';
+            
+            const passed = pct >= 40;
+            const badgeClass = passed ? 'badge-success' : 'badge-danger';
+            const statusLabel = passed ? 'Passed' : 'Failed';
+
+            tbody.innerHTML += `<tr>
+              <td><b>${s.name}</b></td>
+              <td>${s.className}</td>
+              <td>${s.obtained} / ${s.max}</td>
+              <td>${pct}%</td>
+              <td><b>${avgGrade}</b></td>
+              <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+              <td><button class="btn btn-primary" onclick="alert('Opening printable PDF report card for ${s.name}...')">📄 Download PDF</button></td>
+            </tr>`;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load results:', err);
+      }
+    }
   </script>
 </body>
 </html>

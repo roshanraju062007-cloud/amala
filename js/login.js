@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         parent:  'PAR001'
       };
       if (emailInput) emailInput.placeholder = 'Enter ' + (placeholderMap[activeRole] || 'User ID');
+      updateDemoCredentials();
     });
   });
 
@@ -170,4 +171,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  function updateDemoCredentials() {
+    const demoContainer = document.getElementById('demoCredentialsContainer');
+    const demoList = document.getElementById('demo-list');
+    if (!demoContainer || !demoList) return;
+
+    if (activeRole === 'admin') {
+      demoList.innerHTML = '';
+      const badge = document.createElement('span');
+      badge.className = 'demo-badge';
+      badge.textContent = `Use Demo: admin / admin123`;
+      badge.style.cursor = 'pointer';
+      badge.addEventListener('click', () => {
+        if (emailInput) emailInput.value = 'admin';
+        if (passInput) passInput.value = 'admin123';
+        // Auto-fill captcha for ease of testing admin portal
+        const captchaInput = document.getElementById('captchaInput');
+        if (captchaInput) captchaInput.value = currentCaptcha;
+      });
+      demoList.appendChild(badge);
+      demoContainer.style.display = 'block';
+    } else {
+      demoContainer.style.display = 'none';
+      demoList.innerHTML = '';
+    }
+  }
+
+  // Initial call
+  updateDemoCredentials();
 });

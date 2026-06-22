@@ -4,6 +4,13 @@
 -- ============================================================
 
 -- Drop existing tables (order matters for FK constraints)
+DROP TABLE IF EXISTS library_issues CASCADE;
+DROP TABLE IF EXISTS library_books CASCADE;
+DROP TABLE IF EXISTS transport_assignments CASCADE;
+DROP TABLE IF EXISTS transport_vehicles CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS exams CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS timetable CASCADE;
 DROP TABLE IF EXISTS materials CASCADE;
 DROP TABLE IF EXISTS notices CASCADE;
@@ -229,7 +236,14 @@ END
 $$;
 
 -- Grant permissions to the application role
-GRANT CONNECT ON DATABASE edusphere_db TO edusphere_app;
+DO $$
+BEGIN
+  EXECUTE 'GRANT CONNECT ON DATABASE ' || quote_ident(current_database()) || ' TO edusphere_app';
+EXCEPTION
+  WHEN OTHERS THEN
+    NULL;
+END
+$$;
 GRANT USAGE ON SCHEMA public TO edusphere_app;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO edusphere_app;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO edusphere_app;
@@ -514,4 +528,87 @@ CREATE POLICY transport_assignments_student ON transport_assignments FOR SELECT 
 
 CREATE POLICY settings_select ON settings FOR SELECT TO edusphere_app USING (true);
 CREATE POLICY settings_admin ON settings FOR ALL TO edusphere_app USING (current_setting('app.current_user_role', true) = 'admin');
+
+-- ── EXAMS TABLE ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS exams (
+  id            SERIAL PRIMARY KEY,
+  exam_id       VARCHAR(20) UNIQUE NOT NULL,
+  title         VARCHAR(200) NOT NULL,
+  class_name    VARCHAR(120),
+  section       VARCHAR(5),
+  subject       VARCHAR(100),
+  exam_type     VARCHAR(50) DEFAULT 'Quarterly',
+  exam_date     DATE,
+  max_marks     INT DEFAULT 100,
+  duration_mins INT DEFAULT 180,
+  teacher_id    VARCHAR(20),
+  status        VARCHAR(20) DEFAULT 'Scheduled',
+  created_at    TIMESTAMP DEFAULT NOW()
+);
+
+-- ── MESSAGES TABLE ───────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS messages (
+  id          SERIAL PRIMARY KEY,
+  sender_id   VARCHAR(30) NOT NULL,
+  receiver_id VARCHAR(30) NOT NULL,
+  room_id     VARCHAR(100) NOT NULL,
+  content     TEXT NOT NULL,
+  sent_at     TIMESTAMP DEFAULT NOW(),
+  is_read     BOOLEAN DEFAULT FALSE
+);
+CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+
+-- Enable RLS and Force RLS
+ALTER TABLE exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE exams FORCE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages FORCE ROW LEVEL SECURITY;
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON TABLE exams, messages TO edusphere_app;
+
+-- Exams RLS Policies
+CREATE POLICY exams_admin_all ON exams FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY exams_teacher_own ON exams FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'teacher')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'teacher');
+
+CREATE POLICY exams_student_class ON exams FOR SELECT TO edusphere_app
+  USING (
+    current_setting('app.current_user_role', true) = 'student' AND
+    (class_name IS NULL OR class_name = (
+      SELECT class_name FROM students
+      WHERE user_id = NULLIF(current_setting('app.current_db_id', true),'')::int
+    ))
+  );
+
+CREATE POLICY exams_parent_class ON exams FOR SELECT TO edusphere_app
+  USING (
+    current_setting('app.current_user_role', true) = 'parent' AND
+    (class_name IS NULL OR class_name = (
+      SELECT class_name FROM students WHERE id = (
+        SELECT student_id FROM parents
+        WHERE user_id = NULLIF(current_setting('app.current_db_id', true),'')::int
+      )
+    ))
+  );
+
+-- Messages RLS Policies
+CREATE POLICY messages_own ON messages FOR ALL TO edusphere_app
+  USING (
+    sender_id   = current_setting('app.current_user_id', true) OR
+    receiver_id = current_setting('app.current_user_id', true)
+  )
+  WITH CHECK (
+    sender_id = current_setting('app.current_user_id', true)
+  );
+
+CREATE POLICY messages_admin ON messages FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
 

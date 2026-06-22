@@ -188,20 +188,55 @@
   }
 
 
-    window.addEventListener('load', () => {
+    let activeFeeRecord = null;
+
+    window.addEventListener('load', async () => {
       loadParentProfile();
       loadStudentInfoCard(currentChild);
-      renderFeeDetails();
+      await fetchFees();
     });
 
+    async function fetchFees() {
+      try {
+        const res = await API.get('fees');
+        if (res.success && res.data && res.data.length > 0) {
+          // Find first unpaid or partial fee record, otherwise fallback to the most recent one
+          activeFeeRecord = res.data.find(f => f.status !== 'Paid') || res.data[0];
+          renderFeeDetails();
+        } else {
+          renderFeeDetailsFallback();
+        }
+      } catch (err) {
+        console.error(err);
+        renderFeeDetailsFallback();
+      }
+    }
+
     function renderFeeDetails() {
+      if (!activeFeeRecord) return renderFeeDetailsFallback();
+      
+      const balance = parseFloat(activeFeeRecord.balance);
+      const paid = parseFloat(activeFeeRecord.amount_paid);
+
+      document.getElementById('paidAmtText').innerText = '₹' + paid.toLocaleString('en-IN');
+      document.getElementById('balanceAmtText').innerText = '₹' + balance.toLocaleString('en-IN');
+
+      const btnContainer = document.getElementById('payBtnContainer');
+      if (balance === 0 || activeFeeRecord.status === 'Paid') {
+        btnContainer.innerHTML = '<b style="color:var(--success)">✔️ School Fee Ledger Balance Cleared.</b>';
+      } else {
+        btnContainer.innerHTML = '<button class="btn btn-primary" onclick="openPaymentModal()">💳 Pay Outstanding Fees</button>';
+      }
+    }
+
+    function renderFeeDetailsFallback() {
       let balance = 0;
       let paid = 25000;
       if (currentChild.fee === 'Unpaid') { balance = 25000; paid = 0; }
       if (currentChild.fee === 'Partial') { balance = 12500; paid = 12500; }
 
-      document.getElementById('paidAmtText').innerText = '₹' + paid.toLocaleString();
-      document.getElementById('balanceAmtText').innerText = '₹' + balance.toLocaleString();
+      document.getElementById('paidAmtText').innerText = '₹' + paid.toLocaleString('en-IN');
+      document.getElementById('balanceAmtText').innerText = '₹' + balance.toLocaleString('en-IN');
 
       const btnContainer = document.getElementById('payBtnContainer');
       if (balance === 0) {
@@ -213,8 +248,12 @@
 
     function openPaymentModal() {
       let balance = 25000;
-      if (currentChild.fee === 'Partial') balance = 12500;
-      document.getElementById('payModalAmt').innerText = '₹' + balance.toLocaleString();
+      if (activeFeeRecord) {
+        balance = parseFloat(activeFeeRecord.balance);
+      } else {
+        if (currentChild.fee === 'Partial') balance = 12500;
+      }
+      document.getElementById('payModalAmt').innerText = '₹' + balance.toLocaleString('en-IN');
       document.getElementById('payModal').classList.add('open');
     }
 
@@ -222,17 +261,37 @@
       document.getElementById('payModal').classList.remove('open');
     }
 
-    function processPayment() {
-      const students = AppState.getData('lms_students');
-      const idx = students.findIndex(s => s.id === currentChild.id);
-      if (idx !== -1) {
-        students[idx].fee = 'Paid';
-        AppState.saveData('lms_students', students);
-        currentChild.fee = 'Paid';
+    async function processPayment() {
+      const modeSelect = document.querySelector('#payModal select');
+      const mode = modeSelect ? modeSelect.value : 'Online Card';
+
+      if (activeFeeRecord) {
+        try {
+          const res = await API.post(`fees/${activeFeeRecord.id}/pay`, { payment_mode: mode });
+          if (res.success) {
+            App.showToast('School fees payment completed successfully! Receipt No: ' + res.receipt_no);
+            closePaymentModal();
+            await fetchFees();
+            return;
+          } else {
+            App.showToast(res.message || 'Failed to process payment.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          App.showToast('Server error during payment.', 'error');
+        }
+      } else {
+        // Fallback mock logic
+        const students = AppState.getData('lms_students');
+        const idx = students.findIndex(s => s.id === currentChild.id);
+        if (idx !== -1) {
+          students[idx].fee = 'Paid';
+          AppState.saveData('lms_students', students);
+          currentChild.fee = 'Paid';
+        }
+        App.showToast('School fees payment completed successfully! (Mock)');
       }
-      
       closePaymentModal();
-      App.showToast('School fees payment completed successfully!');
       renderFeeDetails();
     }
   </script>
