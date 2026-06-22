@@ -237,6 +237,23 @@ feesRouter.put('/:id', requireRole('admin'), async (req, res) => {
   }
 });
 
+// POST fees — create new fee record (admin only)
+feesRouter.post('/', requireRole('admin'), async (req, res) => {
+  try {
+    const { student_id, academic_year, term, amount_due } = req.body;
+    const stu = await queryOne(`SELECT id FROM students WHERE student_id = $1`, [student_id]);
+    if (!stu) return res.status(404).json({ success: false, message: 'Student not found.' });
+    const row = await query(
+      `INSERT INTO fees (student_id, academic_year, term, amount_due, amount_paid, status)
+       VALUES ($1,$2,$3,$4,0,'Unpaid') RETURNING *`,
+      [stu.id, academic_year || '2026-2027', term || 'Term 1', amount_due || 25000]
+    );
+    res.json({ success: true, data: row.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to create fee record.' });
+  }
+});
+
 // ── NOTICES ───────────────────────────────────────────────────────────────────
 const noticesRouter = express.Router();
 noticesRouter.use(authMiddleware);
@@ -455,7 +472,8 @@ timetableRouter.get('/', async (req, res) => {
     const params = [];
     if (class_name) { params.push(class_name); sql += ` AND class_name = $${params.length}`; }
     if (section)    { params.push(section);    sql += ` AND section = $${params.length}`; }
-    sql += ' ORDER BY CASE day WHEN \'Monday\' THEN 1 WHEN \'Tuesday\' THEN 2 WHEN \'Wednesday\' THEN 3 WHEN \'Thursday\' THEN 4 WHEN \'Friday\' THEN 5 ELSE 6 END, period';
+    sql += ` ORDER BY CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
+             WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 ELSE 6 END, period`;
     const rows = await queryAll(sql, params);
     res.json({ success: true, data: rows });
   } catch (err) {
@@ -463,7 +481,39 @@ timetableRouter.get('/', async (req, res) => {
   }
 });
 
-// ── PARENTS ───────────────────────────────────────────────────────────────────
+timetableRouter.post('/', requireRole('admin'), async (req, res) => {
+  try {
+    const { class_name, section, day, period, subject, teacher_id, start_time, end_time } = req.body;
+    // Delete any existing entry first
+    await query(
+      `DELETE FROM timetable WHERE class_name = $1 AND section = $2 AND day = $3 AND period = $4`,
+      [class_name, section || 'A', day, period]
+    );
+
+    let row;
+    if (subject && subject !== '--') {
+      row = await query(
+        `INSERT INTO timetable (class_name, section, day, period, subject, teacher_id, start_time, end_time)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+        [class_name, section || 'A', day, period, subject, teacher_id || null, start_time || null, end_time || null]
+      );
+    }
+    res.json({ success: true, data: row ? row.rows[0] : {}, message: 'Timetable entry saved.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to save timetable entry.' });
+  }
+});
+
+timetableRouter.delete('/:id', requireRole('admin'), async (req, res) => {
+  try {
+    await query(`DELETE FROM timetable WHERE id = $1`, [req.params.id]);
+    res.json({ success: true, message: 'Timetable entry deleted.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete timetable entry.' });
+  }
+});
+
+// -- PARENTS -------------------------------------------------------------
 const parentsRouter = express.Router();
 parentsRouter.use(authMiddleware);
 
@@ -476,6 +526,35 @@ parentsRouter.get('/', requireRole('admin'), async (req, res) => {
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch parents.' });
+  }
+});
+
+// GET /me -- parent own profile + child info
+parentsRouter.get('/me', async (req, res) => {
+  try {
+    const row = await queryOne(
+      `SELECT p.*, s.name as student_name, s.student_id as student_code, s.class_name, s.section
+       FROM parents p JOIN students s ON p.student_id = s.id WHERE p.user_id = $1`,
+      [req.user.dbId]
+    );
+    res.json({ success: true, data: row || {} });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch parent profile.' });
+  }
+});
+
+// -- SUBMISSION GRADING --------------------------------------------------
+// PUT /api/assignments/submissions/:id -- grade a submission
+assignmentsRouter.put('/submissions/:id', requireRole('admin', 'teacher'), async (req, res) => {
+  try {
+    const { marks_obtained, feedback, status } = req.body;
+    await query(
+      `UPDATE submissions SET marks_obtained=$1, feedback=$2, status=$3 WHERE id=$4`,
+      [marks_obtained, feedback, status || 'Graded', req.params.id]
+    );
+    res.json({ success: true, message: 'Submission graded.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to grade submission.' });
   }
 });
 

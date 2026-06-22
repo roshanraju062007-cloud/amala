@@ -234,6 +234,27 @@ const AppState = {
   },
 
   getData(key) {
+    if (key.startsWith('tt_')) {
+      const section = key.split('_').pop();
+      const className = key.substring(3, key.length - 2).replace(/_/g, ' ');
+      const timetableData = JSON.parse(localStorage.getItem('lms_timetable')) || [];
+      const grid = {};
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      timetableData.forEach(row => {
+        if (row.class_name === className && row.section === section) {
+          const dIdx = dayNames.indexOf(row.day);
+          const pIdx = row.period - 1;
+          if (dIdx >= 0 && pIdx >= 0) {
+            grid[`${pIdx}_${dIdx}`] = {
+              sub: row.subject,
+              tch: row.teacher_id || 'Staff'
+            };
+          }
+        }
+      });
+      return grid;
+    }
+
     const rawLocal = localStorage.getItem(key);
     const data = rawLocal ? JSON.parse(rawLocal) : [];
     
@@ -371,7 +392,7 @@ const AppState = {
 
   async saveData(key, data) {
     const rawLocal = localStorage.getItem(key);
-    const oldData = rawLocal ? JSON.parse(rawLocal) : [];
+    const oldData = rawLocal ? JSON.parse(rawLocal) : (key.startsWith('tt_') ? {} : []);
     localStorage.setItem(key, JSON.stringify(data));
 
     // Dispatch sync events locally immediately for instantaneous UI updates
@@ -393,6 +414,43 @@ const AppState = {
 
     // Sync to PostgreSQL DB asynchronously
     try {
+      if (key.startsWith('tt_')) {
+        const parts = key.split('_');
+        const section = parts.pop();
+        const className = key.substring(3, key.length - 2).replace(/_/g, ' ');
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const timeSlots = [
+          { start: '08:00', end: '08:45' },
+          { start: '08:45', end: '09:30' },
+          { start: '09:30', end: '10:15' },
+          { start: '10:15', end: '11:00' },
+          { start: '11:00', end: '11:45' },
+          { start: '11:45', end: '12:30' },
+          { start: '12:30', end: '13:15' }
+        ];
+
+        for (let pIdx = 0; pIdx < 7; pIdx++) {
+          for (let dIdx = 0; dIdx < 6; dIdx++) {
+            const oldVal = (oldData || {})[`${pIdx}_${dIdx}`] || { sub: '--', tch: '--' };
+            const newVal = (data || {})[`${pIdx}_${dIdx}`] || { sub: '--', tch: '--' };
+            if (oldVal.sub !== newVal.sub || oldVal.tch !== newVal.tch) {
+              await API.post('timetable', {
+                class_name: className,
+                section: section,
+                day: dayNames[dIdx],
+                period: pIdx + 1,
+                subject: newVal.sub,
+                teacher_id: newVal.tch === '--' ? null : newVal.tch,
+                start_time: timeSlots[pIdx].start,
+                end_time: timeSlots[pIdx].end
+              });
+            }
+          }
+        }
+        this.syncDatabaseToLocal();
+        return;
+      }
+
       if (key === 'lms_students') {
         if (data.length > oldData.length) {
           const added = data.find(n => !oldData.some(o => (o.student_id || o.id) === (n.student_id || n.id)));

@@ -102,115 +102,143 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    let marksStudents = [];
+  let marksStudents = [];
+  let currentExamId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const teacherId = localStorage.getItem('userId') || 'TCH001';
-      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
-      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
-      const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+  window.addEventListener('load', async () => {
+    await loadExams();
+    await loadClassesDropdown();
+  });
 
-      const myClasses = classes.filter(c => c.teacherId === teacherId);
-      const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 8);
+  async function loadExams() {
+    try {
+      const r = await fetch('/api/exams', { credentials: 'include' });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      renderExamList(d.data || []);
+    } catch (err) { console.error(err); }
+  }
 
-      const classSelect = document.getElementById('examClass');
-      showClasses.forEach(c => {
-        c.sections.forEach(sec => {
-          classSelect.innerHTML += `<option value="${c.name}|${sec}">${c.name} — Sec ${sec}</option>`;
-        });
-      });
-
-      // Populate subjects
-      const subjSelect = document.getElementById('examSubject');
-      const uniqueSubjects = [...new Set(subjects.map(s => s.name))];
-      if (uniqueSubjects.length === 0) {
-        ['Mathematics','Science','English Language','Social Science','Computer Science','Hindi Language']
-          .forEach(n => subjSelect.innerHTML += `<option>${n}</option>`);
-      } else {
-        uniqueSubjects.forEach(n => subjSelect.innerHTML += `<option>${n}</option>`);
-      }
-
-      loadStudentsMarks();
+  function renderExamList(list) {
+    const sel = document.getElementById('examSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Select Exam --</option>';
+    list.forEach(e => {
+      sel.innerHTML += '<option value="' + (e.exam_id||e.id) + '" data-marks="' + (e.max_marks||100) + '">' + e.title + (e.class_name ? ' (' + e.class_name + ')' : '') + '</option>';
     });
+  }
 
-    function loadStudentsMarks() {
-      const val = document.getElementById('examClass').value;
-      if (!val) return;
-      const [className, section] = val.split('|');
-      const allStudents = JSON.parse(localStorage.getItem('lms_students') || '[]');
-      marksStudents = allStudents.filter(s => s.class === className && s.section === section);
+  async function loadClassesDropdown() {
+    try {
+      const r = await fetch('/api/classes', { credentials: 'include' });
+      const d = await r.json();
+      ['publishClass','markClass'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- Select Class --</option>';
+        (d.data||[]).forEach(c => { sel.innerHTML += '<option value="' + c.name + '">' + c.name + '</option>'; });
+      });
+    } catch (err) { console.error(err); }
+  }
 
+  async function scheduleExam(e) {
+    e.preventDefault();
+    const title     = document.getElementById('schedTitle') ? document.getElementById('schedTitle').value.trim() : '';
+    const exam_type = document.getElementById('schedType') ? document.getElementById('schedType').value : 'Quarterly';
+    const class_name= document.getElementById('schedClass') ? document.getElementById('schedClass').value : '';
+    const subject   = document.getElementById('schedSubject') ? document.getElementById('schedSubject').value : '';
+    const exam_date = document.getElementById('schedDate') ? document.getElementById('schedDate').value : '';
+    const max_marks = document.getElementById('schedMarks') ? document.getElementById('schedMarks').value : 100;
+    if (!title) { App.showToast('Title required.','error'); return; }
+    try {
+      const r = await fetch('/api/exams', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, exam_type, class_name, subject, exam_date, max_marks })
+      });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      App.showToast('Exam scheduled!', 'success');
+      loadExams();
+    } catch (err) { App.showToast('Failed: ' + err.message, 'error'); }
+  }
+
+  async function loadStudentsForMarks() {
+    const classEl   = document.getElementById('publishClass') || document.getElementById('markClass');
+    const sectionEl = document.getElementById('publishSection') || document.getElementById('markSection');
+    const className = classEl ? classEl.value : '';
+    const section   = sectionEl ? sectionEl.value : '';
+    if (!className) { App.showToast('Select a class first.', 'error'); return; }
+    try {
+      const r = await fetch('/api/students?class_name=' + encodeURIComponent(className) + (section ? '&section=' + section : ''), { credentials: 'include' });
+      const d = await r.json();
+      marksStudents = d.data || [];
       const tbody = document.getElementById('marksTableBody');
+      if (!tbody) return;
       tbody.innerHTML = '';
-      if (marksStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No students in this class-section.</td></tr>';
+      if (!marksStudents.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No students found.</td></tr>';
         return;
       }
       marksStudents.forEach((s, i) => {
-        tbody.innerHTML += `<tr>
-          <td>${i+1}</td>
-          <td>${s.id}</td>
-          <td><b>${s.name}</b></td>
-          <td><input type="number" class="form-control marks-input" id="marks_${s.id}" min="0" max="200" placeholder="—" oninput="calcGrade('${s.id}')"></td>
-          <td class="grade-cell" id="grade_${s.id}">—</td>
-          <td><input type="text" class="form-control" id="remark_${s.id}" placeholder="Remarks..." style="max-width:180px;"></td>
-        </tr>`;
+        const maxM = parseInt(document.getElementById('maxMarks') ? document.getElementById('maxMarks').value : 100) || 100;
+        tbody.innerHTML += '<tr><td>' + (i+1) + '</td><td>' + (s.student_id||s.studentId||s.id) + '</td><td><b>' + s.name + '</b></td><td><input type="number" class="form-control marks-input" id="marks_' + s.student_id + '" min="0" max="' + maxM + '" placeholder="--" oninput="calcGrade(\'' + s.student_id + '\')"></td><td class="grade-cell" id="grade_' + s.student_id + '">--</td><td><input type="text" class="form-control" id="remark_' + s.student_id + '" placeholder="Remarks..." style="max-width:180px;"></td></tr>';
       });
-    }
+    } catch (err) { App.showToast('Failed to load students.', 'error'); }
+  }
 
-    function calcGrade(stuId) {
-      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
-      const obtained = parseInt(document.getElementById('marks_' + stuId).value);
-      if (isNaN(obtained)) { document.getElementById('grade_' + stuId).textContent = '—'; return; }
-      const pct = (obtained / maxM) * 100;
-      let g, cls;
-      if (pct >= 90) { g='A+'; cls='g-Ap'; }
-      else if (pct >= 80) { g='A'; cls='g-A'; }
-      else if (pct >= 70) { g='B+'; cls='g-Bp'; }
-      else if (pct >= 60) { g='B'; cls='g-B'; }
-      else if (pct >= 50) { g='C'; cls='g-C'; }
-      else if (pct >= 35) { g='D'; cls='g-D'; }
-      else { g='F'; cls='g-F'; }
-      const el = document.getElementById('grade_' + stuId);
-      el.textContent = g;
-      el.className = 'grade-cell ' + cls;
-    }
+  function calcGrade(stuId) {
+    const maxM = parseInt(document.getElementById('maxMarks') ? document.getElementById('maxMarks').value : 100) || 100;
+    const obtained = parseInt(document.getElementById('marks_' + stuId) ? document.getElementById('marks_' + stuId).value : '');
+    if (isNaN(obtained)) { document.getElementById('grade_' + stuId).textContent = '--'; return; }
+    const pct = (obtained / maxM) * 100;
+    let g, cls;
+    if (pct >= 90) { g='A+'; cls='g-Ap'; }
+    else if (pct >= 80) { g='A'; cls='g-A'; }
+    else if (pct >= 70) { g='B+'; cls='g-Bp'; }
+    else if (pct >= 60) { g='B'; cls='g-B'; }
+    else if (pct >= 50) { g='C'; cls='g-C'; }
+    else if (pct >= 35) { g='D'; cls='g-D'; }
+    else { g='F'; cls='g-F'; }
+    const el = document.getElementById('grade_' + stuId);
+    el.textContent = g;
+    el.className = 'grade-cell ' + cls;
+  }
 
-    function autoFillMarks() {
-      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
-      marksStudents.forEach(s => {
-        const val = Math.floor(Math.random() * (maxM - Math.floor(maxM * 0.4)) + Math.floor(maxM * 0.4));
-        document.getElementById('marks_' + s.id).value = val;
-        calcGrade(s.id);
+  async function saveAllMarks() {
+    const subjectEl  = document.getElementById('examSubject');
+    const examNameEl = document.getElementById('examName');
+    const maxMarksEl = document.getElementById('maxMarks');
+    const subject  = subjectEl ? subjectEl.value : '';
+    const examName = examNameEl ? examNameEl.value : '';
+    const maxM     = parseInt(maxMarksEl ? maxMarksEl.value : 100) || 100;
+    if (!subject || !examName) { App.showToast('Fill in subject and exam name.', 'error'); return; }
+
+    const records = [];
+    marksStudents.forEach(s => {
+      const sid = s.student_id || s.studentId;
+      const el  = document.getElementById('marks_' + sid);
+      if (!el) return;
+      const obtained = parseInt(el.value);
+      if (isNaN(obtained)) return;
+      const grade   = (document.getElementById('grade_' + sid) || {}).textContent || '';
+      const remarks = (document.getElementById('remark_' + sid) || {}).value || 'Good';
+      records.push({ student_id: sid, subject, exam_name: examName, max_marks: maxM, obtained, grade, remarks });
+    });
+
+    if (!records.length) { App.showToast('No marks entered.', 'error'); return; }
+
+    try {
+      const r = await fetch('/api/results', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records })
       });
-    }
-
-    function saveAllMarks() {
-      const subject = document.getElementById('examSubject').value;
-      const examName = document.getElementById('examName').value;
-      const maxM = parseInt(document.getElementById('maxMarks').value) || 100;
-
-      const allResults = JSON.parse(localStorage.getItem('lms_results') || '[]');
-      let saved = 0;
-      marksStudents.forEach(s => {
-        const obtainedEl = document.getElementById('marks_' + s.id);
-        const obtained = parseInt(obtainedEl.value);
-        if (isNaN(obtained)) return;
-        const grade = document.getElementById('grade_' + s.id).textContent;
-        const remarks = document.getElementById('remark_' + s.id).value || 'Good';
-
-        // Remove old entry if exists
-        const idx = allResults.findIndex(r => r.stuId === s.id && r.subject === subject && r.exam === examName);
-        const entry = { stuId: s.id, subject, exam: examName, max: maxM, obtained, grade, remarks };
-        if (idx >= 0) allResults[idx] = entry;
-        else allResults.push(entry);
-        saved++;
-      });
-
-      localStorage.setItem('lms_results', JSON.stringify(allResults));
-      AppState.addNotice(`${examName} marks published for ${subject}`);
-      App.showToast(`✅ Marks saved for ${saved} students!`, 'success');
-    }
-  </script>
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      App.showToast('Marks published for ' + records.length + ' students!', 'success');
+    } catch (err) { App.showToast('Failed: ' + err.message, 'error'); }
+  }
+</script>
 </body>
 </html>

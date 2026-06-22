@@ -11,6 +11,16 @@
       --primary-dark: #4F46E5;
       --primary-light: #EEF2FF;
     }
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
+    }
+    @media (max-width: 992px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -20,11 +30,11 @@
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
           <circle cx="250" cy="250" r="230" fill="#FFF"/>
           <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
-          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">S</text>
         </svg>
         <div class="sidebar-title">
           AMALA HSS
-          <span>eVarsity® School ERP</span>
+          <span>Student Portal</span>
         </div>
       </div>
       <ul class="sidebar-menu">
@@ -45,7 +55,7 @@
           <a href="#" onclick="App.logout()">🚪 Logout ERP</a>
         </li>
       </ul>
-</aside>
+    </aside>
     <main class="main-content">
       <header class="header">
         <div class="header-left">
@@ -53,31 +63,55 @@
           <h1 class="page-title">Online Assessment Player</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search course files...">
-          </div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
           <div class="user-chip">
             <div class="avatar-circle" id="userAvatar">S</div>
             <div style="font-weight: 600;" id="userDisplayName">Student Name</div>
           </div>
-</div>
+        </div>
       </header>
 
       <div class="content-area">
-        <div class="card" id="testPlayerCard">
-          <h3>Mock Quiz: Math General Assignment</h3>
-          <p>Total Questions: 3 | Max Marks: 30</p>
-          <hr style="margin:15px 0; border:0; border-top:1px solid var(--border-color)">
-          <div id="quizBox">
-            <h4 style="margin-bottom:15px;">Q1. Solve for x: 5x + 3 = 18</h4>
-            <input type="radio" name="q1" value="a"> x = 3<br>
-            <input type="radio" name="q1" value="b" style="margin-top:10px;"> x = 4<br>
-            <input type="radio" name="q1" value="c" style="margin-top:10px;"> x = 5<br>
-            <button class="btn btn-primary" style="margin-top:20px;" onclick="submitMockQuiz()">Submit Quiz</button>
+        <div class="grid-container">
+          <!-- Upcoming Exams Card -->
+          <div class="card">
+            <h3 class="card-title">📅 Scheduled School Examinations</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Exam Title</th>
+                    <th>Type</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody id="examsTableBody">
+                  <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading exam schedule...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Mock Quiz Player Card -->
+          <div class="card" id="testPlayerCard">
+            <h3>✍️ Interactive Practice MCQ</h3>
+            <p>Subject: Mathematics | Questions: 1 | Max Marks: 30</p>
+            <hr style="margin:15px 0; border:0; border-top:1px solid var(--border-color)">
+            <div id="quizBox">
+              <h4 style="margin-bottom:15px;">Q1. Solve for x: 5x + 3 = 18</h4>
+              <label style="display:block; margin: 8px 0; cursor:pointer;">
+                <input type="radio" name="q1" value="a"> x = 3
+              </label>
+              <label style="display:block; margin: 8px 0; cursor:pointer;">
+                <input type="radio" name="q1" value="b"> x = 4
+              </label>
+              <label style="display:block; margin: 8px 0; cursor:pointer;">
+                <input type="radio" name="q1" value="c"> x = 5
+              </label>
+              <button class="btn btn-primary" style="margin-top:20px; width:100%;" onclick="submitMockQuiz()">Submit Quiz</button>
+            </div>
           </div>
         </div>
       </div>
@@ -87,48 +121,70 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    
   let currentStudent = null;
 
-  function loadStudentProfile() {
-    const stuId = localStorage.getItem('userId') || 'STU001';
+  window.addEventListener('lms-auth-ready', async (e) => {
+    const user = e.detail;
+    document.getElementById('userDisplayName').textContent = user.name || 'Student';
+    document.getElementById('userAvatar').textContent = (user.name||'S')[0].toUpperCase();
+    
+    // Load student profile to get class
+    const stuId = user.userId;
     const students = AppState.getData('lms_students');
     currentStudent = students.find(s => s.id === stuId) || students[0];
+    
+    loadUpcomingExams();
+  });
 
-    document.getElementById('userDisplayName').innerText = currentStudent.name;
-    const userAv = document.getElementById('userAvatar');
-    if (currentStudent.photo) {
-      userAv.innerHTML = `<img src="${currentStudent.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-      userAv.style.background = 'transparent';
-    } else {
-      const nameParts = currentStudent.name.split(' ');
-      userAv.innerText = nameParts.map(p => p[0]).join('');
-      userAv.style.backgroundColor = 'var(--primary-dark)';
+  async function loadUpcomingExams() {
+    try {
+      let url = '/api/exams';
+      if (currentStudent && currentStudent.class) {
+        url += '?class_name=' + encodeURIComponent(currentStudent.class);
+      }
+      const r = await fetch(url, { credentials: 'include' });
+      const d = await r.json();
+      const body = document.getElementById('examsTableBody');
+      if (!d.success || !d.data || !d.data.length) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No exams scheduled for your class.</td></tr>';
+        return;
+      }
+      body.innerHTML = d.data.map(e => `
+        <tr>
+          <td><b>${e.title}</b></td>
+          <td>${e.exam_type || 'Quarterly'}</td>
+          <td>${e.subject || '--'}</td>
+          <td>${e.exam_date ? new Date(e.exam_date).toLocaleDateString('en-IN') : 'TBD'}</td>
+          <td>${e.duration_mins || 180} mins</td>
+        </tr>
+      `).join('');
+    } catch(err) {
+      console.error(err);
+      document.getElementById('examsTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-danger);">Failed to load exams.</td></tr>';
     }
   }
 
+  function submitMockQuiz() {
+    const q1 = document.querySelector('input[name="q1"]:checked');
+    if (!q1) return App.showToast('Please select an option first.', 'warning');
 
-    window.addEventListener('load', () => {
-      loadStudentProfile();
-    });
-
-    function submitMockQuiz() {
-      const q1 = document.querySelector('input[name="q1"]:checked');
-      if (!q1) return alert('Please select an option before submitting.');
-
-      const quizBox = document.getElementById('quizBox');
-      if (q1.value === 'a') {
-        quizBox.innerHTML = `<div style="text-align:center; padding:20px;">
-          <h2 style="color:var(--success)">🎉 Correct Answer! Score: 30/30</h2>
-          <p>Great job! Math concept verified.</p>
-        </div>`;
-      } else {
-        quizBox.innerHTML = `<div style="text-align:center; padding:20px;">
-          <h2 style="color:var(--danger)">❌ Incorrect! Score: 0/30</h2>
-          <p>Correct answer is: x = 3</p>
-        </div>`;
-      }
+    const quizBox = document.getElementById('quizBox');
+    if (q1.value === 'a') {
+      quizBox.innerHTML = `<div style="text-align:center; padding:20px;">
+        <h2 style="color:var(--success)">🎉 Correct Answer! Score: 30/30</h2>
+        <p>Great job! Math concept verified.</p>
+        <button class="btn btn-outline" style="margin-top:15px;" onclick="location.reload()">Retry</button>
+      </div>`;
+      App.showToast('Correct! +30 marks', 'success');
+    } else {
+      quizBox.innerHTML = `<div style="text-align:center; padding:20px;">
+        <h2 style="color:var(--danger)">❌ Incorrect! Score: 0/30</h2>
+        <p>Correct answer is: x = 3</p>
+        <button class="btn btn-outline" style="margin-top:15px;" onclick="location.reload()">Try Again</button>
+      </div>`;
+      App.showToast('Incorrect answer', 'error');
     }
+  }
   </script>
 </body>
 </html>
