@@ -55,11 +55,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const { name, department, subjects, phone, class_assigned, status, custom_id, password } = req.body;
     if (!name || !department) return res.status(400).json({ success: false, message: 'Name and department are required.' });
 
-    const countRes = await queryOne(`SELECT COUNT(*) as cnt FROM teachers`);
-    const count    = parseInt(countRes.cnt) + 1;
-    const teacherId = custom_id || ('TCH' + String(count).padStart(3, '0'));
+    const teacherId = (custom_id || '').trim();
+    const tchPass = (password || '').trim();
 
-    const tchPass = (password || 'teach123').trim();
+    if (!teacherId || !tchPass) {
+      return res.status(400).json({ success: false, message: 'Teacher ID and Password are required.' });
+    }
+
     const hash = await bcrypt.hash(tchPass, 10);
     const uRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'teacher', $3) RETURNING id`,
@@ -70,7 +72,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [teacherId, uRes.rows[0].id, name, department, subjects, phone, class_assigned || null, status || 'Full-Time']
     );
-    res.json({ success: true, message: `Teacher ${teacherId} registered. Default password: teach123`, data: tRes.rows[0] });
+    res.json({ success: true, message: `Teacher ${teacherId} registered.`, data: tRes.rows[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to add teacher.' });

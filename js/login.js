@@ -69,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Role selection tabs
   const tabs = document.querySelectorAll('.role-tab');
   let activeRole = 'admin';
-  const demoList = document.getElementById('demo-list');
   const emailInput = document.getElementById('email');
   const passInput = document.getElementById('password');
   const loader = document.getElementById('loader');
@@ -89,42 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         parent:  'PAR001'
       };
       if (emailInput) emailInput.placeholder = 'Enter ' + (placeholderMap[activeRole] || 'User ID');
-      
-      updateDemoCredentials();
     });
   });
-
-  function updateDemoCredentials() {
-    if (!demoList) return;
-    demoList.innerHTML = '';
-    
-    const credMap = {
-      admin:   { id: 'admin',  pw: 'admin123' },
-      teacher: { id: 'TCH001', pw: 'teach123' },
-      student: { id: 'STU001', pw: 'stud123'  },
-      parent:  { id: 'PAR001', pw: 'par123'   },
-    };
-    
-    const cred = credMap[activeRole];
-    if (!cred) return;
-
-    const badge = document.createElement('span');
-    badge.className = 'demo-badge';
-    badge.style.cursor = 'pointer';
-    badge.textContent = `Use Demo: ${cred.id} / ${cred.pw}`;
-    badge.addEventListener('click', () => {
-      if (emailInput) emailInput.value = cred.id;
-      if (passInput) passInput.value = cred.pw;
-      
-      // Auto-fill Captcha for easy demo testing
-      const captchaInput = document.getElementById('captchaInput');
-      if (captchaInput) captchaInput.value = currentCaptcha;
-    });
-    demoList.appendChild(badge);
-  }
-
-  // Initialize demo badge
-  updateDemoCredentials();
 
   // Password toggle visibility
   const togglePass = document.getElementById('togglePass');

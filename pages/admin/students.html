@@ -188,10 +188,10 @@
         </div>
         <div class="form-group"><label class="form-label">Parent / Guardian Name</label><input type="text" class="form-control" id="stuParent" required></div>
         <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-control" id="stuPhone" required></div>
-        <div class="form-group"><label class="form-label">Custom Student ID (Optional)</label><input type="text" class="form-control" id="stuCustomId" placeholder="e.g. STU1001 (Leave blank to auto-generate)"></div>
-        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="stuPassword" value="stud123" required></div>
-        <div class="form-group"><label class="form-label">Parent Username (Optional)</label><input type="text" class="form-control" id="stuParentUsername" placeholder="e.g. PAR1001 (Leave blank to auto-generate)"></div>
-        <div class="form-group"><label class="form-label">Parent Password</label><input type="password" class="form-control" id="stuParentPassword" value="par123" required></div>
+        <div class="form-group"><label class="form-label">Student Login ID</label><input type="text" class="form-control" id="stuCustomId" placeholder="e.g. STU1001" required></div>
+        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="stuPassword" placeholder="••••••••" required></div>
+        <div class="form-group"><label class="form-label">Parent Login ID</label><input type="text" class="form-control" id="stuParentUsername" placeholder="e.g. PAR1001" required></div>
+        <div class="form-group"><label class="form-label">Parent Password</label><input type="password" class="form-control" id="stuParentPassword" placeholder="••••••••" required></div>
         <div class="form-group">
           <label class="form-label">Fee Status</label>
           <select class="form-control" id="stuFee"><option>Paid</option><option>Partial</option><option>Unpaid</option></select>
@@ -293,15 +293,16 @@
     const phone = document.getElementById('stuPhone').value.trim();
     const fee = document.getElementById('stuFee').value;
 
-    if (!name || !parent || !phone) return alert('Fill in all fields.');
+    const id = document.getElementById('stuCustomId').value.trim();
+    const password = document.getElementById('stuPassword').value.trim();
+    const parentUsername = document.getElementById('stuParentUsername').value.trim();
+    const parentPassword = document.getElementById('stuParentPassword').value.trim();
+
+    if (!name || !parent || !phone || !id || !password || !parentUsername || !parentPassword) {
+      return alert('Fill in all fields. All login IDs and passwords are required.');
+    }
 
     const students = AppState.getData('lms_students');
-    const customId = document.getElementById('stuCustomId').value.trim();
-    const id = customId || ('STU' + String(students.length + 1).padStart(3, '0'));
-    const password = document.getElementById('stuPassword').value.trim() || 'stud123';
-    
-    const parentUsername = document.getElementById('stuParentUsername').value.trim() || ('PAR' + id.replace('STU', ''));
-    const parentPassword = document.getElementById('stuParentPassword').value.trim() || 'par123';
 
     const newStudent = { 
       id, 
@@ -326,9 +327,9 @@
     document.getElementById('stuParent').value = '';
     document.getElementById('stuPhone').value = '';
     document.getElementById('stuCustomId').value = '';
-    document.getElementById('stuPassword').value = 'stud123';
+    document.getElementById('stuPassword').value = '';
     document.getElementById('stuParentUsername').value = '';
-    document.getElementById('stuParentPassword').value = 'par123';
+    document.getElementById('stuParentPassword').value = '';
 
     App.closeModal('addStudentModal');
     loadStudents();
