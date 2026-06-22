@@ -6,16 +6,12 @@
   <title>Exam Management Center - Amala HSS EduSphere</title>
   <link rel="stylesheet" href="../../css/main.css">
   <style>
-    :root {
-      --primary: #4F46E5;
-      --primary-dark: #3730A3;
-      --primary-light: #EEF2FF;
-    }
+    :root { --primary: #4F46E5; --primary-dark: #3730A3; --primary-light: #EEF2FF; }
+    .th-action { width: 100px; }
   </style>
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
@@ -23,44 +19,35 @@
           <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
           <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
         </svg>
-        <div class="sidebar-title">
-          AMALA HSS
-          <span>EduSphere LMS</span>
-        </div>
+        <div class="sidebar-title">AMALA HSS <span>EduSphere LMS</span></div>
       </div>
       <ul class="sidebar-menu">
-        
-      <li class="menu-header">Main</li>
-      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
-      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
-      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
-      <li class="menu-header">Academics</li>
-      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
-      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
-      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
-      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
-      <li class="menu-header">Assessment</li>
-      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
-      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
-      <li class="menu-header">Administration</li>
-      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
-      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
-      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
-      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
-      <li class="menu-header">System</li>
-      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
-      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
-      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
-    
-        <li style="margin-top: 20px;" class="sidebar-item">
-          <a href="#" onclick="App.logout()">🚪 Logout</a>
-        </li>
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+        <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+        <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+        <li class="menu-header">Academics</li>
+        <li class="sidebar-item"><a href="classes.html">🏫 Classes &amp; Sections</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="menu-header">Assessment</li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+        <li class="menu-header">Administration</li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+        <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+        <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+        <li class="menu-header">System</li>
+        <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+        <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+        <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
-
-    <!-- Main Content -->
     <main class="main-content">
       <header class="header">
         <div class="header-left">
@@ -68,169 +55,155 @@
           <h1 class="page-title">Exam Management Center</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search anything...">
-          </div>
+          <div class="search-bar">🔍 <input type="text" placeholder="Search anything..."></div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
           <div class="user-chip">
-            <div class="avatar-circle" id="userAvatar">A</div><div style="font-weight: 600;" id="userDisplayName">Administrator</div>
+            <div class="avatar-circle" id="userAvatar">A</div>
+            <div style="font-weight: 600;" id="userDisplayName">Administrator</div>
           </div>
         </div>
       </header>
-
       <div class="content-area">
-        
-  <div class="tab-container">
-    <div class="tab active" onclick="switchTab(0)">Upcoming Exams</div>
-    <div class="tab" onclick="switchTab(1)">Online MCQ Creator</div>
-  </div>
-
-  <div style="text-align:right; margin-bottom:15px;" id="upcoming-actions">
-    <button class="btn btn-primary" onclick="App.openModal('examModal')">➕ Schedule Exam</button>
-  </div>
-
-  <div class="card" id="upcoming-tab-pane">
-    <h3 class="card-title">Scheduled School Examinations</h3>
-    <table class="data-table">
-      <thead>
-        <tr><th>Exam Name</th><th>Type</th><th>Classes</th><th>Date Range</th><th>Max Marks</th><th>Status</th></tr>
-      </thead>
-      <tbody id="examTableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- Online MCQ Pane -->
-  <div class="card" id="online-tab-pane" style="display:none;">
-    <h3 class="card-title">Create MCQ Online Quiz</h3>
-    <form onsubmit="saveOnlineQuiz(event)">
-      <div class="form-group"><label class="form-label">Quiz Topic Name</label><input type="text" class="form-control" id="qzTitle" placeholder="e.g. Science Test 1" required></div>
-      <div class="form-group"><label class="form-label">Time Limit (Minutes)</label><input type="number" class="form-control" id="qzDuration" value="20" required></div>
-      <div style="border:1px solid var(--border-color); padding:15px; border-radius:var(--radius); margin-bottom:15px;">
-        <h5>Add Question 1</h5>
-        <div class="form-group"><input type="text" class="form-control" id="qzQ1" placeholder="Question Text" required></div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <input type="text" class="form-control" id="qzQ1a" placeholder="Option A" required>
-          <input type="text" class="form-control" id="qzQ1b" placeholder="Option B" required>
+        <div class="tab-container">
+          <div class="tab active" onclick="switchTab(0)">Scheduled Exams</div>
+          <div class="tab" onclick="switchTab(1)">Online MCQ Creator</div>
         </div>
-      </div>
-      <button type="submit" class="btn btn-success">Publish MCQ Test</button>
-    </form>
-  </div>
-
-  <!-- Schedule Exam Modal -->
-  <div class="modal-overlay" id="examModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">Schedule Academic Exam</h3>
-        <button class="modal-close" onclick="App.closeModal('examModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group"><label class="form-label">Exam Name</label><input type="text" class="form-control" id="exName" required></div>
-        <div class="form-group">
-          <label class="form-label">Type</label>
-          <select class="form-control" id="exType"><option>Quarterly</option><option>Unit Test</option><option>Annual</option></select>
+        <div style="text-align:right; margin-bottom:15px;" id="upcoming-actions">
+          <button class="btn btn-primary" onclick="App.openModal('examModal')">➕ Schedule Exam</button>
         </div>
-        <div class="form-group">
-          <label class="form-label">Class</label>
-          <select class="form-control" id="exClass"></select>
+        <div class="card" id="upcoming-tab-pane">
+          <h3 class="card-title">Scheduled School Examinations</h3>
+          <table class="data-table">
+            <thead>
+              <tr><th>Exam Name</th><th>Type</th><th>Class</th><th>Date</th><th>Max Marks</th><th>Status</th><th class="th-action">Actions</th></tr>
+            </thead>
+            <tbody id="examTableBody"><tr><td colspan="7" style="text-align:center">Loading...</td></tr></tbody>
+          </table>
         </div>
-        <div class="form-group"><label class="form-label">Max Marks</label><input type="number" class="form-control" id="exMarks" value="100" required></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="App.closeModal('examModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveExam()">Schedule</button>
-      </div>
-    </div>
-  </div>
-
+        <div class="card" id="online-tab-pane" style="display:none;">
+          <h3 class="card-title">Create MCQ Online Quiz</h3>
+          <form onsubmit="saveOnlineQuiz(event)">
+            <div class="form-group"><label class="form-label">Quiz Topic Name</label><input type="text" class="form-control" id="qzTitle" placeholder="e.g. Science Test 1" required></div>
+            <div class="form-group"><label class="form-label">Time Limit (Minutes)</label><input type="number" class="form-control" id="qzDuration" value="20" required></div>
+            <div style="border:1px solid var(--border-color); padding:15px; border-radius:var(--radius); margin-bottom:15px;">
+              <h5>Question 1</h5>
+              <div class="form-group"><input type="text" class="form-control" id="qzQ1" placeholder="Question Text" required></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" class="form-control" id="qzQ1a" placeholder="Option A" required>
+                <input type="text" class="form-control" id="qzQ1b" placeholder="Option B" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success">Publish MCQ Test</button>
+          </form>
+        </div>
+        <!-- Schedule Exam Modal -->
+        <div class="modal-overlay" id="examModal">
+          <div class="modal">
+            <div class="modal-header">
+              <h3 class="modal-title">Schedule Academic Exam</h3>
+              <button class="modal-close" onclick="App.closeModal('examModal')">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group"><label class="form-label">Exam Name</label><input type="text" class="form-control" id="exName" required></div>
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-control" id="exType"><option>Quarterly</option><option>Unit Test</option><option>Half-Yearly</option><option>Annual</option></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Class</label>
+                <select class="form-control" id="exClass"><option value="">All Classes</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Subject (optional)</label><input type="text" class="form-control" id="exSubject" placeholder="e.g. Mathematics"></div>
+              <div class="form-group"><label class="form-label">Exam Date</label><input type="date" class="form-control" id="exDate"></div>
+              <div class="form-group"><label class="form-label">Max Marks</label><input type="number" class="form-control" id="exMarks" value="100" required></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="App.closeModal('examModal')">Cancel</button>
+              <button class="btn btn-primary" onclick="saveExam()">Schedule</button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
-
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    
-  window.addEventListener('load', () => {
-    loadExams();
-    loadClassesDropdown();
-  });
+  let allExams = [];
 
-  window.addEventListener('lms-sync-classes', () => {
-    loadClassesDropdown();
-  });
+  window.addEventListener('load', () => { loadExams(); loadClassesDropdown(); });
 
-  function loadExams() {
-    const list = AppState.getData('lms_exams');
+  async function loadExams() {
+    try {
+      const r = await fetch('/api/exams', { credentials: 'include' });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      allExams = d.data || [];
+      renderExams(allExams);
+    } catch (err) { console.error('loadExams:', err.message); }
+  }
+
+  function renderExams(list) {
     const body = document.getElementById('examTableBody');
-    body.innerHTML = '';
-    list.forEach(e => {
-      body.innerHTML += `<tr>
-        <td><b>${e.name}</b></td>
-        <td>${e.type}</td>
-        <td>${e.classes}</td>
-        <td>${e.dates || 'July 2026'}</td>
-        <td>${e.marks}</td>
-        <td><span class="badge badge-success">${e.status}</span></td>
-      </tr>`;
-    });
-  }
-
-  function loadClassesDropdown() {
-    const classes = AppState.getData('lms_classes');
-    const select = document.getElementById('exClass');
-    select.innerHTML = '';
-    classes.forEach(c => {
-      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    });
-  }
-
-  function saveExam() {
-    const name = document.getElementById('exName').value.trim();
-    const type = document.getElementById('exType').value;
-    const className = document.getElementById('exClass').value;
-    const marks = document.getElementById('exMarks').value;
-
-    if(!name) return alert('Name required.');
-
-    const list = AppState.getData('lms_exams');
-    list.push({ name, type, classes: className, dates: 'Jul 2026', marks, status: 'Scheduled' });
-    AppState.saveData('lms_exams', list);
-    AppState.addNotice(`Scheduled Exam: ${name} for ${className}`);
-
-    document.getElementById('exName').value = '';
-    App.closeModal('examModal');
-    loadExams();
-    App.showToast('Exam scheduled successfully!');
-  }
-
-  function switchTab(index) {
-    const tabs = document.querySelectorAll('.tab-container .tab');
-    tabs.forEach((t, i) => {
-      if(i === index) t.classList.add('active');
-      else t.classList.remove('active');
-    });
-
-    if(index === 0) {
-      document.getElementById('upcoming-actions').style.display = 'block';
-      document.getElementById('upcoming-tab-pane').style.display = 'block';
-      document.getElementById('online-tab-pane').style.display = 'none';
-    } else {
-      document.getElementById('upcoming-actions').style.display = 'none';
-      document.getElementById('upcoming-tab-pane').style.display = 'none';
-      document.getElementById('online-tab-pane').style.display = 'block';
+    if (!list.length) {
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No exams scheduled yet.</td></tr>';
+      return;
     }
+    body.innerHTML = list.map(e => {
+      const sc = e.status === 'Completed' ? 'badge-success' : e.status === 'Ongoing' ? 'badge-warning' : 'badge-info';
+      return '<tr><td><b>' + (e.title||'') + '</b></td><td>' + (e.exam_type||'Quarterly') + '</td><td>' + (e.class_name||'All') + '</td><td>' + (e.exam_date ? new Date(e.exam_date).toLocaleDateString('en-IN') : 'TBD') + '</td><td>' + (e.max_marks||100) + '</td><td><span class="badge ' + sc + '">' + (e.status||'Scheduled') + '</span></td><td><button class="btn btn-outline" style="padding:4px 10px;font-size:12px;" onclick="deleteExam(\'' + (e.exam_id||e.id) + '\')">Delete</button></td></tr>';
+    }).join('');
+  }
+
+  async function loadClassesDropdown() {
+    try {
+      const r = await fetch('/api/classes', { credentials: 'include' });
+      const d = await r.json();
+      const sel = document.getElementById('exClass');
+      sel.innerHTML = '<option value="">All Classes</option>';
+      (d.data||[]).forEach(c => { sel.innerHTML += '<option value="' + c.name + '">' + c.name + '</option>'; });
+    } catch (err) { console.error(err); }
+  }
+
+  async function saveExam() {
+    const title = document.getElementById('exName').value.trim();
+    if (!title) { App.showToast('Exam name required.','error'); return; }
+    try {
+      const r = await fetch('/api/exams', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, exam_type: document.getElementById('exType').value, class_name: document.getElementById('exClass').value, subject: document.getElementById('exSubject').value, exam_date: document.getElementById('exDate').value, max_marks: document.getElementById('exMarks').value })
+      });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      document.getElementById('exName').value = '';
+      App.closeModal('examModal');
+      App.showToast('Exam scheduled!','success');
+      loadExams();
+    } catch (err) { App.showToast('Failed: '+err.message,'error'); }
+  }
+
+  async function deleteExam(id) {
+    if (!confirm('Delete this exam?')) return;
+    try {
+      const r = await fetch('/api/exams/'+id, { method:'DELETE', credentials:'include' });
+      const d = await r.json();
+      App.showToast(d.message, d.success?'success':'error');
+      if (d.success) loadExams();
+    } catch(err) { App.showToast('Delete failed.','error'); }
+  }
+
+  function switchTab(i) {
+    document.querySelectorAll('.tab-container .tab').forEach((t,j) => t.classList.toggle('active',i===j));
+    document.getElementById('upcoming-actions').style.display = i===0?'block':'none';
+    document.getElementById('upcoming-tab-pane').style.display = i===0?'block':'none';
+    document.getElementById('online-tab-pane').style.display = i===1?'block':'none';
   }
 
   function saveOnlineQuiz(e) {
     e.preventDefault();
-    const title = document.getElementById('qzTitle').value;
-    App.showToast('MCQ published on Student portal under Online Tests!', 'success');
+    App.showToast('MCQ published on Student portal!','success');
   }
-
   </script>
 </body>
 </html>

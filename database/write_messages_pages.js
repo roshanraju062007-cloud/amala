@@ -1,0 +1,673 @@
+/**
+ * Rewrites all messaging pages to use real Socket.IO + API
+ */
+const fs = require('fs');
+
+// Helper to get token from cookie
+const TOKEN_HELPER = `
+  function getToken() {
+    const match = document.cookie.match(/edusphere_token=([^;]+)/);
+    return match ? match[1] : localStorage.getItem('edusphere_token') || '';
+  }
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STUDENT CHAT PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+const studentChat = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages - EduSphere Student Portal</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    .chat-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; height:calc(100vh - 160px); }
+    .chat-sidebar { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; }
+    .chat-sidebar-header { padding:16px; font-weight:700; border-bottom:1px solid var(--border-color); background:var(--primary); color:#fff; }
+    .chat-contacts { flex:1; overflow-y:auto; }
+    .chat-contact { padding:14px 16px; cursor:pointer; border-bottom:1px solid var(--border-color); transition:background .2s; display:flex; align-items:center; gap:12px; }
+    .chat-contact:hover, .chat-contact.active { background:var(--primary-light,#EEF2FF); }
+    .contact-avatar { width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+    .contact-info { flex:1; min-width:0; }
+    .contact-name { font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .contact-preview { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .unread-badge { background:#EF4444; color:#fff; border-radius:50%; width:20px; height:20px; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .chat-main { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-header { padding:14px 18px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:12px; }
+    .chat-title { font-weight:700; }
+    .chat-subtitle { font-size:12px; color:var(--text-muted); }
+    .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .chat-bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; }
+    .chat-bubble.mine { background:var(--primary); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+    .chat-bubble.theirs { background:var(--surface,#f1f5f9); color:var(--text-primary); align-self:flex-start; border-bottom-left-radius:4px; }
+    .chat-bubble .bubble-time { font-size:10px; opacity:.7; margin-top:4px; text-align:right; }
+    .chat-footer { padding:12px; border-top:1px solid var(--border-color); display:flex; gap:10px; }
+    .chat-footer input { flex:1; }
+    .no-chat { display:flex; align-items:center; justify-content:center; flex:1; color:var(--text-muted); flex-direction:column; gap:8px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">S</text>
+        </svg>
+        <div class="sidebar-title">AMALA HSS <span>Student Portal</span></div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 My Profile</a></li>
+        <li class="menu-header">Academics</li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="online-tests.html">✍️ Exams &amp; Tests</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+        <li class="sidebar-item"><a href="report-card.html">📋 Report Card</a></li>
+        <li class="menu-header">Campus</li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fees</a></li>
+        <li class="sidebar-item"><a href="library.html">📚 Library</a></li>
+        <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+        <li class="sidebar-item"><a href="chat.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="ai-assistant.html">🤖 AI Assistant</a></li>
+        <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
+      </ul>
+    </aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Messages</h1>
+        </div>
+        <div class="header-right">
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">S</div>
+            <div style="font-weight:600;" id="userDisplayName">Student</div>
+          </div>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">💬 Teachers</div>
+            <div class="chat-contacts" id="teacherList">
+              <div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="no-chat" id="noChatMsg">
+              <div style="font-size:48px;">💬</div>
+              <div>Select a teacher to start chatting</div>
+            </div>
+            <div id="chatPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+              <div class="chat-header">
+                <div class="contact-avatar" id="chatAvatar">T</div>
+                <div>
+                  <div class="chat-title" id="chatTitle">Teacher Name</div>
+                  <div class="chat-subtitle" id="chatSubtitle">Teacher</div>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages"></div>
+              <div class="chat-footer">
+                <input type="text" class="form-control" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+                <button class="btn btn-primary" onclick="sendMsg()">Send ➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="../../js/app.js"></script>
+  <script src="../../js/auth-check.js"></script>
+  <script>
+  ${TOKEN_HELPER}
+
+  let socket, currentRoom = null, currentReceiver = null, myUserId = null;
+
+  window.addEventListener('lms-auth-ready', async (e) => {
+    const user = e.detail;
+    myUserId = user.userId;
+    document.getElementById('userDisplayName').textContent = user.name || 'Student';
+    document.getElementById('userAvatar').textContent = (user.name||'S')[0].toUpperCase();
+    initSocket();
+    loadTeachers();
+  });
+
+  function initSocket() {
+    socket = io({ auth: { token: getToken() } });
+    socket.on('newMessage', appendMessage);
+    socket.on('messageError', d => App.showToast(d.message,'error'));
+  }
+
+  async function loadTeachers() {
+    try {
+      const r = await fetch('/api/messages/users', { credentials:'include' });
+      const d = await r.json();
+      const list = document.getElementById('teacherList');
+      if (!d.data || !d.data.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No teachers found.</div>'; return; }
+      list.innerHTML = '';
+      d.data.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'chat-contact';
+        div.innerHTML = '<div class="contact-avatar">' + (t.name||'T')[0].toUpperCase() + '</div><div class="contact-info"><div class="contact-name">' + (t.name||t.user_id) + '</div><div class="contact-preview">' + (t.department||t.subjects||'Teacher') + '</div></div>';
+        div.onclick = () => openChat(t);
+        list.appendChild(div);
+      });
+    } catch(err) { console.error(err); }
+  }
+
+  async function openChat(teacher) {
+    document.querySelectorAll('.chat-contact').forEach(c => c.classList.remove('active'));
+    event && event.currentTarget && event.currentTarget.classList.add('active');
+    currentReceiver = teacher.user_id;
+    // Build room_id client-side (must match server logic: teacher first)
+    const ids = ['teacher-'+teacher.user_id+'-student-'+myUserId];
+    currentRoom = ids[0];
+
+    document.getElementById('noChatMsg').style.display = 'none';
+    document.getElementById('chatPanel').style.display = 'flex';
+    document.getElementById('chatTitle').textContent = teacher.name || teacher.user_id;
+    document.getElementById('chatSubtitle').textContent = teacher.department || teacher.subjects || 'Teacher';
+    document.getElementById('chatAvatar').textContent = (teacher.name||'T')[0].toUpperCase();
+
+    if (socket) { socket.emit('joinRoom', currentRoom); }
+
+    // Load history
+    const r = await fetch('/api/messages?room_id='+encodeURIComponent(currentRoom), { credentials:'include' });
+    const d = await r.json();
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML = '';
+    (d.data||[]).forEach(appendMessage);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendMessage(msg) {
+    const msgs = document.getElementById('chatMessages');
+    if (!msgs) return;
+    const mine = msg.sender_id === myUserId;
+    const div = document.createElement('div');
+    div.className = 'chat-bubble ' + (mine ? 'mine' : 'theirs');
+    const time = msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+    div.innerHTML = (mine ? '' : '<div style="font-size:11px;font-weight:600;margin-bottom:4px;">' + (msg.sender_name||msg.sender_id) + '</div>') + msg.content + '<div class="bubble-time">' + time + '</div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content || !currentRoom || !currentReceiver) return;
+    if (socket && socket.connected) {
+      socket.emit('sendMessage', { room_id: currentRoom, receiver_id: currentReceiver, content });
+    } else {
+      fetch('/api/messages', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ receiver_id: currentReceiver, room_id: currentRoom, content }) })
+        .then(r=>r.json()).then(d => { if (d.success) appendMessage(d.data); });
+    }
+    input.value = '';
+  }
+  </script>
+</body>
+</html>`;
+
+fs.writeFileSync('d:/amala/pages/student/chat.html', studentChat, 'utf8');
+console.log('Written: student/chat.html');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEACHER MESSAGES PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+const teacherMessages = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages - EduSphere Teacher Portal</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    .chat-layout { display:grid; grid-template-columns:300px 1fr; gap:16px; height:calc(100vh - 160px); }
+    .chat-sidebar { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; }
+    .chat-sidebar-header { padding:16px; font-weight:700; border-bottom:1px solid var(--border-color); background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    .chat-contacts { flex:1; overflow-y:auto; }
+    .chat-contact { padding:14px 16px; cursor:pointer; border-bottom:1px solid var(--border-color); transition:background .2s; display:flex; align-items:center; gap:12px; }
+    .chat-contact:hover, .chat-contact.active { background:var(--primary-light,#EEF2FF); }
+    .contact-avatar { width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+    .contact-info { flex:1; min-width:0; }
+    .contact-name { font-weight:600; font-size:14px; }
+    .contact-preview { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .unread-badge { background:#EF4444; color:#fff; border-radius:50%; min-width:20px; height:20px; padding:0 4px; font-size:11px; display:flex; align-items:center; justify-content:center; }
+    .chat-main { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-header { padding:14px 18px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:12px; }
+    .chat-title { font-weight:700; }
+    .chat-subtitle { font-size:12px; color:var(--text-muted); }
+    .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .chat-bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; }
+    .chat-bubble.mine { background:var(--primary); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+    .chat-bubble.theirs { background:var(--surface,#f1f5f9); color:var(--text-primary); align-self:flex-start; border-bottom-left-radius:4px; }
+    .bubble-time { font-size:10px; opacity:.7; margin-top:4px; text-align:right; }
+    .chat-footer { padding:12px; border-top:1px solid var(--border-color); display:flex; gap:10px; }
+    .chat-footer input { flex:1; }
+    .no-chat { display:flex; align-items:center; justify-content:center; flex:1; color:var(--text-muted); flex-direction:column; gap:8px; }
+    .compose-btn { background:rgba(255,255,255,.2); border:none; color:#fff; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">T</text>
+        </svg>
+        <div class="sidebar-title">AMALA HSS <span>Teacher Portal</span></div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 My Profile</a></li>
+        <li class="menu-header">Academics</li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="menu-header">Communication</li>
+        <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notices</a></li>
+        <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
+      </ul>
+    </aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Messages</h1>
+        </div>
+        <div class="header-right">
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight:600;" id="userDisplayName">Teacher</div>
+          </div>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">
+              💬 Inbox
+              <button class="compose-btn" onclick="showCompose()">✏️ New</button>
+            </div>
+            <div class="chat-contacts" id="inboxList">
+              <div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="no-chat" id="noChatMsg">
+              <div style="font-size:48px;">💬</div>
+              <div>Select a conversation or compose a new message</div>
+            </div>
+            <div id="composePanel" style="display:none;flex-direction:column;flex:1;padding:20px;gap:12px;">
+              <h3 style="margin:0;">✏️ New Message</h3>
+              <div class="form-group">
+                <label class="form-label">To (Student/Parent)</label>
+                <select class="form-control" id="composeRecipient"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea class="form-control" id="composeText" rows="4" placeholder="Type your message..."></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="sendCompose()" style="align-self:flex-start;">Send Message ➤</button>
+            </div>
+            <div id="chatPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+              <div class="chat-header">
+                <div class="contact-avatar" id="chatAvatar">S</div>
+                <div>
+                  <div class="chat-title" id="chatTitle"></div>
+                  <div class="chat-subtitle" id="chatSubtitle"></div>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages"></div>
+              <div class="chat-footer">
+                <input type="text" class="form-control" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+                <button class="btn btn-primary" onclick="sendMsg()">Send ➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="../../js/app.js"></script>
+  <script src="../../js/auth-check.js"></script>
+  <script>
+  ${TOKEN_HELPER}
+
+  let socket, currentRoom = null, currentReceiver = null, myUserId = null;
+
+  window.addEventListener('lms-auth-ready', async (e) => {
+    const user = e.detail;
+    myUserId = user.userId;
+    document.getElementById('userDisplayName').textContent = user.name || 'Teacher';
+    document.getElementById('userAvatar').textContent = (user.name||'T')[0].toUpperCase();
+    initSocket();
+    loadInbox();
+    loadAllStudents();
+  });
+
+  function initSocket() {
+    socket = io({ auth: { token: getToken() } });
+    socket.on('newMessage', msg => {
+      if (msg.room_id === currentRoom) appendMessage(msg);
+    });
+  }
+
+  async function loadInbox() {
+    try {
+      const r = await fetch('/api/messages/rooms', { credentials:'include' });
+      const d = await r.json();
+      const list = document.getElementById('inboxList');
+      if (!d.data || !d.data.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No conversations yet.</div>'; return; }
+      list.innerHTML = '';
+      d.data.forEach(room => {
+        const div = document.createElement('div');
+        div.className = 'chat-contact';
+        div.innerHTML = '<div class="contact-avatar">' + (room.other_name||'S')[0].toUpperCase() + '</div><div class="contact-info"><div class="contact-name">' + (room.other_name||room.other_user_id) + '</div><div class="contact-preview">' + (room.last_message||'') + '</div></div>' + (parseInt(room.unread_count)>0 ? '<div class="unread-badge">' + room.unread_count + '</div>' : '');
+        div.onclick = () => openRoom(room);
+        list.appendChild(div);
+      });
+    } catch(err) { console.error(err); }
+  }
+
+  async function loadAllStudents() {
+    try {
+      const r = await fetch('/api/messages/users', { credentials:'include' });
+      const d = await r.json();
+      const sel = document.getElementById('composeRecipient');
+      sel.innerHTML = '<option value="">-- Select recipient --</option>';
+      (d.data||[]).forEach(u => { sel.innerHTML += '<option value="' + u.user_id + '">' + u.name + ' (' + (u.class_name||u.role||'') + ')</option>'; });
+    } catch(err) { console.error(err); }
+  }
+
+  async function openRoom(room) {
+    document.querySelectorAll('.chat-contact').forEach(c => c.classList.remove('active'));
+    event && event.currentTarget && event.currentTarget.classList.add('active');
+    currentRoom = room.room_id;
+    currentReceiver = room.other_user_id;
+    document.getElementById('noChatMsg').style.display = 'none';
+    document.getElementById('composePanel').style.display = 'none';
+    document.getElementById('chatPanel').style.display = 'flex';
+    document.getElementById('chatTitle').textContent = room.other_name || room.other_user_id;
+    document.getElementById('chatSubtitle').textContent = room.other_role || 'Student';
+    document.getElementById('chatAvatar').textContent = (room.other_name||'S')[0].toUpperCase();
+    if (socket) socket.emit('joinRoom', currentRoom);
+    const r = await fetch('/api/messages?room_id=' + encodeURIComponent(currentRoom), { credentials:'include' });
+    const d = await r.json();
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML = '';
+    (d.data||[]).forEach(appendMessage);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendMessage(msg) {
+    const msgs = document.getElementById('chatMessages');
+    if (!msgs) return;
+    const mine = msg.sender_id === myUserId;
+    const div = document.createElement('div');
+    div.className = 'chat-bubble ' + (mine ? 'mine' : 'theirs');
+    const time = msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+    div.innerHTML = (mine ? '' : '<div style="font-size:11px;font-weight:600;margin-bottom:4px;">' + (msg.sender_name||msg.sender_id) + '</div>') + msg.content + '<div class="bubble-time">' + time + '</div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content || !currentRoom || !currentReceiver) return;
+    if (socket && socket.connected) {
+      socket.emit('sendMessage', { room_id: currentRoom, receiver_id: currentReceiver, content });
+    } else {
+      fetch('/api/messages', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ receiver_id: currentReceiver, room_id: currentRoom, content }) })
+        .then(r=>r.json()).then(d => { if(d.success) appendMessage(d.data); });
+    }
+    input.value = '';
+  }
+
+  function showCompose() {
+    document.getElementById('noChatMsg').style.display = 'none';
+    document.getElementById('chatPanel').style.display = 'none';
+    document.getElementById('composePanel').style.display = 'flex';
+  }
+
+  async function sendCompose() {
+    const receiver_id = document.getElementById('composeRecipient').value;
+    const content = document.getElementById('composeText').value.trim();
+    if (!receiver_id || !content) { App.showToast('Select recipient and type a message.','error'); return; }
+    try {
+      const r = await fetch('/api/messages', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ receiver_id, content }) });
+      const d = await r.json();
+      if (!d.success) throw new Error(d.message);
+      App.showToast('Message sent!','success');
+      document.getElementById('composeText').value = '';
+      document.getElementById('composeRecipient').value = '';
+      loadInbox();
+    } catch(err) { App.showToast('Failed: '+err.message,'error'); }
+  }
+  </script>
+</body>
+</html>`;
+
+fs.writeFileSync('d:/amala/pages/teacher/messages.html', teacherMessages, 'utf8');
+console.log('Written: teacher/messages.html');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PARENT MESSAGES PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+const parentMessages = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages - EduSphere Parent Portal</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    .chat-layout { display:grid; grid-template-columns:280px 1fr; gap:16px; height:calc(100vh - 160px); }
+    .chat-sidebar { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); overflow:hidden; display:flex; flex-direction:column; }
+    .chat-sidebar-header { padding:16px; font-weight:700; border-bottom:1px solid var(--border-color); background:var(--primary); color:#fff; }
+    .chat-contacts { flex:1; overflow-y:auto; }
+    .chat-contact { padding:14px 16px; cursor:pointer; border-bottom:1px solid var(--border-color); transition:background .2s; display:flex; align-items:center; gap:12px; }
+    .chat-contact:hover, .chat-contact.active { background:var(--primary-light,#EEF2FF); }
+    .contact-avatar { width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0; }
+    .contact-info { flex:1; min-width:0; }
+    .contact-name { font-weight:600; font-size:14px; }
+    .contact-preview { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .chat-main { background:var(--card-bg); border:1px solid var(--border-color); border-radius:var(--radius); display:flex; flex-direction:column; overflow:hidden; }
+    .chat-header { padding:14px 18px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:12px; }
+    .chat-title { font-weight:700; }
+    .chat-subtitle { font-size:12px; color:var(--text-muted); }
+    .chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+    .chat-bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; }
+    .chat-bubble.mine { background:var(--primary); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+    .chat-bubble.theirs { background:var(--surface,#f1f5f9); color:var(--text-primary); align-self:flex-start; border-bottom-left-radius:4px; }
+    .bubble-time { font-size:10px; opacity:.7; margin-top:4px; text-align:right; }
+    .chat-footer { padding:12px; border-top:1px solid var(--border-color); display:flex; gap:10px; }
+    .chat-footer input { flex:1; }
+    .no-chat { display:flex; align-items:center; justify-content:center; flex:1; color:var(--text-muted); flex-direction:column; gap:8px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">P</text>
+        </svg>
+        <div class="sidebar-title">AMALA HSS <span>Parent Portal</span></div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 My Profile</a></li>
+        <li class="menu-header">Child's Academics</li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+        <li class="sidebar-item"><a href="homework.html">📎 Homework</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fees</a></li>
+        <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+        <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+        <li class="menu-header">Communication</li>
+        <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notices</a></li>
+        <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
+      </ul>
+    </aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">Messages to Teachers</h1>
+        </div>
+        <div class="header-right">
+          <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">P</div>
+            <div style="font-weight:600;" id="userDisplayName">Parent</div>
+          </div>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">💬 Teachers</div>
+            <div class="chat-contacts" id="teacherList">
+              <div style="padding:20px;text-align:center;color:var(--text-muted);">Loading...</div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="no-chat" id="noChatMsg">
+              <div style="font-size:48px;">💬</div>
+              <div>Select a teacher to send a message</div>
+            </div>
+            <div id="chatPanel" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+              <div class="chat-header">
+                <div class="contact-avatar" id="chatAvatar">T</div>
+                <div>
+                  <div class="chat-title" id="chatTitle">Teacher</div>
+                  <div class="chat-subtitle" id="chatSubtitle">Teacher</div>
+                </div>
+              </div>
+              <div class="chat-messages" id="chatMessages"></div>
+              <div class="chat-footer">
+                <input type="text" class="form-control" id="msgInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+                <button class="btn btn-primary" onclick="sendMsg()">Send ➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="../../js/app.js"></script>
+  <script src="../../js/auth-check.js"></script>
+  <script>
+  ${TOKEN_HELPER}
+
+  let socket, currentRoom = null, currentReceiver = null, myUserId = null;
+
+  window.addEventListener('lms-auth-ready', async (e) => {
+    const user = e.detail;
+    myUserId = user.userId;
+    document.getElementById('userDisplayName').textContent = user.name || 'Parent';
+    document.getElementById('userAvatar').textContent = (user.name||'P')[0].toUpperCase();
+    initSocket();
+    loadTeachers();
+  });
+
+  function initSocket() {
+    socket = io({ auth: { token: getToken() } });
+    socket.on('newMessage', msg => { if(msg.room_id === currentRoom) appendMessage(msg); });
+    socket.on('messageError', d => App.showToast(d.message,'error'));
+  }
+
+  async function loadTeachers() {
+    try {
+      const r = await fetch('/api/messages/users', { credentials:'include' });
+      const d = await r.json();
+      const list = document.getElementById('teacherList');
+      if (!d.data || !d.data.length) { list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">No teachers found.</div>'; return; }
+      list.innerHTML = '';
+      d.data.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'chat-contact';
+        div.innerHTML = '<div class="contact-avatar">' + (t.name||'T')[0].toUpperCase() + '</div><div class="contact-info"><div class="contact-name">' + (t.name||t.user_id) + '</div><div class="contact-preview">' + (t.department||t.subjects||'Teacher') + '</div></div>';
+        div.onclick = () => openChat(t, div);
+        list.appendChild(div);
+      });
+    } catch(err) { console.error(err); }
+  }
+
+  async function openChat(teacher, el) {
+    document.querySelectorAll('.chat-contact').forEach(c => c.classList.remove('active'));
+    if (el) el.classList.add('active');
+    currentReceiver = teacher.user_id;
+    currentRoom = 'teacher-' + teacher.user_id + '-parent-' + myUserId;
+    document.getElementById('noChatMsg').style.display = 'none';
+    document.getElementById('chatPanel').style.display = 'flex';
+    document.getElementById('chatTitle').textContent = teacher.name || teacher.user_id;
+    document.getElementById('chatSubtitle').textContent = teacher.department || teacher.subjects || 'Teacher';
+    document.getElementById('chatAvatar').textContent = (teacher.name||'T')[0].toUpperCase();
+    if (socket) socket.emit('joinRoom', currentRoom);
+    const r = await fetch('/api/messages?room_id=' + encodeURIComponent(currentRoom), { credentials:'include' });
+    const d = await r.json();
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML = '';
+    (d.data||[]).forEach(appendMessage);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function appendMessage(msg) {
+    const msgs = document.getElementById('chatMessages');
+    if (!msgs) return;
+    const mine = msg.sender_id === myUserId;
+    const div = document.createElement('div');
+    div.className = 'chat-bubble ' + (mine ? 'mine' : 'theirs');
+    const time = msg.sent_at ? new Date(msg.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+    div.innerHTML = (mine ? '' : '<div style="font-size:11px;font-weight:600;margin-bottom:4px;">' + (msg.sender_name||'Teacher') + '</div>') + msg.content + '<div class="bubble-time">' + time + '</div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function sendMsg() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content || !currentRoom || !currentReceiver) return;
+    if (socket && socket.connected) {
+      socket.emit('sendMessage', { room_id: currentRoom, receiver_id: currentReceiver, content });
+    } else {
+      fetch('/api/messages', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ receiver_id: currentReceiver, room_id: currentRoom, content }) })
+        .then(r=>r.json()).then(d => { if(d.success) appendMessage(d.data); });
+    }
+    input.value = '';
+  }
+  </script>
+</body>
+</html>`;
+
+fs.writeFileSync('d:/amala/pages/parent/messages.html', parentMessages, 'utf8');
+console.log('Written: parent/messages.html');
+
+console.log('\\nAll messaging pages written!');
