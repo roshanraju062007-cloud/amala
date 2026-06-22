@@ -139,8 +139,8 @@
             <option>12th Standard - Commerce with Business Maths</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Custom Teacher ID (Optional)</label><input type="text" class="form-control" id="tchCustomId" placeholder="e.g. TCH001"></div>
-        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="tchPassword" value="teach123" required></div>
+        <div class="form-group"><label class="form-label">Teacher Login ID</label><input type="text" class="form-control" id="tchCustomId" placeholder="e.g. TCH001" required></div>
+        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="tchPassword" placeholder="••••••••" required></div>
         <div class="form-group">
           <label class="form-label">Staff Status</label>
           <select class="form-control" id="tchStatus"><option>Full-Time</option><option>Part-Time</option></select>
@@ -213,15 +213,15 @@
     const subjects = document.getElementById('tchSub').value.trim();
     const phone = document.getElementById('tchPhone').value.trim();
     const status = document.getElementById('tchStatus').value;
-
-    if (!name || !dept || !subjects || !phone) return alert('Fill all fields.');
-
-    const list = AppState.getData('lms_teachers');
-    const customId = document.getElementById('tchCustomId').value.trim();
-    const id = customId || ('TCH' + String(list.length + 1).padStart(3, '0'));
-    const password = document.getElementById('tchPassword').value.trim() || 'teach123';
+    const id = document.getElementById('tchCustomId').value.trim();
+    const password = document.getElementById('tchPassword').value.trim();
     const classAssigned = document.getElementById('tchClassAssigned').value;
 
+    if (!name || !dept || !subjects || !phone || !id || !password) {
+      return alert('Fill in all fields. Teacher ID and password are required.');
+    }
+
+    const list = AppState.getData('lms_teachers');
     const newT = { id, name, dept, subjects, phone, status, password, classAssigned };
     list.push(newT);
     AppState.saveData('lms_teachers', list);
@@ -232,7 +232,7 @@
     document.getElementById('tchSub').value = '';
     document.getElementById('tchPhone').value = '';
     document.getElementById('tchCustomId').value = '';
-    document.getElementById('tchPassword').value = 'teach123';
+    document.getElementById('tchPassword').value = '';
     document.getElementById('tchClassAssigned').value = 'None';
 
     App.closeModal('addTeacherModal');

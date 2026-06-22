@@ -70,22 +70,16 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const { name, class_name, section, phone, fee_status, parent_name, custom_student_id, student_password, parent_username, parent_password } = req.body;
     if (!name || !class_name) return res.status(400).json({ success: false, message: 'Name and class are required.' });
 
-    // Generate/Resolve Student ID
-    let studentId = (custom_student_id || '').trim();
-    const countRes = await queryOne(`SELECT COUNT(*) as cnt FROM students`);
-    const count    = parseInt(countRes.cnt) + 1;
-    if (!studentId) {
-      studentId = 'STU' + String(count).padStart(3, '0');
-    }
+    const studentId = (custom_student_id || '').trim();
+    const stuPass = (student_password || '').trim();
+    const parentId = (parent_username || '').trim();
+    const parPass = (parent_password || '').trim();
 
-    // Generate/Resolve Parent ID
-    let parentId = (parent_username || '').trim();
-    if (!parentId) {
-      parentId = 'PAR' + String(count).padStart(3, '0');
+    if (!studentId || !stuPass || !parentId || !parPass) {
+      return res.status(400).json({ success: false, message: 'Student ID, Student Password, Parent Username, and Parent Password are all required.' });
     }
 
     // Create student user
-    const stuPass = (student_password || 'stud123').trim();
     const hash = await bcrypt.hash(stuPass, 10);
     const uRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'student', $3) RETURNING id`,
@@ -103,7 +97,6 @@ router.post('/', requireRole('admin'), async (req, res) => {
 
     // Create parent user
     const parentName = parent_name || `Parent of ${name}`;
-    const parPass = (parent_password || 'par123').trim();
     const pHash = await bcrypt.hash(parPass, 10);
     const puRes = await query(
       `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'parent', $3) RETURNING id`,
