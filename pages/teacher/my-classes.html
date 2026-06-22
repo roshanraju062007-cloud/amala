@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Classes - EduSphere Teacher Portal</title>
   <link rel="stylesheet" href="../../css/main.css">
-  <style>:root{--primary:#10B981;--primary-dark:#059669;--primary-light:#ECFDF5;}</style>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -13,21 +19,24 @@
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
           <circle cx="250" cy="250" r="230" fill="#FFF"/>
-          <circle cx="250" cy="250" r="180" fill="#10B981"/>
-          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">T</text>
         </svg>
-        <div class="sidebar-title">AMALA HSS<span>Teacher Portal</span></div>
+        <div class="sidebar-title">AMALA HSS <span>Teacher Portal</span></div>
       </div>
       <ul class="sidebar-menu">
-        <li class="menu-header">Teacher</li>
+        <li class="menu-header">Main</li>
         <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-        <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 My Profile</a></li>
+        <li class="menu-header">Academics</li>
         <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
         <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-        <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
         <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="menu-header">Communication</li>
         <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
-        <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notices</a></li>
         <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
@@ -35,12 +44,15 @@
       <header class="header">
         <div class="header-left">
           <button class="hamburger" id="hamburger">☰</button>
-          <h1 class="page-title">My Classes</h1>
+          <h1 class="page-title">My Assigned Classes</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">🔍 <input type="text" id="classSearch" placeholder="Search classes..." oninput="filterClasses()"></div>
+          <div class="search-bar">🔍 <input type="text" id="classSearch" placeholder="Search students..." oninput="filterClasses()"></div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <div class="user-chip"><div class="avatar-circle" id="userAvatar">T</div><div style="font-weight:600;" id="userDisplayName">Teacher</div></div>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight:600;" id="userDisplayName">Teacher</div>
+          </div>
         </div>
       </header>
       <div class="content-area">
@@ -49,8 +61,19 @@
           <h3 class="card-title">📋 My Students</h3>
           <div class="table-responsive">
             <table class="data-table">
-              <thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Section</th><th>Attendance</th><th>Fee Status</th></tr></thead>
-              <tbody id="myStudentsTable"></tbody>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Section</th>
+                  <th>Attendance</th>
+                  <th>Fee Status</th>
+                </tr>
+              </thead>
+              <tbody id="myStudentsTable">
+                <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading students roster...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -62,18 +85,26 @@
   <script>
     let myClasses = [];
     let myStudents = [];
+    let teacherId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const teacherId = localStorage.getItem('userId') || 'TCH001';
-      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
+    window.addEventListener('lms-auth-ready', (e) => {
+      const user = e.detail;
+      teacherId = user.userId;
+      document.getElementById('userDisplayName').textContent = user.name || 'Teacher';
+      document.getElementById('userAvatar').textContent = (user.name||'T')[0].toUpperCase();
+
+      loadClassesData();
+    });
+
+    function loadClassesData() {
+      const classes = AppState.getData('lms_classes');
+      const teachers = AppState.getData('lms_teachers');
+      const students = AppState.getData('lms_students');
       const teacher = teachers.find(t => t.id === teacherId) || {};
-      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
-      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
 
       // Find classes assigned to this teacher
-      myClasses = classes.filter(c => c.teacherId === teacherId);
+      myClasses = classes.filter(c => c.name === teacher.classAssigned);
       if (myClasses.length === 0 && classes.length > 0) {
-        // Assign first class as fallback
         myClasses = [classes[0]];
       }
 
@@ -82,7 +113,7 @@
 
       renderClasses();
       renderStudents(myStudents);
-    });
+    }
 
     function renderClasses() {
       const grid = document.getElementById('classesGrid');
@@ -91,14 +122,14 @@
         grid.innerHTML = '<div class="card"><p style="color:var(--text-muted)">No classes assigned yet. Contact admin.</p></div>';
         return;
       }
+      const students = AppState.getData('lms_students');
       myClasses.forEach(cls => {
-        const stuCount = (JSON.parse(localStorage.getItem('lms_students') || '[]')).filter(s => s.class === cls.name).length;
+        const stuCount = students.filter(s => s.class === cls.name).length;
         grid.innerHTML += `<div class="card" style="border-top:4px solid var(--primary);">
           <h4 style="font-size:15px; color:var(--primary); margin-bottom:10px;">${cls.name}</h4>
           <p><b>Sections:</b> ${cls.sections ? cls.sections.join(', ') : 'A'}</p>
           <p><b>Students:</b> ${stuCount} enrolled</p>
-          <p><b>Subjects:</b> ${cls.subjects || 'All Subjects'}</p>
-          <button class="btn btn-success" style="width:100%;margin-top:12px;" onclick="scrollToStudents()">👥 View Students</button>
+          <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="scrollToStudents()">👥 View Students</button>
         </div>`;
       });
     }
@@ -115,13 +146,14 @@
         return;
       }
       list.forEach(s => {
-        const attColor = s.attendance >= 85 ? 'var(--success)' : s.attendance >= 75 ? 'var(--warning)' : 'var(--danger)';
+        const attVal = parseFloat(s.attendance || 100);
+        const attColor = attVal >= 85 ? 'var(--success)' : attVal >= 75 ? 'var(--warning)' : 'var(--danger)';
         tbody.innerHTML += `<tr>
           <td>${s.id}</td>
           <td><b>${s.name}</b></td>
           <td>${s.class}</td>
           <td>${s.section}</td>
-          <td><span style="color:${attColor};font-weight:600;">${s.attendance || 90}%</span></td>
+          <td><span style="color:${attColor};font-weight:600;">${attVal}%</span></td>
           <td><span class="badge ${s.fee==='Paid'?'badge-success':s.fee==='Partial'?'badge-warning':'badge-danger'}">${s.fee}</span></td>
         </tr>`;
       });

@@ -224,6 +224,59 @@ feesRouter.get('/', async (req, res) => {
   }
 });
 
+feesRouter.post('/:id/pay', async (req, res) => {
+  try {
+    const feeId = parseInt(req.params.id);
+    const { payment_mode } = req.body;
+
+    const fee = await queryOne(
+      `SELECT f.*, s.student_id as student_code, s.id as student_db_id
+       FROM fees f
+       JOIN students s ON f.student_id = s.id
+       WHERE f.id = $1`,
+      [feeId]
+    );
+
+    if (!fee) {
+      return res.status(404).json({ success: false, message: 'Fee record not found.' });
+    }
+
+    if (req.user.role === 'student' && req.user.userId !== fee.student_code) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+    if (req.user.role === 'parent') {
+      const child = await queryOne(
+        `SELECT id FROM students WHERE id = $1 AND id IN (
+          SELECT student_id FROM parents WHERE user_id = $2
+        )`,
+        [fee.student_db_id, req.user.dbId]
+      );
+      if (!child) {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+    }
+
+    const receiptNo = 'RCP' + Date.now().toString().slice(-8);
+
+    await query(
+      `UPDATE fees
+       SET amount_paid = amount_due, status = 'Paid', payment_date = CURRENT_DATE, payment_mode = $1, receipt_no = $2
+       WHERE id = $3`,
+      [payment_mode || 'Online Card', receiptNo, feeId]
+    );
+
+    await query(
+      `UPDATE students SET fee_status = 'Paid' WHERE id = $1`,
+      [fee.student_db_id]
+    );
+
+    res.json({ success: true, message: 'Payment processed successfully.', receipt_no: receiptNo });
+  } catch (err) {
+    console.error('Pay fee error:', err);
+    res.status(500).json({ success: false, message: 'Failed to process payment.' });
+  }
+});
+
 feesRouter.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const { amount_paid, payment_mode, receipt_no, status } = req.body;

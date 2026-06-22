@@ -114,7 +114,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       AppState.init();
       const stuId = localStorage.getItem('userId') || 'STU001';
-      const students = JSON.parse(localStorage.getItem('lms_students') || '[]');
+      const students = AppState.getData('lms_students');
       const currentS = students.find(s => s.id === stuId) || students[0];
 
       if (!currentS) {
@@ -129,7 +129,7 @@
       document.getElementById('stuAttendance').textContent = (currentS.attendance || 92) + '%';
       document.getElementById('stuFee').textContent = currentS.fee || 'Paid';
 
-      const allResults = JSON.parse(localStorage.getItem('lms_results') || '[]');
+      const allResults = AppState.getData('lms_results');
       const myResults = allResults.filter(r => r.stuId === currentS.id);
       const table = document.getElementById('reportCardTable');
 
@@ -145,7 +145,7 @@
 
       if (myResults.length === 0) {
         // Generate demo results from subjects
-        const subjects = JSON.parse(localStorage.getItem('lms_subjects') || '[]');
+        const subjects = AppState.getData('lms_subjects');
         const classSubjects = subjects.filter(s => s.class === currentS.class).slice(0, 6);
         const demoData = classSubjects.length > 0 ? classSubjects : [
           { name: 'Mathematics' }, { name: 'Science' }, { name: 'English Language' },

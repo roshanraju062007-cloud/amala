@@ -5,14 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mark Attendance - EduSphere Teacher Portal</title>
   <link rel="stylesheet" href="../../css/main.css">
-  <style>:root{--primary:#10B981;--primary-dark:#059669;--primary-light:#ECFDF5;}
-  .att-row{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border-color);}
-  .att-row:last-child{border-bottom:none;}
-  .att-btns{display:flex;gap:8px;}
-  .att-btn{padding:5px 14px;border-radius:4px;border:2px solid var(--border-color);cursor:pointer;font-size:13px;background:transparent;}
-  .att-btn.P{background:#D1FAE5;border-color:#10B981;color:#065F46;font-weight:700;}
-  .att-btn.A{background:#FEE2E2;border-color:#EF4444;color:#B91C1C;font-weight:700;}
-  .att-btn.L{background:#FEF3C7;border-color:#F59E0B;color:#92400E;font-weight:700;}
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-dark: #3730A3;
+      --primary-light: #EEF2FF;
+    }
+    .att-row { display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color); }
+    .att-btns { display:flex; gap:8px; }
+    .att-btn { padding:6px 12px; border:1px solid var(--border-color); background:var(--card-bg); border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
+    .att-btn:hover { background:var(--surface); }
+    .att-btn.P { background:var(--success-light,#E0F2FE); color:var(--success,#0369A1); border-color:var(--success); }
+    .att-btn.A { background:var(--danger-light,#FEE2E2); color:var(--danger,#B91C1C); border-color:var(--danger); }
+    .att-btn.L { background:var(--warning-light,#FEF3C7); color:var(--warning,#B45309); border-color:var(--warning); }
   </style>
 </head>
 <body>
@@ -21,21 +26,24 @@
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
           <circle cx="250" cy="250" r="230" fill="#FFF"/>
-          <circle cx="250" cy="250" r="180" fill="#10B981"/>
-          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+          <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">T</text>
         </svg>
-        <div class="sidebar-title">AMALA HSS<span>Teacher Portal</span></div>
+        <div class="sidebar-title">AMALA HSS <span>Teacher Portal</span></div>
       </div>
       <ul class="sidebar-menu">
-        <li class="menu-header">Teacher</li>
+        <li class="menu-header">Main</li>
         <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-        <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 My Profile</a></li>
+        <li class="menu-header">Academics</li>
         <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📖 Study Materials</a></li>
         <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-        <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
         <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="menu-header">Communication</li>
         <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
-        <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notices</a></li>
         <li style="margin-top:20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
@@ -43,33 +51,42 @@
       <header class="header">
         <div class="header-left">
           <button class="hamburger" id="hamburger">☰</button>
-          <h1 class="page-title">Mark Attendance</h1>
+          <h1 class="page-title">Class Attendance Register</h1>
         </div>
         <div class="header-right">
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <div class="user-chip"><div class="avatar-circle" id="userAvatar">T</div><div style="font-weight:600;" id="userDisplayName">Teacher</div></div>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight:600;" id="userDisplayName">Teacher</div>
+          </div>
         </div>
       </header>
       <div class="content-area">
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+              <div>
+                <label class="form-label" style="margin-bottom:4px;">Date</label>
+                <input type="date" class="form-control" id="attDate" style="width:160px;" onchange="loadStudentsForAtt()">
+              </div>
+              <div>
+                <label class="form-label" style="margin-bottom:4px;">Class &amp; Section</label>
+                <select class="form-control" id="attClassSelect" style="width:240px;" onchange="loadStudentsForAtt()"></select>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-outline" onclick="markAllPresent()">Select All Present</button>
+              <button class="btn btn-primary" onclick="saveAttendance()">Save Attendance</button>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
-          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
-            <div>
-              <label class="form-label">Select Class</label>
-              <select class="form-control" id="attClassSelect" onchange="loadStudentsForAtt()" style="min-width:200px;"></select>
-            </div>
-            <div>
-              <label class="form-label">Date</label>
-              <input type="date" class="form-control" id="attDate">
-            </div>
-            <div style="margin-top:22px;">
-              <button class="btn btn-primary" onclick="markAllPresent()">✅ All Present</button>
-            </div>
+          <h3 class="card-title">Student Roster</h3>
+          <div id="attendanceList">
+            <div style="padding:20px; text-align:center; color:var(--text-muted);">Loading students...</div>
           </div>
-          <div id="attendanceList"></div>
-          <div style="margin-top:20px;display:flex;gap:12px;">
-            <button class="btn btn-success" onclick="saveAttendance()">💾 Save Attendance</button>
-            <span id="attStatus" style="align-self:center;color:var(--text-muted);font-size:13px;"></span>
-          </div>
+          <div style="margin-top:15px; font-weight:700; color:var(--primary);" id="attStatus"></div>
         </div>
       </div>
     </main>
@@ -79,18 +96,29 @@
   <script>
     let attMap = {};
     let currentStudents = [];
+    let teacherId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('lms-auth-ready', (e) => {
+      const user = e.detail;
+      teacherId = user.userId;
+      document.getElementById('userDisplayName').textContent = user.name || 'Teacher';
+      document.getElementById('userAvatar').textContent = (user.name||'T')[0].toUpperCase();
+      
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('attDate').value = today;
 
-      const teacherId = localStorage.getItem('userId') || 'TCH001';
-      const classes = JSON.parse(localStorage.getItem('lms_classes') || '[]');
-      const teachers = JSON.parse(localStorage.getItem('lms_teachers') || '[]');
+      loadClassesDropdown();
+    });
+
+    function loadClassesDropdown() {
+      const classes = AppState.getData('lms_classes');
+      const teachers = AppState.getData('lms_teachers');
       const teacher = teachers.find(t => t.id === teacherId) || {};
 
       const select = document.getElementById('attClassSelect');
-      const myClasses = classes.filter(c => c.teacherId === teacherId);
+      select.innerHTML = '';
+      
+      const myClasses = classes.filter(c => c.name === teacher.classAssigned);
       const showClasses = myClasses.length > 0 ? myClasses : classes.slice(0, 5);
 
       showClasses.forEach(c => {
@@ -98,37 +126,33 @@
           select.innerHTML += `<option value="${c.name}|${sec}">${c.name} — Section ${sec}</option>`;
         });
       });
+      
       loadStudentsForAtt();
-    });
+    }
 
     function loadStudentsForAtt() {
       const val = document.getElementById('attClassSelect').value;
       if (!val) return;
       const [className, section] = val.split('|');
-      const allStudents = JSON.parse(localStorage.getItem('lms_students') || '[]');
+      const allStudents = AppState.getData('lms_students');
+      
       currentStudents = allStudents.filter(s => s.class === className && s.section === section);
       attMap = {};
       currentStudents.forEach(s => attMap[s.id] = 'P');
 
       const list = document.getElementById('attendanceList');
-      list.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg-secondary);border-radius:6px;margin-bottom:8px;font-weight:600;font-size:13px;">
-        <span>STUDENT NAME</span><span>PRESENT / ABSENT / LEAVE</span>
-      </div>`;
+      list.innerHTML = '';
 
       currentStudents.forEach(s => {
         list.innerHTML += `<div class="att-row">
           <span><b>${s.name}</b> <small style="color:var(--text-muted);">(${s.id})</small></span>
           <div class="att-btns">
-            <button class="att-btn P" id="btn_P_${s.id}" onclick="markAtt('${s.id}','P')">✓ P</button>
-            <button class="att-btn" id="btn_A_${s.id}" onclick="markAtt('${s.id}','A')">✗ A</button>
-            <button class="att-btn" id="btn_L_${s.id}" onclick="markAtt('${s.id}','L')">~ L</button>
+            <button class="att-btn P" id="btn_P_${s.id}" onclick="markAtt('${s.id}','P')">P</button>
+            <button class="att-btn" id="btn_A_${s.id}" onclick="markAtt('${s.id}','A')">A</button>
+            <button class="att-btn" id="btn_L_${s.id}" onclick="markAtt('${s.id}','L')">L</button>
           </div>
         </div>`;
       });
-
-      if (currentStudents.length === 0) {
-        list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">No students in this class-section.</p>';
-      }
     }
 
     function markAtt(stuId, status) {
@@ -143,22 +167,40 @@
       currentStudents.forEach(s => markAtt(s.id, 'P'));
     }
 
-    function saveAttendance() {
+    async function saveAttendance() {
       const date = document.getElementById('attDate').value;
       const val = document.getElementById('attClassSelect').value;
       if (!val || !date) return;
       const [className, section] = val.split('|');
 
-      const allAtt = JSON.parse(localStorage.getItem('lms_attendance') || '{}');
-      const key = date + '_' + className + '_' + section;
-      allAtt[key] = attMap;
-      localStorage.setItem('lms_attendance', JSON.stringify(allAtt));
+      const records = Object.entries(attMap).map(([stuId, status]) => ({
+        student_id: stuId,
+        status: status
+      }));
 
-      const present = Object.values(attMap).filter(v => v === 'P').length;
-      const absent = Object.values(attMap).filter(v => v === 'A').length;
-      document.getElementById('attStatus').textContent = `✅ Saved! Present: ${present}, Absent: ${absent}`;
-      App.showToast('Attendance saved for ' + date);
-      AppState.addNotice('Attendance marked for ' + className + ' Section ' + section + ' on ' + date);
+      if (records.length === 0) {
+        App.showToast('No students to mark attendance for.', 'error');
+        return;
+      }
+
+      try {
+        const r = await fetch('/api/attendance', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ class_name: className, section, date, records })
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.message);
+
+        const present = Object.values(attMap).filter(v => v === 'P').length;
+        const absent = Object.values(attMap).filter(v => v === 'A').length;
+        document.getElementById('attStatus').textContent = `✅ Saved! Present: ${present}, Absent: ${absent}`;
+        App.showToast('Attendance saved for ' + date, 'success');
+        AppState.addNotice('Attendance marked for ' + className + ' Section ' + section + ' on ' + date);
+      } catch(err) {
+        App.showToast('Failed to save: ' + err.message, 'error');
+      }
     }
   </script>
 </body>

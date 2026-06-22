@@ -289,6 +289,74 @@ async function seedData(client) {
   }
   console.log('  ✅ Sample timetable seeded for 10th Standard A.');
 
+  // ── SAMPLE RESULTS (for STU001 - Aditya Patel) ────────────────────
+  const stu001 = await client.query(`SELECT id FROM students WHERE student_id = 'STU001'`);
+  if (stu001.rows.length > 0) {
+    const sDbId = stu001.rows[0].id;
+    const resultsToSeed = [
+      // Quarterly Exam
+      { subject: 'Mathematics', exam: 'Quarterly Examination', max: 100, obt: 95, gr: 'A+', rem: 'Excellent analytical skills' },
+      { subject: 'Science', exam: 'Quarterly Examination', max: 100, obt: 92, gr: 'A+', rem: 'Outstanding lab work and theory' },
+      { subject: 'English Language', exam: 'Quarterly Examination', max: 100, obt: 88, gr: 'A', rem: 'Good communication and vocabulary' },
+      { subject: 'Social Science', exam: 'Quarterly Examination', max: 100, obt: 85, gr: 'A', rem: 'Strong grasp of history and geography' },
+      { subject: 'Computer Science', exam: 'Quarterly Examination', max: 100, obt: 98, gr: 'A+', rem: 'Exceptional programming logic' },
+      
+      // Unit Test 1 (for CIA)
+      { subject: 'Mathematics', exam: 'Unit Test 1', max: 20, obt: 19, gr: 'A+', rem: 'Great start' },
+      { subject: 'Science', exam: 'Unit Test 1', max: 20, obt: 18, gr: 'A', rem: 'Well done' },
+      { subject: 'English Language', exam: 'Unit Test 1', max: 20, obt: 17, gr: 'A', rem: 'Good job' },
+      { subject: 'Social Science', exam: 'Unit Test 1', max: 20, obt: 16, gr: 'B+', rem: 'Satisfactory' },
+      { subject: 'Computer Science', exam: 'Unit Test 1', max: 20, obt: 20, gr: 'A+', rem: 'Perfect score' },
+
+      // Unit Test 2 (for CIA)
+      { subject: 'Mathematics', exam: 'Unit Test 2', max: 20, obt: 20, gr: 'A+', rem: 'Perfect score' },
+      { subject: 'Science', exam: 'Unit Test 2', max: 20, obt: 19, gr: 'A+', rem: 'Very good' },
+      { subject: 'English Language', exam: 'Unit Test 2', max: 20, obt: 18, gr: 'A', rem: 'Well done' },
+      { subject: 'Social Science', exam: 'Unit Test 2', max: 20, obt: 17, gr: 'A', rem: 'Improved performance' },
+      { subject: 'Computer Science', exam: 'Unit Test 2', max: 20, obt: 20, gr: 'A+', rem: 'Perfect score' },
+
+      // Model Exam (for CIA)
+      { subject: 'Mathematics', exam: 'Model Exam', max: 40, obt: 38, gr: 'A+', rem: 'Superb readiness' },
+      { subject: 'Science', exam: 'Model Exam', max: 40, obt: 36, gr: 'A+', rem: 'Strong theory comprehension' },
+      { subject: 'English Language', exam: 'Model Exam', max: 40, obt: 35, gr: 'A', rem: 'Good essay writing' },
+      { subject: 'Social Science', exam: 'Model Exam', max: 40, obt: 34, gr: 'A', rem: 'Consistent' },
+      { subject: 'Computer Science', exam: 'Model Exam', max: 40, obt: 39, gr: 'A+', rem: 'Flawless coding' },
+
+      // Assignment (for CIA)
+      { subject: 'Mathematics', exam: 'Assignment', max: 10, obt: 10, gr: 'A+', rem: 'Neat submission' },
+      { subject: 'Science', exam: 'Assignment', max: 10, obt: 9, gr: 'A', rem: 'Well researched' },
+      { subject: 'English Language', exam: 'Assignment', max: 10, obt: 9, gr: 'A', rem: 'Creative write-up' },
+      { subject: 'Social Science', exam: 'Assignment', max: 10, obt: 8, gr: 'B+', rem: 'Timely' },
+      { subject: 'Computer Science', exam: 'Assignment', max: 10, obt: 10, gr: 'A+', rem: 'Well documented code' },
+
+      // Attendance score (for CIA)
+      { subject: 'Mathematics', exam: 'Attendance', max: 10, obt: 10, gr: 'A+', rem: '100% attendance' },
+      { subject: 'Science', exam: 'Attendance', max: 10, obt: 10, gr: 'A+', rem: '100% attendance' },
+      { subject: 'English Language', exam: 'Attendance', max: 10, obt: 9, gr: 'A', rem: '90% attendance' },
+      { subject: 'Social Science', exam: 'Attendance', max: 10, obt: 9, gr: 'A', rem: '90% attendance' },
+      { subject: 'Computer Science', exam: 'Attendance', max: 10, obt: 10, gr: 'A+', rem: '100% attendance' }
+    ];
+
+    for (const r of resultsToSeed) {
+      await client.query(
+        `INSERT INTO results (student_id, subject, exam_name, max_marks, obtained, grade, remarks, published_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'TCH012')`,
+        [sDbId, r.subject, r.exam, r.max, r.obt, r.gr, r.rem]
+      );
+    }
+    console.log('  ✅ Sample results seeded for STU001.');
+  }
+
+  // ── SAMPLE EXAMS ──────────────────────────────────────────────────
+  await client.query(
+    `INSERT INTO exams (exam_id, title, class_name, section, subject, exam_type, exam_date, max_marks, duration_mins, teacher_id, status)
+     VALUES 
+       ('EXM001', 'Unit Test I', '10th Standard', 'A', 'Mathematics', 'Unit Test', CURRENT_DATE + 3, 50, 60, 'TCH012', 'Scheduled'),
+       ('EXM002', 'Quarterly Chemistry Exam', '10th Standard', 'A', 'Science', 'Quarterly', CURRENT_DATE + 5, 100, 180, 'TCH012', 'Scheduled')
+     ON CONFLICT (exam_id) DO NOTHING`
+  );
+  console.log('  ✅ Sample exams seeded.');
+
   console.log('\n🎉 Database seeded successfully!\n');
 }
 
