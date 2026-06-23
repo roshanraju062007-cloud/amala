@@ -137,7 +137,8 @@
             <th>Parent</th>
             <th>Phone</th>
             <th>Fee Status</th>
-            <th>Login Details</th>
+            <th>Parent Username</th>
+            <th>Parent Password</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -189,9 +190,21 @@
         <div class="form-group"><label class="form-label">Parent / Guardian Name</label><input type="text" class="form-control" id="stuParent" required></div>
         <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-control" id="stuPhone" required></div>
         <div class="form-group"><label class="form-label">Student Login ID</label><input type="text" class="form-control" id="stuCustomId" placeholder="e.g. STU1001" required></div>
-        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="stuPassword" placeholder="••••••••" required></div>
+        <div class="form-group">
+          <label class="form-label">Login Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="stuPassword" placeholder="••••••••" required>
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('stuPassword', this)">👁️</button>
+          </div>
+        </div>
         <div class="form-group"><label class="form-label">Parent Login ID</label><input type="text" class="form-control" id="stuParentUsername" placeholder="e.g. PAR1001" required></div>
-        <div class="form-group"><label class="form-label">Parent Password</label><input type="password" class="form-control" id="stuParentPassword" placeholder="••••••••" required></div>
+        <div class="form-group">
+          <label class="form-label">Parent Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="stuParentPassword" placeholder="••••••••" required>
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('stuParentPassword', this)">👁️</button>
+          </div>
+        </div>
         <div class="form-group">
           <label class="form-label">Fee Status</label>
           <select class="form-control" id="stuFee"><option>Paid</option><option>Partial</option><option>Unpaid</option></select>
@@ -200,6 +213,52 @@
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="App.closeModal('addStudentModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveStudent()">Save Student</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Credentials Modal -->
+  <div class="modal-overlay" id="editCredentialsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Credentials</h3>
+        <button class="modal-close" onclick="App.closeModal('editCredentialsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editOriginalStudentId">
+        <input type="hidden" id="editOriginalParentUsername">
+        
+        <h4 style="margin-top: 0; margin-bottom: 12px; color: var(--primary);">Student Account</h4>
+        <div class="form-group">
+          <label class="form-label">Student Username</label>
+          <input type="text" class="form-control" id="editStudentId" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Student Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="editStudentPassword" placeholder="Leave empty to keep current">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('editStudentPassword', this)">👁️</button>
+          </div>
+        </div>
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+        
+        <h4 style="margin-top: 0; margin-bottom: 12px; color: var(--primary);">Parent Account</h4>
+        <div class="form-group">
+          <label class="form-label">Parent Username</label>
+          <input type="text" class="form-control" id="editParentUsername" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Parent Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="editParentPassword" placeholder="Leave empty to keep current">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('editParentPassword', this)">👁️</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('editCredentialsModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCredentials()">Save Changes</button>
       </div>
     </div>
   </div>
@@ -240,6 +299,94 @@
     });
   }
 
+  function toggleParentPassVisibility(studentId) {
+    const span = document.getElementById(`parent-pass-${studentId}`);
+    const btn = document.getElementById(`btn-toggle-${studentId}`);
+    if (!span || !btn) return;
+    const isMasked = span.innerText === '••••••••';
+    if (isMasked) {
+      span.innerText = span.getAttribute('data-password');
+      btn.innerText = '🔒';
+    } else {
+      span.innerText = '••••••••';
+      btn.innerText = '👁️';
+    }
+  }
+
+  function toggleInputPass(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerText = isPass ? '🔒' : '👁️';
+  }
+
+  function openEditCredentialsModal(studentId, parentUsername, studentPass, parentPass) {
+    document.getElementById('editOriginalStudentId').value = studentId;
+    document.getElementById('editOriginalParentUsername').value = parentUsername;
+    
+    document.getElementById('editStudentId').value = studentId;
+    document.getElementById('editStudentPassword').value = '';
+    
+    document.getElementById('editParentUsername').value = parentUsername;
+    document.getElementById('editParentPassword').value = '';
+    
+    // Reset password field types to password
+    document.getElementById('editStudentPassword').type = 'password';
+    document.getElementById('editParentPassword').type = 'password';
+    
+    App.openModal('editCredentialsModal');
+  }
+
+  async function saveCredentials() {
+    const oldStudentId = document.getElementById('editOriginalStudentId').value;
+    const oldParentUsername = document.getElementById('editOriginalParentUsername').value;
+    
+    const newStudentId = document.getElementById('editStudentId').value.trim();
+    const newStudentPassword = document.getElementById('editStudentPassword').value.trim();
+    
+    const newParentUsername = document.getElementById('editParentUsername').value.trim();
+    const newParentPassword = document.getElementById('editParentPassword').value.trim();
+    
+    if (!newStudentId || !newParentUsername) {
+      return alert('Student Username and Parent Username cannot be empty.');
+    }
+    
+    try {
+      // 1. Update Student credentials
+      const resStu = await API.put('auth/admin/update-credentials', {
+        role: 'student',
+        old_id: oldStudentId,
+        new_username: newStudentId,
+        new_password: newStudentPassword || undefined
+      });
+      if (!resStu.success) {
+        alert('Student Update Error: ' + resStu.message);
+        return;
+      }
+      
+      // 2. Update Parent credentials
+      const resPar = await API.put('auth/admin/update-credentials', {
+        role: 'parent',
+        old_id: oldParentUsername,
+        new_username: newParentUsername,
+        new_password: newParentPassword || undefined
+      });
+      if (!resPar.success) {
+        alert('Parent Update Error: ' + resPar.message);
+        return;
+      }
+      
+      App.closeModal('editCredentialsModal');
+      App.showToast('Credentials updated successfully!');
+      
+      AppState.syncDatabaseToLocal();
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while saving credentials.');
+    }
+  }
+
   function renderTable(list) {
     const body = document.getElementById('studentTableBody');
     body.innerHTML = '';
@@ -247,6 +394,9 @@
       let badge = 'badge-success';
       if (s.fee === 'Partial') badge = 'badge-warning';
       if (s.fee === 'Unpaid') badge = 'badge-danger';
+
+      const parentPass = s.parentPassword || 'par123';
+      const studentPass = s.password || 'stud123';
 
       body.innerHTML += `<tr>
         <td>${s.id}</td>
@@ -256,14 +406,15 @@
         <td>${s.parent}</td>
         <td>${s.phone}</td>
         <td><span class="badge ${badge}">${s.fee}</span></td>
+        <td><code>${s.parentUsername || ''}</code></td>
         <td>
-          <code style="display:block;">User: ${s.id}</code>
-          <small style="color:var(--text-muted)">Pass: ${s.password || 'stud123'}</small>
-          <hr style="margin:4px 0; border:0; border-top:1px solid var(--border-color);">
-          <code style="display:block;">Parent: ${s.parentUsername || ''}</code>
-          <small style="color:var(--text-muted)">Pass: ${s.parentPassword || 'par123'}</small>
+          <div class="table-password-cell">
+            <span id="parent-pass-${s.id}" data-password="${parentPass}">••••••••</span>
+            <button class="btn-toggle-table-pass" id="btn-toggle-${s.id}" onclick="toggleParentPassVisibility('${s.id}')">👁️</button>
+          </div>
         </td>
         <td>
+          <button class="btn btn-outline" style="padding:4px 8px; margin-right:4px;" onclick="openEditCredentialsModal('${s.id}', '${s.parentUsername || ''}', '${studentPass}', '${parentPass}')" title="Edit Credentials">🔑</button>
           <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger);" onclick="deleteStudent('${s.id}')">🗑️</button>
         </td>
       </tr>`;

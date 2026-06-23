@@ -59,8 +59,8 @@
             🔔 <span class="badge-dot"></span>
           </button>
           <div class="user-chip">
-            <div class="avatar-circle" id="parentAvatar">P</div>
-            <div style="font-weight: 600;" id="parentDisplayName">Parent Name</div>
+            <div class="avatar-circle" id="userAvatar">P</div>
+            <div style="font-weight: 600;" id="userDisplayName">Parent Name</div>
           </div>
 </div>
       </header>
@@ -113,11 +113,17 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:600px; margin-bottom:15px;">
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Current Password</label>
-                <input type="password" id="oldPasswordInput" class="form-control" placeholder="Enter current password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="oldPasswordInput" class="form-control" placeholder="Enter current password" required>
+                  <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('oldPasswordInput', this)">👁️</button>
+                </div>
               </div>
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">New Password</label>
-                <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" required>
+                  <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('newPasswordInput', this)">👁️</button>
+                </div>
               </div>
             </div>
             <button type="submit" class="btn btn-primary">Update Password</button>
@@ -141,16 +147,22 @@
     const students = AppState.getData('lms_students');
     
     currentChild = students.find(s => s.id === childId || s.parentUsername === parentId) || students[0];
-    currentParentName = currentChild.parent;
-    currentParentId = currentChild.parentUsername || parentId;
+    if (currentChild) {
+      currentParentName = currentChild.parent;
+      currentParentId = currentChild.parentUsername || parentId;
 
-    document.getElementById('parentDisplayName').innerText = currentParentName;
-    const nameParts = currentParentName.split(' ');
-    document.getElementById('parentAvatar').innerText = nameParts.map(p => p[0]).join('');
+      const nameEl = document.getElementById('userDisplayName');
+      const avEl = document.getElementById('userAvatar');
+      if (nameEl) nameEl.innerText = currentParentName;
+      if (avEl) {
+        const nameParts = currentParentName.split(' ');
+        avEl.innerText = nameParts.map(p => p[0]).join('').toUpperCase();
+      }
+    }
   }
 
-    
   function loadStudentInfoCard(studentObj) {
+    if (!studentObj) return;
     document.getElementById('stuHeaderName').innerText = studentObj.name;
     document.getElementById('stuHeaderClass').innerText = studentObj.class + ' - Section ' + studentObj.section;
     document.getElementById('infoAdmID').innerText = studentObj.id;
@@ -167,16 +179,24 @@
       avatar.style.background = 'transparent';
     } else {
       const nameParts = studentObj.name.split(' ');
-      avatar.innerText = nameParts.map(p => p[0]).join('');
+      avatar.innerText = nameParts.map(p => p[0]).join('').toUpperCase();
       avatar.style.backgroundColor = 'var(--primary-light)';
     }
   }
 
+  function toggleInputPass(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerText = isPass ? '🔒' : '👁️';
+  }
 
-    window.addEventListener('load', () => {
-      loadParentProfile();
-      loadStudentInfoCard(currentChild);
+  window.addEventListener('load', () => {
+    loadParentProfile();
+    loadStudentInfoCard(currentChild);
 
+    if (currentChild) {
       document.getElementById('parName').innerText = currentChild.parent;
       document.getElementById('parUser').innerText = currentChild.parentUsername;
       document.getElementById('parEmail').innerText = currentChild.parentEmail || 'None';
@@ -189,29 +209,30 @@
       document.getElementById('childDOB').innerText = currentChild.dob || '12-04-2011';
       document.getElementById('childAtt').innerText = (currentChild.attendance || 85) + '%';
       document.getElementById('childFee').innerText = currentChild.fee;
-    });
-
-    async function changeParentPassword(e) {
-      e.preventDefault();
-      const oldPassword = document.getElementById('oldPasswordInput').value;
-      const newPassword = document.getElementById('newPasswordInput').value;
-      
-      try {
-        const res = await API.post('auth/change-password', { oldPassword, newPassword });
-        if (res.success) {
-          App.showToast(res.message || 'Password updated successfully!');
-          document.getElementById('passwordForm').reset();
-          if (document.getElementById('parPassword')) {
-            document.getElementById('parPassword').innerText = newPassword;
-          }
-        } else {
-          App.showToast(res.message || 'Failed to update password.', 'error');
-        }
-      } catch (err) {
-        console.error(err);
-        App.showToast('Error changing password.', 'error');
-      }
     }
+  });
+
+  async function changeParentPassword(e) {
+    e.preventDefault();
+    const oldPassword = document.getElementById('oldPasswordInput').value;
+    const newPassword = document.getElementById('newPasswordInput').value;
+    
+    try {
+      const res = await API.post('auth/change-password', { oldPassword, newPassword });
+      if (res.success) {
+        App.showToast('Password updated successfully!');
+        document.getElementById('passwordForm').reset();
+        if (document.getElementById('parPassword')) {
+          document.getElementById('parPassword').innerText = newPassword;
+        }
+      } else {
+        App.showToast(res.message || 'Failed to update password.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      App.showToast('Error changing password.', 'error');
+    }
+  }
   </script>
 </body>
 </html>

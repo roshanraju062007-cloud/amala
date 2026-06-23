@@ -59,8 +59,8 @@
             🔔 <span class="badge-dot"></span>
           </button>
           <div class="user-chip">
-            <div class="avatar-circle" id="parentAvatar">P</div>
-            <div style="font-weight: 600;" id="parentDisplayName">Parent Name</div>
+            <div class="avatar-circle" id="userAvatar">P</div>
+            <div style="font-weight: 600;" id="userDisplayName">Parent Name</div>
           </div>
 </div>
       </header>
@@ -80,21 +80,32 @@
             </div>
             <div>
               <button class="btn btn-outline" onclick="resetToMyChildClass()">Ward's Class</button>
-              <button class="btn btn-primary" onclick="window.print()">🖨️ Print timetable</button>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <table class="data-table" style="text-align:center;">
-            <thead>
-              <tr>
-                <th>Time Period</th>
-                <th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th>
-              </tr>
-            </thead>
-            <tbody id="timetableBody"></tbody>
-          </table>
+        <div class="card" style="padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius); background-color: var(--primary-light);">
+          <div id="timetableStatusContainer" style="text-align: center; color: var(--text-muted); padding: 30px 0;">
+            No manual timetable uploaded yet for this class and section.
+          </div>
+
+          <div id="timetableDetailsContainer" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+              <div>
+                <h4 style="margin: 0; color: var(--primary-dark);" id="lblFileName">Timetable File</h4>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                  Uploaded on: <span id="lblUploadDate">N/A</span> 
+                  <span id="lblFileSizeSeparator">|</span> 
+                  <span id="lblFileSize">0 KB</span>
+                </p>
+              </div>
+              <button class="btn btn-primary" onclick="downloadTimetable()">📥 Download Timetable</button>
+            </div>
+
+            <div id="timetablePreviewArea" style="border: 1px solid var(--border-color); border-radius: var(--radius); padding: 10px; background-color: #fff; min-height: 250px; display: flex; align-items: center; justify-content: center;">
+              <!-- Preview content here -->
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -114,78 +125,113 @@
     const students = AppState.getData('lms_students');
     
     currentChild = students.find(s => s.id === childId || s.parentUsername === parentId) || students[0];
-    currentParentName = currentChild.parent;
-    currentParentId = currentChild.parentUsername || parentId;
+    if (currentChild) {
+      currentParentName = currentChild.parent;
+      currentParentId = currentChild.parentUsername || parentId;
 
-    document.getElementById('parentDisplayName').innerText = currentParentName;
-    const nameParts = currentParentName.split(' ');
-    document.getElementById('parentAvatar').innerText = nameParts.map(p => p[0]).join('');
+      const nameEl = document.getElementById('userDisplayName');
+      const avEl = document.getElementById('userAvatar');
+      if (nameEl) nameEl.innerText = currentParentName;
+      if (avEl) {
+        const nameParts = currentParentName.split(' ');
+        avEl.innerText = nameParts.map(p => p[0]).join('').toUpperCase();
+      }
+    }
   }
 
-
-    const timeSlots = [
-      '08:00 - 08:45 AM',
-      '08:45 - 09:30 AM',
-      '09:30 - 10:15 AM',
-      '10:15 - 11:00 AM',
-      '11:00 - 11:45 AM',
-      '11:45 - 12:30 PM',
-      '12:30 - 01:15 PM'
-    ];
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    window.addEventListener('load', () => {
-      loadParentProfile();
-      loadClassesDropdown(() => {
-        resetToMyChildClass();
-      });
+  window.addEventListener('load', () => {
+    loadParentProfile();
+    loadClassesDropdown(() => {
+      resetToMyChildClass();
     });
+  });
 
-    function loadClassesDropdown(callback) {
-      const classes = AppState.getData('lms_classes');
-      const select = document.getElementById('ttClassSelect');
-      select.innerHTML = '';
-      classes.forEach(c => {
-        select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-      });
-      if(callback) callback();
+  function loadClassesDropdown(callback) {
+    const classes = AppState.getData('lms_classes');
+    const select = document.getElementById('ttClassSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    classes.forEach(c => {
+      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+    });
+    if(callback) callback();
+  }
+
+  function resetToMyChildClass() {
+    if (!currentChild) return;
+    document.getElementById('ttClassSelect').value = currentChild.class;
+    document.getElementById('ttSectionSelect').value = currentChild.section;
+    loadSelectedTimetable();
+  }
+
+  async function loadSelectedTimetable() {
+    const c = document.getElementById('ttClassSelect').value;
+    const s = document.getElementById('ttSectionSelect').value;
+    if (!c || !s) return;
+
+    try {
+      const res = await API.get('timetable/uploaded', { class_name: c, section: s });
+      const statusContainer = document.getElementById('timetableStatusContainer');
+      const detailsContainer = document.getElementById('timetableDetailsContainer');
+      const previewArea = document.getElementById('timetablePreviewArea');
+
+      if (!res.success || !res.data) {
+        statusContainer.style.display = 'block';
+        detailsContainer.style.display = 'none';
+        return;
+      }
+
+      statusContainer.style.display = 'none';
+      detailsContainer.style.display = 'block';
+
+      const item = res.data;
+      document.getElementById('lblFileName').textContent = item.file_name || 'Timetable File';
+      document.getElementById('lblUploadDate').textContent = App.formatDate(item.upload_date);
+
+      const sizeSep = document.getElementById('lblFileSizeSeparator');
+      const sizeLbl = document.getElementById('lblFileSize');
+      if (item.file_size) {
+        sizeSep.style.display = 'inline';
+        sizeLbl.style.display = 'inline';
+        sizeLbl.textContent = (item.file_size / 1024).toFixed(1) + ' KB';
+      } else {
+        sizeSep.style.display = 'none';
+        sizeLbl.style.display = 'none';
+      }
+
+      // Render preview
+      previewArea.innerHTML = '';
+      if (item.file_path) {
+        const ext = item.file_path.split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+          previewArea.innerHTML = `<img src="${item.file_path}" style="max-width: 100%; max-height: 400px; border-radius: var(--radius); object-fit: contain;">`;
+        } else if (ext === 'pdf') {
+          previewArea.innerHTML = `<iframe src="${item.file_path}" style="width: 100%; height: 400px; border: none; border-radius: var(--radius);"></iframe>`;
+        } else {
+          previewArea.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+            <span style="font-size: 40px; display: block; margin-bottom: 10px;">📄</span>
+            Preview not available for <b>.${ext}</b> files.<br>
+            Please download the file to view its contents.
+          </div>`;
+        }
+      } else if (item.external_url) {
+        previewArea.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+          <span style="font-size: 40px; display: block; margin-bottom: 10px;">🔗</span>
+          External URL Timetable Link.<br>
+          <a href="${item.external_url}" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 600;">Open External Link in New Tab</a>
+        </div>`;
+      }
+    } catch (e) {
+      console.error('Failed to load manual timetable:', e);
     }
+  }
 
-    function resetToMyChildClass() {
-      if (!currentChild) return;
-      document.getElementById('ttClassSelect').value = currentChild.class;
-      document.getElementById('ttSectionSelect').value = currentChild.section;
-      loadSelectedTimetable();
-    }
-
-    function loadSelectedTimetable() {
-      const className = document.getElementById('ttClassSelect').value;
-      const section = document.getElementById('ttSectionSelect').value;
-      const key = 'tt_' + className.replace(/ /g, '_') + '_' + section;
-      const tt = AppState.getData(key) || {};
-      
-      const tbody = document.getElementById('timetableBody');
-      tbody.innerHTML = '';
-
-      timeSlots.forEach((slot, pIdx) => {
-        let rowHtml = `<tr><td><b>Period ${pIdx + 1}<br><small style="font-weight:normal; opacity:0.8;">${slot}</small></b></td>`;
-        days.forEach((day, dIdx) => {
-          const item = tt[`${pIdx}_${dIdx}`] || { sub: '--', tch: '--' };
-          
-          let cellStyle = '';
-          if (item.sub !== '--') {
-            cellStyle = 'background-color: var(--primary-light); color: var(--primary-dark); font-weight:600;';
-          }
-
-          rowHtml += `<td style="${cellStyle}">
-            <div>${item.sub}</div>
-            <div style="font-size:10px; font-weight:normal; opacity:0.8;">${item.tch}</div>
-          </td>`;
-        });
-        rowHtml += `</tr>`;
-        tbody.innerHTML += rowHtml;
-      });
-    }
+  function downloadTimetable() {
+    const c = document.getElementById('ttClassSelect').value;
+    const s = document.getElementById('ttSectionSelect').value;
+    if (!c || !s) return;
+    window.location.href = `/api/timetable/download?class_name=${encodeURIComponent(c)}&section=${encodeURIComponent(s)}`;
+  }
   </script>
 </body>
 </html>

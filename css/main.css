@@ -691,3 +691,214 @@ body {
     box-shadow: none !important;
   }
 }
+
+/* Password visibility input wrapper */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.password-input-wrapper .form-control {
+  padding-right: 40px;
+}
+.password-input-wrapper .btn-toggle-pass {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.password-input-wrapper .btn-toggle-pass:hover {
+  color: var(--primary);
+}
+
+.table-password-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-toggle-table-pass {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.btn-toggle-table-pass:hover {
+  color: var(--primary);
+}
+
+/* ── RESPONSIVE TABLES ───────────────────────────────────────────────────── */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+@media (max-width: 768px) {
+  .table-responsive table {
+    font-size: 12px;
+  }
+  .table-responsive th,
+  .table-responsive td {
+    padding: 8px 10px;
+  }
+  .content-area {
+    padding: 12px;
+  }
+  .card {
+    padding: 16px;
+  }
+  .header-right .search-bar {
+    display: none;
+  }
+  .main-content {
+    margin-left: 0;
+    padding-top: var(--header-h);
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-row-2,
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── LOADING SKELETON ────────────────────────────────────────────────────── */
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    var(--border-color) 25%,
+    var(--bg-app) 50%,
+    var(--border-color) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-pulse {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+/* ── EMPTY STATES ─────────────────────────────────────────────────────────── */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-state-container .empty-icon {
+  font-size: 52px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state-container h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.empty-state-container p {
+  font-size: 13px;
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+/* ── BADGE IMPROVEMENTS ──────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.badge-success  { background: #D1FAE5; color: #065F46; }
+.badge-warning  { background: #FEF3C7; color: #92400E; }
+.badge-danger   { background: #FEE2E2; color: #991B1B; }
+.badge-info     { background: #DBEAFE; color: #1E40AF; }
+.badge-primary  { background: var(--primary-light); color: var(--primary); }
+
+.dark .badge-success  { background: #022c22; color: #6ee7b7; }
+.dark .badge-warning  { background: #451a03; color: #fde68a; }
+.dark .badge-danger   { background: #450a0a; color: #fca5a5; }
+.dark .badge-info     { background: #1e3a5f; color: #93c5fd; }
+
+/* ── IMPROVED FORM SELECT ────────────────────────────────────────────────── */
+.form-control option {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+/* ── TIMETABLE PRINT HELPER ──────────────────────────────────────────────── */
+.no-print { }
+@media print {
+  .no-print { display: none !important; }
+  .sidebar, .header { display: none !important; }
+  .main-content { margin-left: 0 !important; }
+  body { font-size: 11px; }
+}
+
+/* ── LOADING SPINNER ─────────────────────────────────────────────────────── */
+.loading-spinner {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CARD HOVER EFFECT ───────────────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}

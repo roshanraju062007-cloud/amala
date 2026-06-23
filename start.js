@@ -63,142 +63,80 @@ async function main() {
 
       // Run seeder
       const bcrypt = require('bcryptjs');
-      // Minimal seed: just admin user
       const adminHash = await bcrypt.hash('admin123', 10);
       await pool.query(
-        `INSERT INTO users (user_id, password, role, name, email) VALUES ('admin', $1, 'admin', 'Administrator', 'admin@amalahss.edu.in') ON CONFLICT DO NOTHING`,
+        `INSERT INTO users (user_id, password, raw_password, role, name, email) VALUES ('admin', $1, 'admin123', 'admin', 'Administrator', 'admin@amalahss.edu.in') ON CONFLICT DO NOTHING`,
         [adminHash]
       );
       console.log('✅ Admin user created (ID: admin / Pass: admin123)');
-      console.log('\n⚠️  Run "node database/setup.js" to seed all students, teachers, classes etc.\n');
-    } else {
-      console.log('✅ Database schema already exists');
-    }
 
-    // Seed minimal demo data if not already present
-    try {
-      const { Client } = require('pg');
-      const seedClient = new Client({
-        host:     process.env.DB_HOST || 'localhost',
-        port:     PG_PORT,
-        database: DB_NAME,
-        user:     process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || 'postgres',
-      });
-      await seedClient.connect();
+      // ── CLASSES ────────────────────────────────────────────────────────
+      const classList = [
+        { name: 'LKG',         sections: ['A','B'] },
+        { name: 'UKG',         sections: ['A','B','C'] },
+        { name: '1st Standard', sections: ['A','B'] },
+        { name: '2nd Standard', sections: ['A','B'] },
+        { name: '3rd Standard', sections: ['A','B'] },
+        { name: '4th Standard', sections: ['A','B'] },
+        { name: '5th Standard', sections: ['A','B'] },
+        { name: '6th Standard', sections: ['A','B'] },
+        { name: '7th Standard', sections: ['A','B'] },
+        { name: '8th Standard', sections: ['A','B'] },
+        { name: '9th Standard', sections: ['A','B'] },
+        { name: '10th Standard', sections: ['A','B','C','D'] },
+        { name: '11th Standard - Computer Science with Mathematics', sections: ['A'] },
+        { name: '11th Standard - Biology with Mathematics',          sections: ['A'] },
+        { name: '11th Standard - Pure Science',                      sections: ['A'] },
+        { name: '11th Standard - Commerce with Computer Application', sections: ['A'] },
+        { name: '11th Standard - Commerce with Business Maths',      sections: ['A'] },
+        { name: '12th Standard - Computer Science with Mathematics', sections: ['A'] },
+        { name: '12th Standard - Biology with Mathematics',          sections: ['A'] },
+        { name: '12th Standard - Pure Science',                      sections: ['A'] },
+        { name: '12th Standard - Commerce with Computer Application', sections: ['A'] },
+        { name: '12th Standard - Commerce with Business Maths',      sections: ['A'] },
+      ];
 
-      const usersCheck = await seedClient.query(`SELECT 1 FROM users WHERE user_id IN ('TCH001', 'STU001', 'PAR001')`);
-      if (usersCheck.rows.length < 3) {
-        console.log('📦 Seeding minimal portal demo users...');
-        const bcrypt = require('bcryptjs');
-        const adminHash = await bcrypt.hash('admin123', 10);
-        const teachHash = await bcrypt.hash('teach123', 10);
-        const studHash = await bcrypt.hash('stud123', 10);
-        const parHash = await bcrypt.hash('par123', 10);
+      for (const cls of classList) {
+        await pool.query(
+          `INSERT INTO classes (name, sections, students_count)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (name) DO NOTHING`,
+          [cls.name, cls.sections, 40]
+        );
+      }
+      console.log(`✅ ${classList.length} classes seeded.`);
 
-        try {
-          // Temporarily disable RLS for seeding
-          await seedClient.query(`ALTER TABLE users DISABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE classes DISABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE teachers DISABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE students DISABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE parents DISABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE fees DISABLE ROW LEVEL SECURITY`);
+      // ── SUBJECTS ───────────────────────────────────────────────────────
+      const subjectMap = {
+        'LKG':  ['Rhymes & Singing','Alphabet Writing','Drawing & Coloring','Numbers & Counting','Storytelling'],
+        'UKG':  ['Phonics','Number Work','Drawing','Environmental Studies','Story Time'],
+        'default': ['Mathematics','Science','English Language','Social Science','Hindi Language','Computer Science'],
+        '11th Standard - Computer Science with Mathematics': ['Mathematics','Physics','Chemistry','English Language','Computer Science'],
+        '11th Standard - Biology with Mathematics':          ['Mathematics','Physics','Chemistry','English Language','Biology'],
+        '11th Standard - Pure Science':                      ['Physics','Chemistry','Biology','English Language','Zoology & Botany'],
+        '11th Standard - Commerce with Computer Application': ['Accountancy','Business Studies','Economics','English Language','Computer Application'],
+        '11th Standard - Commerce with Business Maths':      ['Accountancy','Business Studies','Economics','English Language','Business Mathematics'],
+      };
 
-          // Ensure admin user exists
-          await seedClient.query(
-            `INSERT INTO users (user_id, password, role, name, email)
-             VALUES ('admin', $1, 'admin', 'Administrator', 'admin@amalahss.edu.in')
-             ON CONFLICT (user_id) DO NOTHING`,
-            [adminHash]
+      for (let cIdx = 0; cIdx < classList.length; cIdx++) {
+        const cls      = classList[cIdx];
+        const subNames = subjectMap[cls.name] ||
+                         subjectMap[cls.name.replace('12th', '11th')] ||
+                         subjectMap.default;
+
+        for (let sIdx = 0; sIdx < subNames.length; sIdx++) {
+          const code = cls.name.substring(0, 3).toUpperCase().replace(/ /g,'') + '_' + sIdx + '01';
+          await pool.query(
+            `INSERT INTO subjects (code, name, class_name, teacher_id, periods_week, type)
+             VALUES ($1, $2, $3, NULL, 5, 'Core')
+             ON CONFLICT (code) DO NOTHING`,
+            [code, subNames[sIdx], cls.name]
           );
-
-          // Ensure class exists
-          await seedClient.query(
-            `INSERT INTO classes (name, sections)
-             VALUES ('10th Standard', '{A,B,C,D}')
-             ON CONFLICT (name) DO NOTHING`
-          );
-
-          // Seed teacher Priya Sharma
-          const tUserRes = await seedClient.query(
-            `INSERT INTO users (user_id, password, role, name)
-             VALUES ('TCH001', $1, 'teacher', 'Priya Sharma')
-             ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name
-             RETURNING id`,
-            [teachHash]
-          );
-          const tUid = tUserRes.rows[0]?.id;
-          if (tUid) {
-            await seedClient.query(
-              `INSERT INTO teachers (teacher_id, user_id, name, department, subjects, phone, class_assigned, status)
-               VALUES ('TCH001', $1, 'Priya Sharma', 'High School', 'Mathematics & Science', '+91 9441000001', '10th Standard', 'Full-Time')
-               ON CONFLICT (teacher_id) DO NOTHING`,
-              [tUid]
-            );
-          }
-
-          // Seed student Aditya Patel
-          const sUserRes = await seedClient.query(
-            `INSERT INTO users (user_id, password, role, name)
-             VALUES ('STU001', $1, 'student', 'Aditya Patel')
-             ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name
-             RETURNING id`,
-            [studHash]
-          );
-          const sUid = sUserRes.rows[0]?.id;
-          if (sUid) {
-            const sRes = await seedClient.query(
-              `INSERT INTO students (student_id, user_id, name, class_name, section, phone, attendance_pct, fee_status)
-               VALUES ('STU001', $1, 'Aditya Patel', '10th Standard', 'A', '+91 9800000001', 98.50, 'Paid')
-               ON CONFLICT (student_id) DO NOTHING
-               RETURNING id`,
-              [sUid]
-            );
-            const sDbId = sRes.rows[0]?.id || (await seedClient.query(`SELECT id FROM students WHERE student_id = 'STU001'`)).rows[0]?.id;
-
-            if (sDbId) {
-              // Seed parent Suresh Patel
-              const pUserRes = await seedClient.query(
-                `INSERT INTO users (user_id, password, role, name)
-                 VALUES ('PAR001', $1, 'parent', 'Suresh Patel')
-                 ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name
-                 RETURNING id`,
-                [parHash]
-              );
-              const pUid = pUserRes.rows[0]?.id;
-              if (pUid) {
-                await seedClient.query(
-                  `INSERT INTO parents (parent_id, user_id, student_id, name, phone, email)
-                   VALUES ('PAR001', $1, $2, 'Suresh Patel', '+91 9800000001', 'suresh@example.com')
-                   ON CONFLICT (parent_id) DO NOTHING`,
-                  [pUid, sDbId]
-                );
-              }
-
-              // Seed fee
-              await seedClient.query(
-                `INSERT INTO fees (student_id, academic_year, term, amount_due, amount_paid, status)
-                 VALUES ($1, '2026-2027', 'Annual', 25000, 25000, 'Paid')
-                 ON CONFLICT DO NOTHING`,
-                [sDbId]
-              );
-            }
-          }
-          console.log('✅ Minimal portal demo users seeded.');
-        } finally {
-          // Re-enable RLS after seeding
-          await seedClient.query(`ALTER TABLE users ENABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE classes ENABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE teachers ENABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE students ENABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE parents ENABLE ROW LEVEL SECURITY`);
-          await seedClient.query(`ALTER TABLE fees ENABLE ROW LEVEL SECURITY`);
         }
       }
-      await seedClient.end();
-    } catch (seedErr) {
-      console.error('⚠️ Seeding minimal portal users failed:', seedErr.message);
+      console.log(`✅ Subjects seeded for all classes.`);
+    } else {
+      console.log('✅ Database schema already exists');
     }
 
   } catch (pgErr) {

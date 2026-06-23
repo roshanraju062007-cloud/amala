@@ -87,27 +87,38 @@
     <div class="table-responsive">
       <table class="data-table">
         <thead>
-          <tr><th>Father's Name</th><th>Mother's Name</th><th>Phone</th><th>Email</th><th>Associated Child</th><th>Credentials</th><th>Occupation</th></tr>
+          <tr><th>Father's Name</th><th>Mother's Name</th><th>Phone</th><th>Email</th><th>Associated Child</th><th>Credentials</th><th>Actions</th></tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>Suresh Patel</td>
-            <td>Rita Patel</td>
-            <td>+91 9876543210</td>
-            <td>suresh@example.com</td>
-            <td>Aditya Patel (10-A)</td>
-            <td>Business Manager</td>
-          </tr>
-          <tr>
-            <td>Ramesh Sharma</td>
-            <td>Meena Sharma</td>
-            <td>+91 8765432109</td>
-            <td>ramesh@example.com</td>
-            <td>Pooja Sharma (12-B)</td>
-            <td>Software Engineer</td>
-          </tr>
-        </tbody>
+        <tbody></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Edit Parent Credentials Modal -->
+  <div class="modal-overlay" id="editParentCredentialsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Parent Credentials</h3>
+        <button class="modal-close" onclick="App.closeModal('editParentCredentialsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editOriginalParentUsername">
+        <div class="form-group">
+          <label class="form-label">Parent Login ID (Username)</label>
+          <input type="text" class="form-control" id="editParentUsername" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="editParentPassword" placeholder="Leave empty to keep current">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('editParentPassword', this)">👁️</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('editParentCredentialsModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveParentCredentials()">Save Changes</button>
+      </div>
     </div>
   </div>
 
@@ -119,16 +130,82 @@
   <script src="../../js/auth-check.js"></script>
   <script>
     window.addEventListener('load', loadParents);
+    window.addEventListener('lms-sync-students', loadParents);
+
+    function toggleParentPassVisibility(studentId) {
+      const span = document.getElementById(`parent-pass-${studentId}`);
+      const btn = document.getElementById(`btn-toggle-${studentId}`);
+      if (!span || !btn) return;
+      const isMasked = span.innerText === '••••••••';
+      if (isMasked) {
+        span.innerText = span.getAttribute('data-password');
+        btn.innerText = '🔒';
+      } else {
+        span.innerText = '••••••••';
+        btn.innerText = '👁️';
+      }
+    }
+
+    function toggleInputPass(id, btn) {
+      const input = document.getElementById(id);
+      if (!input) return;
+      const isPass = input.type === 'password';
+      input.type = isPass ? 'text' : 'password';
+      btn.innerText = isPass ? '🔒' : '👁️';
+    }
+
+    function openEditParentCredentialsModal(parentUsername) {
+      document.getElementById('editOriginalParentUsername').value = parentUsername;
+      document.getElementById('editParentUsername').value = parentUsername;
+      document.getElementById('editParentPassword').value = '';
+      document.getElementById('editParentPassword').type = 'password';
+      App.openModal('editParentCredentialsModal');
+    }
+
+    async function saveParentCredentials() {
+      const oldUsername = document.getElementById('editOriginalParentUsername').value;
+      const newUsername = document.getElementById('editParentUsername').value.trim();
+      const newPassword = document.getElementById('editParentPassword').value.trim();
+
+      if (!newUsername) {
+        return alert('Parent Username cannot be empty.');
+      }
+
+      try {
+        const res = await API.put('auth/admin/update-credentials', {
+          role: 'parent',
+          old_id: oldUsername,
+          new_username: newUsername,
+          new_password: newPassword || undefined
+        });
+
+        if (!res.success) {
+          alert('Error updating credentials: ' + res.message);
+          return;
+        }
+
+        App.closeModal('editParentCredentialsModal');
+        App.showToast('Parent credentials updated successfully!');
+        AppState.syncDatabaseToLocal();
+      } catch (err) {
+        console.error(err);
+        alert('Failed to save parent credentials.');
+      }
+    }
 
     function loadParents() {
       const students = AppState.getData('lms_students');
       const body = document.querySelector('.data-table tbody');
+      if (!body) return;
       body.innerHTML = '';
       
       const seenParents = new Set();
       students.forEach(s => {
         if (!s.parent || seenParents.has(s.parent)) return;
         seenParents.add(s.parent);
+
+        const pass = s.parentPassword || 'par123';
+        const safeId = (s.student_id || s.id || '').replace(/[^a-zA-Z0-9]/g, '');
 
         body.innerHTML += `<tr>
           <td><b>${s.parent}</b></td>
@@ -138,9 +215,14 @@
           <td>${s.name} (${s.class} - ${s.section})</td>
           <td>
             <code>User: ${s.parentUsername || ''}</code><br>
-            <small style="color:var(--text-muted);">Pass: ${s.parentPassword || 'par123'}</small>
+            <div class="table-password-cell">
+              <span id="parent-pass-${safeId}" data-password="${pass}">••••••••</span>
+              <button class="btn-toggle-table-pass" id="btn-toggle-${safeId}" onclick="toggleParentPassVisibility('${safeId}')">👁️</button>
+            </div>
           </td>
-          <td>Business / Guardian</td>
+          <td>
+            <button class="btn btn-outline" style="padding:4px 8px;" onclick="openEditParentCredentialsModal('${s.parentUsername || ''}')" title="Edit Credentials">🔑</button>
+          </td>
         </tr>`;
       });
     }

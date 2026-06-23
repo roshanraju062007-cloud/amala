@@ -140,7 +140,13 @@
           </select>
         </div>
         <div class="form-group"><label class="form-label">Teacher Login ID</label><input type="text" class="form-control" id="tchCustomId" placeholder="e.g. TCH001" required></div>
-        <div class="form-group"><label class="form-label">Login Password</label><input type="password" class="form-control" id="tchPassword" placeholder="••••••••" required></div>
+        <div class="form-group">
+          <label class="form-label">Login Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="tchPassword" placeholder="••••••••" required>
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('tchPassword', this)">👁️</button>
+          </div>
+        </div>
         <div class="form-group">
           <label class="form-label">Staff Status</label>
           <select class="form-control" id="tchStatus"><option>Full-Time</option><option>Part-Time</option></select>
@@ -149,6 +155,34 @@
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="App.closeModal('addTeacherModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveTeacher()">Save Faculty</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Teacher Credentials Modal -->
+  <div class="modal-overlay" id="editTeacherCredentialsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Faculty Credentials</h3>
+        <button class="modal-close" onclick="App.closeModal('editTeacherCredentialsModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editOriginalTeacherId">
+        <div class="form-group">
+          <label class="form-label">Teacher Login ID (Username)</label>
+          <input type="text" class="form-control" id="editTeacherId" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" class="form-control" id="editTeacherPassword" placeholder="Leave empty to keep current">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('editTeacherPassword', this)">👁️</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="App.closeModal('editTeacherCredentialsModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTeacherCredentials()">Save Changes</button>
       </div>
     </div>
   </div>
@@ -184,11 +218,73 @@
     });
   }
 
+  function toggleTeacherPassVisibility(teacherId) {
+    const span = document.getElementById(`teacher-pass-${teacherId}`);
+    const btn = document.getElementById(`btn-toggle-${teacherId}`);
+    if (!span || !btn) return;
+    const isMasked = span.innerText === '••••••••';
+    if (isMasked) {
+      span.innerText = span.getAttribute('data-password');
+      btn.innerText = '🔒';
+    } else {
+      span.innerText = '••••••••';
+      btn.innerText = '👁️';
+    }
+  }
+
+  function toggleInputPass(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerText = isPass ? '🔒' : '👁️';
+  }
+
+  function openEditTeacherCredentialsModal(teacherId) {
+    document.getElementById('editOriginalTeacherId').value = teacherId;
+    document.getElementById('editTeacherId').value = teacherId;
+    document.getElementById('editTeacherPassword').value = '';
+    document.getElementById('editTeacherPassword').type = 'password';
+    App.openModal('editTeacherCredentialsModal');
+  }
+
+  async function saveTeacherCredentials() {
+    const oldId = document.getElementById('editOriginalTeacherId').value;
+    const newId = document.getElementById('editTeacherId').value.trim();
+    const newPassword = document.getElementById('editTeacherPassword').value.trim();
+
+    if (!newId) {
+      return alert('Teacher ID / Username cannot be empty.');
+    }
+
+    try {
+      const res = await API.put('auth/admin/update-credentials', {
+        role: 'teacher',
+        old_id: oldId,
+        new_username: newId,
+        new_password: newPassword || undefined
+      });
+
+      if (!res.success) {
+        alert('Error updating credentials: ' + res.message);
+        return;
+      }
+
+      App.closeModal('editTeacherCredentialsModal');
+      App.showToast('Faculty credentials updated successfully!');
+      AppState.syncDatabaseToLocal();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save faculty credentials.');
+    }
+  }
+
   function loadTeachers() {
     const list = AppState.getData('lms_teachers');
     const body = document.getElementById('teacherTableBody');
     body.innerHTML = '';
     list.forEach(t => {
+      const pass = t.password || 'teach123';
       body.innerHTML += `<tr>
         <td>${t.id}</td>
         <td><b>${t.name}</b></td>
@@ -198,9 +294,13 @@
         <td>${t.phone}</td>
         <td>
           <code>User: ${t.id}</code><br>
-          <small style="color:var(--text-muted);">Pass: ${t.password || 'teach123'}</small>
+          <div class="table-password-cell">
+            <span id="teacher-pass-${t.id}" data-password="${pass}">••••••••</span>
+            <button class="btn-toggle-table-pass" id="btn-toggle-${t.id}" onclick="toggleTeacherPassVisibility('${t.id}')">👁️</button>
+          </div>
         </td>
         <td>
+          <button class="btn btn-outline" style="padding:4px 8px; margin-right:4px;" onclick="openEditTeacherCredentialsModal('${t.id}')" title="Edit Credentials">🔑</button>
           <button class="btn btn-outline" style="padding:4px 8px; color:var(--danger);" onclick="deleteTeacher('${t.id}')">🗑️</button>
         </td>
       </tr>`;

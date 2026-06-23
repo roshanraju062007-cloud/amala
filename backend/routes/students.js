@@ -13,7 +13,22 @@ router.get('/', async (req, res) => {
     let rows;
     if (req.user.role === 'admin' || req.user.role === 'teacher') {
       const { class_name, section, search } = req.query;
-      let sql = `SELECT s.*, u.email FROM students s LEFT JOIN users u ON s.user_id = u.id WHERE 1=1`;
+      let sql = `
+        SELECT 
+          s.*, 
+          su.user_id AS student_username, 
+          su.raw_password AS student_raw_password, 
+          su.email AS student_email,
+          p.name AS parent_name,
+          p.phone AS parent_phone,
+          p.email AS parent_email,
+          pu.user_id AS parent_username,
+          pu.raw_password AS parent_raw_password
+        FROM students s
+        LEFT JOIN users su ON s.user_id = su.id
+        LEFT JOIN parents p ON p.student_id = s.id
+        LEFT JOIN users pu ON p.user_id = pu.id
+        WHERE 1=1`;
       const params = [];
       if (class_name) { params.push(class_name); sql += ` AND s.class_name = $${params.length}`; }
       if (section)    { params.push(section);    sql += ` AND s.section = $${params.length}`; }
@@ -21,13 +36,39 @@ router.get('/', async (req, res) => {
       sql += ' ORDER BY s.student_id';
       rows = await queryAll(sql, params);
     } else if (req.user.role === 'student') {
-      rows = await queryAll(`SELECT s.*, u.email FROM students s LEFT JOIN users u ON s.user_id = u.id WHERE s.student_id = $1`, [req.user.userId]);
+      rows = await queryAll(`
+        SELECT 
+          s.*, 
+          su.user_id AS student_username, 
+          su.raw_password AS student_raw_password, 
+          su.email AS student_email,
+          p.name AS parent_name,
+          p.phone AS parent_phone,
+          p.email AS parent_email,
+          pu.user_id AS parent_username,
+          pu.raw_password AS parent_raw_password
+        FROM students s
+        LEFT JOIN users su ON s.user_id = su.id
+        LEFT JOIN parents p ON p.student_id = s.id
+        LEFT JOIN users pu ON p.user_id = pu.id
+        WHERE s.student_id = $1`, [req.user.userId]);
     } else if (req.user.role === 'parent') {
       // Parent sees their child
       rows = await queryAll(`
-        SELECT s.*, u.email FROM students s
-        LEFT JOIN users u ON s.user_id = u.id
+        SELECT 
+          s.*, 
+          su.user_id AS student_username, 
+          su.raw_password AS student_raw_password, 
+          su.email AS student_email,
+          p.name AS parent_name,
+          p.phone AS parent_phone,
+          p.email AS parent_email,
+          pu.user_id AS parent_username,
+          pu.raw_password AS parent_raw_password
+        FROM students s
+        LEFT JOIN users su ON s.user_id = su.id
         LEFT JOIN parents p ON p.student_id = s.id
+        LEFT JOIN users pu ON p.user_id = pu.id
         WHERE p.user_id = $1`, [req.user.dbId]);
     }
     const mapped = rows.map(s => ({
@@ -36,7 +77,12 @@ router.get('/', async (req, res) => {
       db_id: s.id,
       class: s.class_name,
       fee: s.fee_status,
-      attendance: parseFloat(s.attendance_pct || 100)
+      attendance: parseFloat(s.attendance_pct || 100),
+      password: s.student_raw_password || '',
+      parent: s.parent_name || 'Parent',
+      parentUsername: s.parent_username || '',
+      parentPassword: s.parent_raw_password || '',
+      parentEmail: s.parent_email || ''
     }));
     res.json({ success: true, data: mapped });
   } catch (err) {
@@ -48,7 +94,22 @@ router.get('/', async (req, res) => {
 // GET /api/students/:id
 router.get('/:id', async (req, res) => {
   try {
-    const row = await queryOne(`SELECT s.*, u.email FROM students s LEFT JOIN users u ON s.user_id = u.id WHERE s.student_id = $1`, [req.params.id]);
+    const row = await queryOne(`
+      SELECT 
+        s.*, 
+        su.user_id AS student_username, 
+        su.raw_password AS student_raw_password, 
+        su.email AS student_email,
+        p.name AS parent_name,
+        p.phone AS parent_phone,
+        p.email AS parent_email,
+        pu.user_id AS parent_username,
+        pu.raw_password AS parent_raw_password
+      FROM students s
+      LEFT JOIN users su ON s.user_id = su.id
+      LEFT JOIN parents p ON p.student_id = s.id
+      LEFT JOIN users pu ON p.user_id = pu.id
+      WHERE s.student_id = $1`, [req.params.id]);
     if (!row) return res.status(404).json({ success: false, message: 'Student not found.' });
     const mapped = {
       ...row,
@@ -56,7 +117,12 @@ router.get('/:id', async (req, res) => {
       db_id: row.id,
       class: row.class_name,
       fee: row.fee_status,
-      attendance: parseFloat(row.attendance_pct || 100)
+      attendance: parseFloat(row.attendance_pct || 100),
+      password: row.student_raw_password || '',
+      parent: row.parent_name || 'Parent',
+      parentUsername: row.parent_username || '',
+      parentPassword: row.parent_raw_password || '',
+      parentEmail: row.parent_email || ''
     };
     res.json({ success: true, data: mapped });
   } catch (err) {
@@ -82,8 +148,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // Create student user
     const hash = await bcrypt.hash(stuPass, 10);
     const uRes = await query(
-      `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'student', $3) RETURNING id`,
-      [studentId, hash, name]
+      `INSERT INTO users (user_id, password, raw_password, role, name) VALUES ($1, $2, $3, 'student', $4) RETURNING id`,
+      [studentId, hash, stuPass, name]
     );
     const uId = uRes.rows[0].id;
 
@@ -99,8 +165,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const parentName = parent_name || `Parent of ${name}`;
     const pHash = await bcrypt.hash(parPass, 10);
     const puRes = await query(
-      `INSERT INTO users (user_id, password, role, name) VALUES ($1, $2, 'parent', $3) RETURNING id`,
-      [parentId, pHash, parentName]
+      `INSERT INTO users (user_id, password, raw_password, role, name) VALUES ($1, $2, $3, 'parent', $4) RETURNING id`,
+      [parentId, pHash, parPass, parentName]
     );
     const puId = puRes.rows[0].id;
 

@@ -33,6 +33,7 @@
       <li class="menu-header">Teacher</li>
       <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
       <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
       <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
       <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
       <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
@@ -71,7 +72,7 @@
       <div class="content-area">
   <div class="card">
       <h3 class="card-title">My Profile Details</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-size:14px; line-height:2.0;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-size:14px; line-height:2.0; margin-bottom: 20px;">
         <div>👤 <b>Full Name:</b> <span id="profName"></span></div>
         <div>🔑 <b>Staff ID:</b> <span id="profId"></span></div>
         <div>🏫 <b>Department:</b> <span id="profDept"></span></div>
@@ -80,31 +81,37 @@
         <div>📚 <b>Subjects Taught:</b> <span id="profSubjects"></span></div>
       </div>
     </div>
-        
-  <div class="card" style="max-width:600px; margin:0 auto;">
-    <div style="text-align:center; margin-bottom:20px;">
-      <div class="avatar-circle" style="width:100px; height:100px; font-size:40px; margin:0 auto 15px;">RK</div>
-      <h2>Mr. Rajesh Kumar</h2>
-      <p style="color:var(--text-muted);">Senior Lecturer - Mathematics Department</p>
+
+  <div class="card">
+    <h3 class="card-title">Profile Picture</h3>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <div class="avatar-circle" id="profileAvatarPreview" style="width: 100px; height: 100px; font-size: 40px;">U</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <label class="form-label" style="margin-bottom: 0;">Upload new avatar image (JPG, PNG, WEBP):</label>
+        <input type="file" id="avatarFileInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;" onchange="handleAvatarUpload(event)">
+        <button class="btn btn-outline" onclick="document.getElementById('avatarFileInput').click()">📁 Select Photo</button>
+      </div>
     </div>
-    
-    <table class="data-table">
-      <tbody>
-        <tr><td><b>Employee ID:</b></td><td>TCH001</td></tr>
-        <tr><td><b>Qualification:</b></td><td>M.Sc. Mathematics, B.Ed.</td></tr>
-        <tr><td><b>Phone:</b></td><td>+91 94412 34567</td></tr>
-        <tr><td><b>Email:</b></td><td>rajesh.maths@amalahss.edu.in</td></tr>
-        <tr><td><b>Date of Joining:</b></td><td>12 Aug 2018</td></tr>
-      </tbody>
-    </table>
   </div>
 
   <div class="card" style="margin-top:20px;">
     <h3 class="card-title">Change Password</h3>
     <form id="passwordForm" onsubmit="changePassword(event)">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-        <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="oldPassword" class="form-control" required placeholder="Enter current password"></div>
-        <div class="form-group"><label class="form-label">New Password</label><input type="password" id="newPassword" class="form-control" required placeholder="Enter new password"></div>
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="oldPassword" class="form-control" required placeholder="Enter current password">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('oldPassword', this)">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="newPassword" class="form-control" required placeholder="Enter new password">
+            <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('newPassword', this)">👁️</button>
+          </div>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary" style="margin-top:15px;">Update Password</button>
     </form>
@@ -122,18 +129,90 @@
         const teachers = AppState.getData('lms_teachers');
         const currentT = teachers.find(t => t.id === tId) || teachers[0];
 
-        document.getElementById('userDisplayName').innerText = currentT.name;
-        const nameParts = currentT.name.split(' ');
-        document.getElementById('userAvatar').innerText = nameParts.map(p => p[0]).join('');
+        if (currentT) {
+          document.getElementById('userDisplayName').innerText = currentT.name;
+          const userAv = document.getElementById('userAvatar');
+          const profAv = document.getElementById('profileAvatarPreview');
+          const photoUrl = currentT.photo || localStorage.getItem('userAvatar');
 
-        // Render profile fields
-        document.getElementById('profName').innerText = currentT.name;
-        document.getElementById('profId').innerText = currentT.id;
-        document.getElementById('profDept').innerText = currentT.dept;
-        document.getElementById('profClass').innerText = currentT.classAssigned || 'None';
-        document.getElementById('profPhone').innerText = currentT.phone;
-        document.getElementById('profSubjects').innerText = currentT.subjects;
+          if (photoUrl) {
+            const imgHtml = `<img src="${photoUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            if (userAv) { userAv.innerHTML = imgHtml; userAv.style.background = 'transparent'; }
+            if (profAv) { profAv.innerHTML = imgHtml; profAv.style.background = 'transparent'; }
+          } else {
+            const nameParts = currentT.name.split(' ');
+            const initials = nameParts.map(p => p[0]).join('').toUpperCase();
+            if (userAv) { userAv.innerText = initials; userAv.style.background = ''; }
+            if (profAv) { profAv.innerText = initials; profAv.style.background = ''; }
+          }
+
+          // Render profile fields
+          document.getElementById('profName').innerText = currentT.name;
+          document.getElementById('profId').innerText = currentT.id;
+          document.getElementById('profDept').innerText = currentT.dept;
+          document.getElementById('profClass').innerText = currentT.classAssigned || 'None';
+          document.getElementById('profPhone').innerText = currentT.phone;
+          document.getElementById('profSubjects').innerText = currentT.subjects;
+        }
       });
+
+      async function handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        try {
+          const token = localStorage.getItem('authToken');
+          const headers = {};
+          if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+          }
+
+          const res = await fetch('/api/auth/upload-avatar', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Avatar upload failed.');
+          }
+
+          App.showToast('Profile picture updated successfully!');
+
+          // Update local storage and UI
+          localStorage.setItem('userAvatar', data.avatarUrl);
+          sessionStorage.setItem('userAvatar', data.avatarUrl);
+
+          const preview = document.getElementById('profileAvatarPreview');
+          if (preview) {
+            preview.innerHTML = `<img src="${data.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            preview.style.background = 'transparent';
+          }
+
+          const headerAv = document.getElementById('userAvatar');
+          if (headerAv) {
+            headerAv.innerHTML = `<img src="${data.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            headerAv.style.background = 'transparent';
+          }
+
+          AppState.syncDatabaseToLocal();
+        } catch (err) {
+          console.error(err);
+          alert(err.message || 'Failed to upload profile picture.');
+        }
+      }
+
+      function toggleInputPass(id, btn) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        btn.innerText = isPass ? '🔒' : '👁️';
+      }
 
       async function changePassword(e) {
         e.preventDefault();

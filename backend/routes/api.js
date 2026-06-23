@@ -313,7 +313,7 @@ noticesRouter.use(authMiddleware);
 
 noticesRouter.get('/', async (req, res) => {
   try {
-    const rows = await queryAll(`SELECT * FROM notices WHERE is_active = TRUE ORDER BY posted_at DESC LIMIT 20`);
+    const rows = await queryAll(`SELECT * FROM notices WHERE is_active = TRUE ORDER BY posted_at DESC LIMIT 50`);
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to fetch notices.' });
@@ -322,14 +322,23 @@ noticesRouter.get('/', async (req, res) => {
 
 noticesRouter.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, title, target_audience } = req.body;
     const row = await query(
-      `INSERT INTO notices (message, posted_by) VALUES ($1, $2) RETURNING *`,
-      [message, req.user.name]
+      `INSERT INTO notices (title, message, target_audience, posted_by) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title || null, message, target_audience || 'all', req.user.name]
     );
     res.json({ success: true, data: row.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to post notice.' });
+  }
+});
+
+noticesRouter.delete('/:id', requireRole('admin'), async (req, res) => {
+  try {
+    await query(`UPDATE notices SET is_active = FALSE WHERE id = $1`, [req.params.id]);
+    res.json({ success: true, message: 'Notice deactivated.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to delete notice.' });
   }
 });
 
@@ -518,6 +527,7 @@ materialsRouter.delete('/:id', requireRole('admin','teacher'), async (req, res) 
 const timetableRouter = express.Router();
 timetableRouter.use(authMiddleware);
 
+// GET /api/timetable — get timetable for a class+section (or all)
 timetableRouter.get('/', async (req, res) => {
   try {
     const { class_name, section } = req.query;
@@ -534,10 +544,134 @@ timetableRouter.get('/', async (req, res) => {
   }
 });
 
+// GET /api/timetable/teacher/:teacherId — personal timetable for a teacher
+timetableRouter.get('/teacher/:teacherId', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const rows = await queryAll(
+      `SELECT t.*, s.name as subject_full_name
+       FROM timetable t
+       LEFT JOIN subjects s ON s.name = t.subject AND s.class_name = t.class_name
+       WHERE t.teacher_id = $1
+       ORDER BY 
+         CASE t.day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
+         WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 ELSE 6 END,
+         t.period`,
+      [teacherId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('Fetch teacher timetable error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch teacher timetable.' });
+  }
+});
+
+// POST /api/timetable/upload — upload timetable file or link (MUST be before /:id)
+timetableRouter.post('/upload', requireRole('admin'), upload.single('timetableFile'), async (req, res) => {
+  const { class_name, section, external_url } = req.body;
+  if (!class_name || !section) {
+    return res.status(400).json({ success: false, message: 'Class name and section are required.' });
+  }
+
+  try {
+    let filePath = null;
+    let fileName = null;
+    let fileSize = null;
+
+    if (req.file) {
+      filePath = '/uploads/' + req.file.filename;
+      fileName = req.file.originalname;
+      fileSize = req.file.size;
+    } else if (external_url && external_url.trim()) {
+      fileName = 'Google Drive / External URL Link';
+    } else {
+      return res.status(400).json({ success: false, message: 'Please select a file or enter an external URL.' });
+    }
+
+    await query(
+      `INSERT INTO uploaded_timetables (class_name, section, file_path, file_name, file_size, external_url, upload_date)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (class_name, section)
+       DO UPDATE SET file_path = EXCLUDED.file_path,
+                     file_name = EXCLUDED.file_name,
+                     file_size = EXCLUDED.file_size,
+                     external_url = EXCLUDED.external_url,
+                     upload_date = NOW()`,
+      [class_name, section, filePath, fileName, fileSize, external_url ? external_url.trim() : null]
+    );
+
+    res.json({
+      success: true,
+      message: 'Timetable uploaded successfully.',
+      data: { class_name, section, file_path: filePath, file_name: fileName, file_size: fileSize, external_url: external_url || null, upload_date: new Date() }
+    });
+  } catch (err) {
+    console.error('Timetable upload failed:', err);
+    res.status(500).json({ success: false, message: 'Server error. Timetable upload failed.' });
+  }
+});
+
+// GET /api/timetable/uploaded — get upload metadata (MUST be before /:id)
+timetableRouter.get('/uploaded', async (req, res) => {
+  const { class_name, section } = req.query;
+  if (!class_name || !section) {
+    return res.status(400).json({ success: false, message: 'Class name and section are required.' });
+  }
+  try {
+    const row = await queryOne(
+      'SELECT * FROM uploaded_timetables WHERE class_name = $1 AND section = $2',
+      [class_name, section]
+    );
+    res.json({ success: true, data: row || null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch uploaded timetable.' });
+  }
+});
+
+// GET /api/timetable/download — download timetable file (MUST be before /:id)
+timetableRouter.get('/download', async (req, res) => {
+  const { class_name, section } = req.query;
+  if (!class_name || !section) {
+    return res.status(400).send('Class name and section are required.');
+  }
+
+  try {
+    const row = await queryOne(
+      'SELECT * FROM uploaded_timetables WHERE class_name = $1 AND section = $2',
+      [class_name, section]
+    );
+
+    if (!row) return res.status(404).send('Timetable not found.');
+
+    if (row.external_url) return res.redirect(row.external_url);
+
+    if (!row.file_path) return res.status(404).send('Timetable file not found.');
+
+    const path = require('path');
+    const fs = require('fs');
+    const absolutePath = path.join(__dirname, '../..', row.file_path);
+    if (!fs.existsSync(absolutePath)) return res.status(404).send('Physical file does not exist on server.');
+
+    const date = new Date(row.upload_date || Date.now());
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthYear = `${monthNames[date.getMonth()]}${date.getFullYear()}`;
+    const cleanClassName = class_name.replace(/[^a-zA-Z0-9]/g, '');
+    const cleanSection = section.replace(/[^a-zA-Z0-9]/g, '');
+    const ext = path.extname(row.file_name) || '.pdf';
+    const downloadName = `Timetable_${cleanClassName}_${cleanSection}_${monthYear}${ext}`;
+
+    res.download(absolutePath, downloadName);
+  } catch (err) {
+    console.error('Timetable download failed:', err);
+    res.status(500).send('Server error.');
+  }
+});
+
+// POST /api/timetable — save a timetable cell entry
 timetableRouter.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { class_name, section, day, period, subject, teacher_id, start_time, end_time } = req.body;
-    // Delete any existing entry first
+    const { class_name, section, day, period, subject, teacher_id, start_time, end_time, room_number } = req.body;
     await query(
       `DELETE FROM timetable WHERE class_name = $1 AND section = $2 AND day = $3 AND period = $4`,
       [class_name, section || 'A', day, period]
@@ -546,9 +680,9 @@ timetableRouter.post('/', requireRole('admin'), async (req, res) => {
     let row;
     if (subject && subject !== '--') {
       row = await query(
-        `INSERT INTO timetable (class_name, section, day, period, subject, teacher_id, start_time, end_time)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-        [class_name, section || 'A', day, period, subject, teacher_id || null, start_time || null, end_time || null]
+        `INSERT INTO timetable (class_name, section, day, period, subject, teacher_id, room_number, start_time, end_time)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+        [class_name, section || 'A', day, period, subject, teacher_id || null, room_number || null, start_time || null, end_time || null]
       );
     }
     res.json({ success: true, data: row ? row.rows[0] : {}, message: 'Timetable entry saved.' });
@@ -557,6 +691,21 @@ timetableRouter.post('/', requireRole('admin'), async (req, res) => {
   }
 });
 
+// PUT /api/timetable/:id — update a specific timetable entry
+timetableRouter.put('/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const { subject, teacher_id, room_number, start_time, end_time } = req.body;
+    await query(
+      `UPDATE timetable SET subject=$1, teacher_id=$2, room_number=$3, start_time=$4, end_time=$5 WHERE id=$6`,
+      [subject, teacher_id || null, room_number || null, start_time || null, end_time || null, req.params.id]
+    );
+    res.json({ success: true, message: 'Timetable entry updated.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to update timetable entry.' });
+  }
+});
+
+// DELETE /api/timetable/:id
 timetableRouter.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     await query(`DELETE FROM timetable WHERE id = $1`, [req.params.id]);
@@ -565,6 +714,7 @@ timetableRouter.delete('/:id', requireRole('admin'), async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to delete timetable entry.' });
   }
 });
+
 
 // -- PARENTS -------------------------------------------------------------
 const parentsRouter = express.Router();

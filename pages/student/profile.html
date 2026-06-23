@@ -104,8 +104,9 @@
         <div class="card" style="margin-top: 20px;">
           <h3 class="card-title">Upload Profile Photo</h3>
           <div style="display:flex; gap:15px; align-items:center;">
-            <input type="file" id="uploadPhotoInput" accept="image/*" class="form-control" style="max-width:300px;">
-            <button class="btn btn-primary" onclick="uploadProfilePhoto()">Save Photo</button>
+            <input type="file" id="uploadPhotoInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;" onchange="uploadProfilePhoto(event)">
+            <button class="btn btn-outline" onclick="document.getElementById('uploadPhotoInput').click()">📁 Select Photo</button>
+            <span id="uploadPhotoName" style="font-size: 13px; color: var(--text-muted);">No photo selected</span>
           </div>
         </div>
 
@@ -115,11 +116,17 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:600px; margin-bottom:15px;">
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">Current Password</label>
-                <input type="password" id="oldPasswordInput" class="form-control" placeholder="Enter current password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="oldPasswordInput" class="form-control" placeholder="Enter current password" required>
+                  <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('oldPasswordInput', this)">👁️</button>
+                </div>
               </div>
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">New Password</label>
-                <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" required>
+                <div class="password-input-wrapper">
+                  <input type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" required>
+                  <button type="button" class="btn-toggle-pass" onclick="toggleInputPass('newPasswordInput', this)">👁️</button>
+                </div>
               </div>
             </div>
             <button type="submit" class="btn btn-primary">Update Password</button>
@@ -140,20 +147,24 @@
     const students = AppState.getData('lms_students');
     currentStudent = students.find(s => s.id === stuId) || students[0];
 
-    document.getElementById('userDisplayName').innerText = currentStudent.name;
-    const userAv = document.getElementById('userAvatar');
-    if (currentStudent.photo) {
-      userAv.innerHTML = `<img src="${currentStudent.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-      userAv.style.background = 'transparent';
-    } else {
-      const nameParts = currentStudent.name.split(' ');
-      userAv.innerText = nameParts.map(p => p[0]).join('');
-      userAv.style.backgroundColor = 'var(--primary-dark)';
+    if (currentStudent) {
+      document.getElementById('userDisplayName').innerText = currentStudent.name;
+      const userAv = document.getElementById('userAvatar');
+      const photoUrl = currentStudent.photo || localStorage.getItem('userAvatar');
+
+      if (photoUrl) {
+        userAv.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        userAv.style.background = 'transparent';
+      } else {
+        const nameParts = currentStudent.name.split(' ');
+        userAv.innerText = nameParts.map(p => p[0]).join('').toUpperCase();
+        userAv.style.backgroundColor = 'var(--primary-dark)';
+      }
     }
   }
 
-    
   function loadStudentInfoCard(studentObj) {
+    if (!studentObj) return;
     document.getElementById('stuHeaderName').innerText = studentObj.name;
     document.getElementById('stuHeaderClass').innerText = studentObj.class + ' - Section ' + studentObj.section;
     document.getElementById('infoAdmID').innerText = studentObj.id;
@@ -165,68 +176,99 @@
 
     // Avatar
     const avatar = document.getElementById('stuBigAvatar');
-    if (studentObj.photo) {
-      avatar.innerHTML = `<img src="${studentObj.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+    const photoUrl = studentObj.photo || localStorage.getItem('userAvatar');
+    if (photoUrl) {
+      avatar.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
       avatar.style.background = 'transparent';
     } else {
       const nameParts = studentObj.name.split(' ');
-      avatar.innerText = nameParts.map(p => p[0]).join('');
+      avatar.innerText = nameParts.map(p => p[0]).join('').toUpperCase();
       avatar.style.backgroundColor = 'var(--primary-light)';
     }
   }
 
+  async function uploadProfilePhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    function uploadProfilePhoto() {
-      const fileInput = document.getElementById('uploadPhotoInput');
-      const file = fileInput.files[0];
-      if (!file) return alert('Please select an image file first.');
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64 = e.target.result;
-        const students = AppState.getData('lms_students');
-        const idx = students.findIndex(s => s.id === currentStudent.id);
-        if (idx !== -1) {
-          students[idx].photo = base64;
-          AppState.saveData('lms_students', students);
-          currentStudent.photo = base64;
-          loadStudentInfoCard(currentStudent);
-          
-          const userAv = document.getElementById('userAvatar');
-          userAv.innerHTML = `<img src="${base64}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-          userAv.style.background = 'transparent';
-          
-          App.showToast('Profile photo updated successfully!');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    // Show selected file name
+    document.getElementById('uploadPhotoName').textContent = file.name;
 
-    async function changeStudentPassword(e) {
-      e.preventDefault();
-      const oldPassword = document.getElementById('oldPasswordInput').value;
-      const newPassword = document.getElementById('newPasswordInput').value;
-      
-      try {
-        const res = await API.post('auth/change-password', { oldPassword, newPassword });
-        if (res.success) {
-          App.showToast(res.message || 'Password updated successfully!');
-          document.getElementById('passwordForm').reset();
-          if (document.getElementById('profPassword')) {
-            document.getElementById('profPassword').innerText = newPassword;
-          }
-        } else {
-          App.showToast(res.message || 'Failed to update password.', 'error');
-        }
-      } catch (err) {
-        console.error(err);
-        App.showToast('Error changing password.', 'error');
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
       }
-    }
 
-    window.addEventListener('load', () => {
+      const res = await fetch('/api/auth/upload-avatar', {
+        method: 'POST',
+        headers: headers,
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Avatar upload failed.');
+      }
+
+      App.showToast('Profile photo updated successfully!');
+
+      // Update local storage and UI
+      localStorage.setItem('userAvatar', data.avatarUrl);
+      sessionStorage.setItem('userAvatar', data.avatarUrl);
+
+      if (currentStudent) {
+        currentStudent.photo = data.avatarUrl;
+      }
       loadStudentProfile();
       loadStudentInfoCard(currentStudent);
 
+      AppState.syncDatabaseToLocal();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to upload profile picture.');
+    }
+  }
+
+  function toggleInputPass(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerText = isPass ? '🔒' : '👁️';
+  }
+
+  async function changeStudentPassword(e) {
+    e.preventDefault();
+    const oldPassword = document.getElementById('oldPasswordInput').value;
+    const newPassword = document.getElementById('newPasswordInput').value;
+    
+    try {
+      const res = await API.post('auth/change-password', { oldPassword, newPassword });
+      if (res.success) {
+        App.showToast(res.message || 'Password updated successfully!');
+        document.getElementById('passwordForm').reset();
+        if (document.getElementById('profPassword')) {
+          document.getElementById('profPassword').innerText = newPassword;
+        }
+      } else {
+        App.showToast(res.message || 'Failed to update password.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      App.showToast('Error changing password.', 'error');
+    }
+  }
+
+  window.addEventListener('load', () => {
+    loadStudentProfile();
+    loadStudentInfoCard(currentStudent);
+
+    if (currentStudent) {
       document.getElementById('profName').innerText = currentStudent.name;
       document.getElementById('profId').innerText = currentStudent.id;
       document.getElementById('profClass').innerText = currentStudent.class + ' (' + currentStudent.section + ')';
@@ -236,7 +278,8 @@
       document.getElementById('profParentUser').innerText = currentStudent.parentUsername || 'None';
       document.getElementById('profAtt').innerText = (currentStudent.attendance || 85) + '%';
       document.getElementById('profPassword').innerText = currentStudent.password || 'stud123';
-    });
+    }
+  });
   </script>
 </body>
 </html>
