@@ -260,35 +260,33 @@ const AppState = {
     
     // Transform formatting to match legacy localStorage expectancies
     if (key === 'lms_students') {
-      const parents = JSON.parse(localStorage.getItem('lms_parents')) || [];
-      return data.map(s => {
-        const p = parents.find(parent => parent.student_id === s.id) || {};
-        return {
-          id: s.student_id,
-          name: s.name,
-          class: s.class_name,
-          section: s.section,
-          parent: p.name || 'Parent',
-          phone: s.phone,
-          attendance: parseFloat(s.attendance_pct || 100),
-          fee: s.fee_status,
-          password: 'stud123',
-          parentUsername: p.parent_id || '',
-          parentPassword: 'par123'
-        };
-      });
+      return data.map(s => ({
+        id: s.student_id || s.id,
+        name: s.name,
+        class: s.class_name || s.class,
+        section: s.section,
+        parent: s.parent || 'Parent',
+        phone: s.phone,
+        attendance: parseFloat(s.attendance_pct || s.attendance || 100),
+        fee: s.fee_status || s.fee,
+        password: s.password || '',
+        parentUsername: s.parentUsername || '',
+        parentPassword: s.parentPassword || '',
+        photo: s.photo || null
+      }));
     }
 
     if (key === 'lms_teachers') {
       return data.map(t => ({
-        id: t.teacher_id,
+        id: t.teacher_id || t.id,
         name: t.name,
-        dept: t.department,
-        classAssigned: t.class_assigned,
+        dept: t.department || t.dept,
+        classAssigned: t.class_assigned || t.classAssigned,
         subjects: t.subjects || 'All',
         phone: t.phone,
         status: t.status,
-        password: 'teach123'
+        password: t.password || '',
+        photo: t.photo || null
       }));
     }
 

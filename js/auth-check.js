@@ -54,12 +54,20 @@
 
     if (nameEl) nameEl.textContent = displayName;
     if (avatarEl) {
-      const parts = displayName.split(' ');
-      avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+      const avatarUrl = data.user.avatar || localStorage.getItem('userAvatar');
+      if (avatarUrl) {
+        avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        avatarEl.style.background = 'transparent';
+      } else {
+        const parts = displayName.split(' ');
+        avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+        avatarEl.style.background = '';
+      }
     }
 
     // Keep localStorage in sync
     localStorage.setItem('userName', data.user.name);
+    localStorage.setItem('userAvatar', data.user.avatar || '');
 
   } catch (err) {
     // If server is unreachable but we have a token, allow through (offline mode)
@@ -69,8 +77,15 @@
     const avatarEl = document.getElementById('userAvatar');
     if (nameEl) nameEl.textContent = name || userId;
     if (avatarEl) {
-      const parts = (name || userId).split(' ');
-      avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+      const avatarUrl = localStorage.getItem('userAvatar');
+      if (avatarUrl) {
+        avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        avatarEl.style.background = 'transparent';
+      } else {
+        const parts = (name || userId).split(' ');
+        avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+        avatarEl.style.background = '';
+      }
     }
   }
 
@@ -78,6 +93,7 @@
     localStorage.removeItem('userRole');
     localStorage.removeItem('userId');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userAvatar');
     localStorage.removeItem('authToken');
     // Calculate correct depth for redirect
     const parts = window.location.pathname.split('/');

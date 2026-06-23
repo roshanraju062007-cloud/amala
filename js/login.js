@@ -83,12 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Update placeholders
       const placeholderMap = {
         admin:   'admin',
-        teacher: 'TCH001',
-        student: 'STU001',
-        parent:  'PAR001'
+        teacher: 'Teacher ID',
+        student: 'Student ID',
+        parent:  'Parent Username'
       };
       if (emailInput) emailInput.placeholder = 'Enter ' + (placeholderMap[activeRole] || 'User ID');
-      updateDemoCredentials();
     });
   });
 
@@ -144,12 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('userRole', data.user.role);
         sessionStorage.setItem('userId', data.user.userId);
         sessionStorage.setItem('userName', data.user.name);
+        sessionStorage.setItem('userAvatar', data.user.avatar || '');
         if (data.user.childId) sessionStorage.setItem('childId', data.user.childId);
 
         // Backup to localStorage for older static pages
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userId', data.user.userId);
         localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userAvatar', data.user.avatar || '');
         localStorage.setItem('authToken', data.token);
         if (data.user.childId) localStorage.setItem('childId', data.user.childId);
 
@@ -158,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
           admin:   'pages/admin/dashboard.html',
           teacher: 'pages/teacher/dashboard.html',
           student: 'pages/student/dashboard.html',
+          parent:  'pages/parent/dashboard.html',
           parent:  'pages/parent/dashboard.html',
         };
         const dest = redirectMap[data.user.role] || 'pages/admin/dashboard.html';
@@ -171,33 +173,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-  function updateDemoCredentials() {
-    const demoContainer = document.getElementById('demoCredentialsContainer');
-    const demoList = document.getElementById('demo-list');
-    if (!demoContainer || !demoList) return;
-
-    if (activeRole === 'admin') {
-      demoList.innerHTML = '';
-      const badge = document.createElement('span');
-      badge.className = 'demo-badge';
-      badge.textContent = `Use Demo: admin / admin123`;
-      badge.style.cursor = 'pointer';
-      badge.addEventListener('click', () => {
-        if (emailInput) emailInput.value = 'admin';
-        if (passInput) passInput.value = 'admin123';
-        // Auto-fill captcha for ease of testing admin portal
-        const captchaInput = document.getElementById('captchaInput');
-        if (captchaInput) captchaInput.value = currentCaptcha;
-      });
-      demoList.appendChild(badge);
-      demoContainer.style.display = 'block';
-    } else {
-      demoContainer.style.display = 'none';
-      demoList.innerHTML = '';
-    }
-  }
-
-  // Initial call
-  updateDemoCredentials();
 });

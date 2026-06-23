@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS settings CASCADE;
 DROP TABLE IF EXISTS exams CASCADE;
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS timetable CASCADE;
+DROP TABLE IF EXISTS uploaded_timetables CASCADE;
 DROP TABLE IF EXISTS materials CASCADE;
 DROP TABLE IF EXISTS notices CASCADE;
 DROP TABLE IF EXISTS results CASCADE;
@@ -28,15 +29,17 @@ DROP TABLE IF EXISTS users CASCADE;
 
 -- ── USERS (auth table for all roles) ─────────────────────────────────────
 CREATE TABLE users (
-  id          SERIAL PRIMARY KEY,
-  user_id     VARCHAR(30) UNIQUE NOT NULL,   -- e.g. admin, TCH001, STU001, PAR001
-  password    VARCHAR(255) NOT NULL,          -- bcrypt hash
-  role        VARCHAR(10) NOT NULL CHECK (role IN ('admin','teacher','student','parent')),
-  name        VARCHAR(120) NOT NULL,
-  email       VARCHAR(150),
-  is_active   BOOLEAN DEFAULT TRUE,
-  created_at  TIMESTAMP DEFAULT NOW(),
-  updated_at  TIMESTAMP DEFAULT NOW()
+  id            SERIAL PRIMARY KEY,
+  user_id       VARCHAR(30) UNIQUE NOT NULL,   -- e.g. admin, TCH001, STU001, PAR001
+  password      VARCHAR(255) NOT NULL,          -- bcrypt hash
+  raw_password  VARCHAR(255),                   -- plain text credentials (admin visibility)
+  avatar        VARCHAR(255),                   -- profile photo URL
+  role          VARCHAR(10) NOT NULL CHECK (role IN ('admin','teacher','student','parent')),
+  name          VARCHAR(120) NOT NULL,
+  email         VARCHAR(150),
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMP DEFAULT NOW(),
+  updated_at    TIMESTAMP DEFAULT NOW()
 );
 
 -- ── CLASSES ───────────────────────────────────────────────────────────────
@@ -57,6 +60,10 @@ CREATE TABLE teachers (
   department      VARCHAR(100),
   subjects        TEXT,
   phone           VARCHAR(20),
+  email           VARCHAR(150),
+  address         TEXT,
+  date_joined     DATE,
+  date_of_birth   DATE,
   class_assigned  VARCHAR(120) REFERENCES classes(name) ON DELETE SET NULL,
   status          VARCHAR(20) DEFAULT 'Full-Time',
   created_at      TIMESTAMP DEFAULT NOW()
@@ -70,7 +77,11 @@ CREATE TABLE students (
   name            VARCHAR(120) NOT NULL,
   class_name      VARCHAR(120) REFERENCES classes(name) ON DELETE SET NULL,
   section         VARCHAR(5) DEFAULT 'A',
+  roll_number     VARCHAR(20),
   phone           VARCHAR(20),
+  gender          VARCHAR(10),
+  date_of_birth   DATE,
+  address         TEXT,
   attendance_pct  DECIMAL(5,2) DEFAULT 100.00,
   fee_status      VARCHAR(20) DEFAULT 'Unpaid' CHECK (fee_status IN ('Paid','Partial','Unpaid')),
   admitted_on     DATE DEFAULT CURRENT_DATE,
@@ -176,11 +187,13 @@ CREATE TABLE results (
 
 -- ── NOTICES ───────────────────────────────────────────────────────────────
 CREATE TABLE notices (
-  id            SERIAL PRIMARY KEY,
-  message       TEXT NOT NULL,
-  posted_by     VARCHAR(120) DEFAULT 'Administration',
-  posted_at     TIMESTAMP DEFAULT NOW(),
-  is_active     BOOLEAN DEFAULT TRUE
+  id               SERIAL PRIMARY KEY,
+  title            VARCHAR(200),
+  message          TEXT NOT NULL,
+  target_audience  VARCHAR(20) DEFAULT 'all',
+  posted_by        VARCHAR(120) DEFAULT 'Administration',
+  posted_at        TIMESTAMP DEFAULT NOW(),
+  is_active        BOOLEAN DEFAULT TRUE
 );
 
 -- ── MATERIALS ─────────────────────────────────────────────────────────────
@@ -205,9 +218,23 @@ CREATE TABLE timetable (
   period        INT,                  -- 1-8
   subject       VARCHAR(100),
   teacher_id    VARCHAR(20),
+  room_number   VARCHAR(20),
   start_time    TIME,
   end_time      TIME,
   created_at    TIMESTAMP DEFAULT NOW()
+);
+
+-- ── UPLOADED TIMETABLES ───────────────────────────────────────────────────
+CREATE TABLE uploaded_timetables (
+  id            SERIAL PRIMARY KEY,
+  class_name    VARCHAR(120) NOT NULL,
+  section       VARCHAR(5) NOT NULL,
+  file_path     TEXT,
+  file_name     VARCHAR(255),
+  file_size     INT,
+  upload_date   TIMESTAMP DEFAULT NOW(),
+  external_url  TEXT,
+  UNIQUE (class_name, section)
 );
 
 -- ── INDEXES ───────────────────────────────────────────────────────────────
@@ -265,6 +292,7 @@ ALTER TABLE results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE timetable ENABLE ROW LEVEL SECURITY;
+ALTER TABLE uploaded_timetables ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE users FORCE ROW LEVEL SECURITY;
 ALTER TABLE classes FORCE ROW LEVEL SECURITY;
@@ -280,6 +308,7 @@ ALTER TABLE results FORCE ROW LEVEL SECURITY;
 ALTER TABLE notices FORCE ROW LEVEL SECURITY;
 ALTER TABLE materials FORCE ROW LEVEL SECURITY;
 ALTER TABLE timetable FORCE ROW LEVEL SECURITY;
+ALTER TABLE uploaded_timetables FORCE ROW LEVEL SECURITY;
 
 -- ── RLS POLICIES ───────────────────────────────────────────────────────────
 
@@ -447,6 +476,14 @@ CREATE POLICY timetable_admin_all ON timetable FOR ALL TO edusphere_app
   WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
 
 CREATE POLICY timetable_auth_select ON timetable FOR SELECT TO edusphere_app
+  USING (current_setting('app.current_user_role', true) IS NOT NULL);
+
+-- 15. UPLOADED TIMETABLES POLICIES
+CREATE POLICY uploaded_timetables_admin_all ON uploaded_timetables FOR ALL TO edusphere_app
+  USING (current_setting('app.current_user_role', true) = 'admin')
+  WITH CHECK (current_setting('app.current_user_role', true) = 'admin');
+
+CREATE POLICY uploaded_timetables_auth_select ON uploaded_timetables FOR SELECT TO edusphere_app
   USING (current_setting('app.current_user_role', true) IS NOT NULL);
 
 -- ── LIBRARY BOOKS ────────────────────────────────────────────────────────

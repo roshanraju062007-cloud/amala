@@ -19,7 +19,7 @@ router.post('/login', async (req, res) => {
 
     // Find user in database
     const user = await queryOne(
-      `SELECT id, user_id, password, role, name, email FROM users WHERE user_id = $1 AND is_active = TRUE`,
+      `SELECT id, user_id, password, role, name, email, avatar FROM users WHERE user_id = $1 AND is_active = TRUE`,
       [user_id.trim()]
     );
 
@@ -72,6 +72,7 @@ router.post('/login', async (req, res) => {
         name:   user.name,
         role:   user.role,
         email:  user.email,
+        avatar: user.avatar || null,
         childId,
       },
       token, // also send in body for localStorage fallback
@@ -99,7 +100,7 @@ router.get('/me', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await queryOne(`SELECT user_id, name, role, email FROM users WHERE user_id = $1`, [decoded.userId]);
+    const user = await queryOne(`SELECT user_id, name, role, email, avatar FROM users WHERE user_id = $1`, [decoded.userId]);
     if (!user) return res.status(401).json({ success: false, message: 'User not found.' });
     return res.json({ success: true, user });
   } catch {
@@ -108,7 +109,8 @@ router.get('/me', async (req, res) => {
 });
 
 // POST /api/auth/change-password — secure password change for logged-in user
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const { query } = require('../db');
 
 router.post('/change-password', authMiddleware, async (req, res) => {
@@ -141,6 +143,104 @@ router.post('/change-password', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Password update failed:', err);
     res.status(500).json({ success: false, message: 'Failed to change password. Server error.' });
+  }
+});
+
+// PUT /api/auth/admin/update-credentials — admin edits credentials for teachers, students, parents
+router.put('/admin/update-credentials', authMiddleware, requireRole('admin'), async (req, res) => {
+  const { role, old_id, new_username, new_password } = req.body;
+  if (!role || !old_id || !new_username) {
+    return res.status(400).json({ success: false, message: 'Role, current ID, and new username are required.' });
+  }
+
+  try {
+    let targetUserId = null;
+    let oldUsername = null;
+
+    if (role === 'teacher') {
+      const tch = await queryOne('SELECT user_id, teacher_id FROM teachers WHERE teacher_id = $1', [old_id]);
+      if (tch) {
+        targetUserId = tch.user_id;
+        oldUsername = tch.teacher_id;
+      }
+    } else if (role === 'student') {
+      const stu = await queryOne('SELECT user_id, student_id FROM students WHERE student_id = $1', [old_id]);
+      if (stu) {
+        targetUserId = stu.user_id;
+        oldUsername = stu.student_id;
+      }
+    } else if (role === 'parent') {
+      const par = await queryOne('SELECT user_id, parent_id FROM parents WHERE parent_id = $1', [old_id]);
+      if (par) {
+        targetUserId = par.user_id;
+        oldUsername = par.parent_id;
+      }
+    }
+
+    if (!targetUserId) {
+      return res.status(404).json({ success: false, message: `${role} with ID ${old_id} not found.` });
+    }
+
+    // Check if new_username is taken by someone else
+    const taken = await queryOne('SELECT id FROM users WHERE user_id = $1 AND id <> $2', [new_username.trim(), targetUserId]);
+    if (taken) {
+      return res.status(400).json({ success: false, message: `Username "${new_username}" is already taken.` });
+    }
+
+    await query('BEGIN');
+
+    if (new_password) {
+      const hash = await bcrypt.hash(new_password.trim(), 10);
+      await query(
+        'UPDATE users SET user_id = $1, password = $2, raw_password = $3, updated_at = NOW() WHERE id = $4',
+        [new_username.trim(), hash, new_password.trim(), targetUserId]
+      );
+    } else {
+      await query(
+        'UPDATE users SET user_id = $1, updated_at = NOW() WHERE id = $2',
+        [new_username.trim(), targetUserId]
+      );
+    }
+
+    if (oldUsername !== new_username.trim()) {
+      const newU = new_username.trim();
+      if (role === 'teacher') {
+        await query('UPDATE teachers SET teacher_id = $1 WHERE user_id = $2', [newU, targetUserId]);
+        await query('UPDATE subjects SET teacher_id = $1 WHERE teacher_id = $2', [newU, oldUsername]);
+        await query('UPDATE timetable SET teacher_id = $1 WHERE teacher_id = $2', [newU, oldUsername]);
+        await query('UPDATE materials SET teacher_id = $1 WHERE teacher_id = $2', [newU, oldUsername]);
+        await query('UPDATE assignments SET teacher_id = $1 WHERE teacher_id = $2', [newU, oldUsername]);
+        await query('UPDATE exams SET teacher_id = $1 WHERE teacher_id = $2', [newU, oldUsername]);
+      } else if (role === 'student') {
+        await query('UPDATE students SET student_id = $1 WHERE user_id = $2', [newU, targetUserId]);
+        await query('UPDATE library_issues SET student_id = $1 WHERE student_id = $2', [newU, oldUsername]);
+        await query('UPDATE transport_assignments SET student_id = $1 WHERE student_id = $2', [newU, oldUsername]);
+      } else if (role === 'parent') {
+        await query('UPDATE parents SET parent_id = $1 WHERE user_id = $2', [newU, targetUserId]);
+      }
+    }
+
+    await query('COMMIT');
+    res.json({ success: true, message: 'Credentials updated successfully.' });
+  } catch (err) {
+    await query('ROLLBACK');
+    console.error('Update credentials failed:', err);
+    res.status(500).json({ success: false, message: 'Server error. Failed to update credentials.' });
+  }
+});
+
+// POST /api/auth/upload-avatar — upload profile photo
+router.post('/upload-avatar', authMiddleware, upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+    const avatarPath = '/uploads/' + req.file.filename;
+    await query('UPDATE users SET avatar = $1 WHERE user_id = $2', [avatarPath, req.user.userId]);
+    res.json({ success: true, avatarUrl: avatarPath, message: 'Profile picture updated successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to upload profile photo.' });
   }
 });
 

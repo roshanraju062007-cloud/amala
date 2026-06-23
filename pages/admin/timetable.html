@@ -3,19 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School Timetable Planner - Amala HSS EduSphere</title>
+  <title>Timetable Manager - Amala HSS EduSphere</title>
   <link rel="stylesheet" href="../../css/main.css">
   <style>
-    :root {
-      --primary: #4F46E5;
-      --primary-dark: #3730A3;
-      --primary-light: #EEF2FF;
+    :root { --primary: #4F46E5; --primary-dark: #3730A3; --primary-light: #EEF2FF; }
+
+    .tab-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; overflow-x: auto; }
+    .tab-nav button {
+      padding: 12px 24px; font-size: 14px; font-weight: 600; background: none;
+      border: none; border-bottom: 3px solid transparent; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
     }
+    .tab-nav button.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-nav button:hover { color: var(--primary); background: var(--primary-light); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Timetable builder grid */
+    .tt-builder-grid { overflow-x: auto; }
+    .tt-builder-table { border-collapse: collapse; min-width: 600px; width: 100%; font-size: 13px; }
+    .tt-builder-table th {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: #fff; padding: 10px 8px; text-align: center; font-weight: 600;
+    }
+    .tt-builder-table td {
+      border: 1px solid var(--border-color); padding: 0;
+      min-width: 110px; height: 70px; text-align: center; vertical-align: middle;
+    }
+    .tt-builder-table td:first-child {
+      padding: 8px; font-weight: 600; background: var(--primary-light);
+      color: var(--primary); font-size: 12px; white-space: nowrap; position: sticky; left: 0;
+    }
+    .builder-cell {
+      padding: 6px 4px; cursor: pointer; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; transition: background 0.15s;
+    }
+    .builder-cell:hover { background: var(--primary-light); }
+    .builder-cell.filled { background: linear-gradient(145deg, #EEF2FF, #E0E7FF); border-left: 3px solid var(--primary); }
+    .builder-cell-subject { font-weight: 700; font-size: 11px; color: var(--primary); }
+    .builder-cell-class { font-size: 10px; color: var(--text-muted); }
+    .builder-cell-room { font-size: 10px; color: var(--text-muted); }
+    .builder-cell-empty { font-size: 10px; color: var(--border-color); }
+    .builder-cell .edit-icon { font-size: 10px; opacity: 0; transition: opacity 0.2s; }
+    .builder-cell:hover .edit-icon { opacity: 1; }
+
+    /* Teacher schedule grid */
+    .teacher-grid-wrap { overflow-x: auto; }
+    .teacher-grid { border-collapse: collapse; min-width: 700px; width: 100%; font-size: 12px; }
+    .teacher-grid th { background: linear-gradient(135deg, #059669, #10B981); color: #fff; padding: 10px; text-align: center; font-weight: 600; }
+    .teacher-grid td { border: 1px solid var(--border-color); min-width: 110px; height: 72px; padding: 0; }
+    .teacher-grid td:first-child { background: var(--primary-light); font-weight: 600; color: var(--primary); padding: 8px; font-size: 12px; white-space: nowrap; }
+    .tch-cell { padding: 5px; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
+    .tch-cell:hover { background: #f0fdf4; }
+    .tch-cell.filled { background: #ecfdf5; border-left: 3px solid #10B981; }
+    .tch-cell-sub { font-weight: 700; font-size: 11px; color: #065f46; }
+    .tch-cell-class { font-size: 10px; color: #047857; }
+    .tch-cell-room { font-size: 10px; color: #6b7280; background: rgba(16,185,129,0.1); padding: 1px 5px; border-radius: 8px; }
+    .tch-cell-empty { font-size: 10px; color: var(--border-color); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    .loading-spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 3px solid var(--border-color); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <div class="app-container">
-    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
         <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
@@ -23,265 +82,458 @@
           <circle cx="250" cy="250" r="180" fill="#4F46E5"/>
           <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
         </svg>
-        <div class="sidebar-title">
-          AMALA HSS
-          <span>EduSphere LMS</span>
-        </div>
+        <div class="sidebar-title">AMALA HSS<span>EduSphere LMS</span></div>
       </div>
       <ul class="sidebar-menu">
-        
-      <li class="menu-header">Main</li>
-      <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
-      <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
-      <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
-      <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
-      <li class="menu-header">Academics</li>
-      <li class="sidebar-item"><a href="classes.html">🏫 Classes & Sections</a></li>
-      <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
-      <li class="sidebar-item"><a href="timetable.html">📅 Timetable</a></li>
-      <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
-      <li class="menu-header">Assessment</li>
-      <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
-      <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
-      <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
-      <li class="menu-header">Administration</li>
-      <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
-      <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
-      <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
-      <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
-      <li class="menu-header">System</li>
-      <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
-      <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
-      <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
-    
-        <li style="margin-top: 20px;" class="sidebar-item">
-          <a href="#" onclick="App.logout()">🚪 Logout</a>
-        </li>
+        <li class="menu-header">Main</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="students.html">🎓 Students</a></li>
+        <li class="sidebar-item"><a href="teachers.html">👨‍🏫 Teachers</a></li>
+        <li class="sidebar-item"><a href="parents.html">👪 Parents</a></li>
+        <li class="menu-header">Academics</li>
+        <li class="sidebar-item"><a href="classes.html">🏫 Classes &amp; Sections</a></li>
+        <li class="sidebar-item"><a href="subjects.html">📚 Subjects</a></li>
+        <li class="sidebar-item active"><a href="timetable.html">📅 Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="menu-header">Assessment</li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="results.html">🏆 Results</a></li>
+        <li class="menu-header">Administration</li>
+        <li class="sidebar-item"><a href="fees.html">💳 Fee Management</a></li>
+        <li class="sidebar-item"><a href="library.html">📖 Library</a></li>
+        <li class="sidebar-item"><a href="transport.html">🚌 Transport</a></li>
+        <li class="sidebar-item"><a href="notifications.html">🔔 Notifications</a></li>
+        <li class="menu-header">System</li>
+        <li class="sidebar-item"><a href="analytics.html">📈 Analytics</a></li>
+        <li class="sidebar-item"><a href="ai-tools.html">🤖 AI Tools</a></li>
+        <li class="sidebar-item"><a href="settings.html">⚙️ Settings</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item"><a href="#" onclick="App.logout()">🚪 Logout</a></li>
       </ul>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
       <header class="header">
         <div class="header-left">
           <button class="hamburger" id="hamburger">☰</button>
-          <h1 class="page-title">School Timetable Planner</h1>
+          <h1 class="page-title">Timetable Manager</h1>
         </div>
         <div class="header-right">
-          <div class="search-bar">
-            🔍 <input type="text" placeholder="Search anything...">
-          </div>
+          <div class="search-bar">🔍 <input type="text" placeholder="Search anything..."></div>
           <button class="header-btn" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
-          <button class="header-btn">
-            🔔 <span class="badge-dot"></span>
-          </button>
+          <button class="header-btn">🔔 <span class="badge-dot"></span></button>
           <div class="user-chip">
-            <div class="avatar-circle" id="userAvatar">A</div><div style="font-weight: 600;" id="userDisplayName">Administrator</div>
+            <div class="avatar-circle" id="userAvatar">A</div>
+            <div style="font-weight: 600;" id="userDisplayName">Administrator</div>
           </div>
         </div>
       </header>
 
       <div class="content-area">
-        
-  <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-      <div>
-        <select class="form-control" style="display:inline-block; width:220px; margin-right:10px;" id="ttClassSelect" onchange="loadTimetable()"></select>
-        <select class="form-control" style="display:inline-block; width:100px; margin-right:10px;" id="ttSectionSelect" onchange="loadTimetable()">
-          <option>A</option>
-          <option>B</option>
-          <option>C</option>
-          <option>D</option>
-        </select>
-      </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-warning" onclick="aiGenerateTimetable()">🤖 Generate Timetable (AI)</button>
-        <button class="btn btn-primary" onclick="window.print()">Print PDF</button>
-      </div>
-    </div>
-
-    <table class="data-table" style="text-align:center;">
-      <thead>
-        <tr>
-          <th>Time Slot</th>
-          <th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th>
-        </tr>
-      </thead>
-      <tbody id="timetableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- Edit Slot Modal -->
-  <div class="modal-overlay" id="editSlotModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">Edit Class Period</h3>
-        <button class="modal-close" onclick="App.closeModal('editSlotModal')">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label class="form-label">Subject</label>
-          <select class="form-control" id="slotSubSelect"></select>
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+          <button class="active" onclick="switchTab('classTab', this)" id="btn-classTab">📁 Class Timetable Upload</button>
+          <button onclick="switchTab('teacherTab', this)" id="btn-teacherTab">👨‍🏫 Teacher Schedule Builder</button>
         </div>
-        <div class="form-group">
-          <label class="form-label">Teacher</label>
-          <select class="form-control" id="slotTchSelect"></select>
+
+        <!-- TAB 1: Class Timetable Upload -->
+        <div id="classTab" class="tab-panel active">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Upload Form -->
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 20px;">Upload Class Timetable</h3>
+              <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 180px;">
+                  <label class="form-label">Class</label>
+                  <select class="form-control" id="ttClassSelect" onchange="loadUploadedTimetable()"></select>
+                </div>
+                <div style="min-width: 100px;">
+                  <label class="form-label">Section</label>
+                  <select class="form-control" id="ttSectionSelect" onchange="loadUploadedTimetable()">
+                    <option>A</option><option>B</option><option>C</option><option>D</option>
+                  </select>
+                </div>
+              </div>
+              <form id="timetableUploadForm" onsubmit="handleUpload(event)" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">Upload Local File (.pdf, .jpg, .png, .xlsx, .docx)</label>
+                  <input type="file" id="timetableFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp,.xlsx,.docx">
+                </div>
+                <div style="text-align: center; font-weight: bold; color: var(--text-muted);">— OR —</div>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label">External URL (Google Drive, etc.)</label>
+                  <input type="url" id="timetableUrl" class="form-control" placeholder="https://drive.google.com/...">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">📤 Upload / Update Timetable</button>
+              </form>
+            </div>
+
+            <!-- Current Preview -->
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 20px;">Current Timetable</h3>
+              <div id="timetableStatusContainer" style="padding: 30px; border: 2px dashed var(--border-color); border-radius: var(--radius); text-align: center; background-color: var(--primary-light); color: var(--text-muted);">
+                Select a class and section to view the timetable.
+              </div>
+              <div id="timetableDetailsContainer" style="display: none;">
+                <div style="padding: 14px; background: var(--primary-light); border-radius: var(--radius); margin-bottom: 14px;">
+                  <p style="margin: 3px 0;"><strong>File:</strong> <span id="lblFileName"></span></p>
+                  <p style="margin: 3px 0;" id="rowFileSize"><strong>Size:</strong> <span id="lblFileSize"></span></p>
+                  <p style="margin: 3px 0;"><strong>Uploaded:</strong> <span id="lblUploadDate"></span></p>
+                  <p style="margin: 3px 0; display: none;" id="rowExternalUrl"><strong>URL:</strong> <a id="lblExternalUrl" target="_blank" href="#" style="color: var(--primary);">Open Link</a></p>
+                  <div style="margin-top: 12px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="downloadTimetable()">📥 Download</button>
+                  </div>
+                </div>
+                <div id="timetablePreviewArea" style="border: 1px solid var(--border-color); border-radius: var(--radius); min-height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden;"></div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="App.closeModal('editSlotModal')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveSlot()">Save Slot</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Loading Animation overlay -->
-  <div class="loading-overlay" id="aiLoader">
-    <div style="text-align: center;">
-      <div class="spinner"></div>
-      <p style="margin-top: 15px; font-weight: 600; color: var(--text-main);">AI Generator constructing schedule...</p>
-    </div>
-  </div>
+        <!-- TAB 2: Teacher Schedule Builder -->
+        <div id="teacherTab" class="tab-panel">
+          <div class="card" style="margin-bottom: 20px;">
+            <h3 class="card-title" style="margin-bottom: 16px;">Assign Teacher Schedule</h3>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+              <div style="flex: 1; min-width: 180px;">
+                <label class="form-label">Teacher</label>
+                <select class="form-control" id="schedTeacher" onchange="loadTeacherSchedule()">
+                  <option value="">-- Select Teacher --</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <button class="btn btn-primary" onclick="loadTeacherSchedule()">🔄 Refresh</button>
+              </div>
+            </div>
+          </div>
 
+          <!-- Teacher Schedule Grid -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 class="card-title">Weekly Schedule Grid</h3>
+              <span id="schedTeacherName" style="font-size: 14px; color: var(--text-muted);"></span>
+            </div>
+            <div id="schedLoadingMsg" style="text-align: center; padding: 30px; color: var(--text-muted);">
+              Select a teacher above to view and edit their schedule.
+            </div>
+            <div id="teacherGridWrap" class="teacher-grid-wrap" style="display: none;">
+              <table class="teacher-grid" id="teacherGrid">
+                <thead>
+                  <tr>
+                    <th style="min-width: 110px; text-align: left; padding-left: 10px;">Period</th>
+                    <th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th>
+                  </tr>
+                </thead>
+                <tbody id="teacherGridBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
+  </div>
+
+  <!-- Entry Edit Modal -->
+  <div class="modal-overlay" id="entryModal">
+    <div class="modal" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="entryModalTitle">Assign Timetable Slot</h3>
+        <button class="modal-close" onclick="App.closeModal('entryModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="entryDay">
+        <input type="hidden" id="entryPeriod">
+        <input type="hidden" id="entryExistingId">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Day</label>
+            <input type="text" class="form-control" id="entryDayLabel" disabled>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Period</label>
+            <input type="text" class="form-control" id="entryPeriodLabel" disabled>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class &amp; Section</label>
+          <div style="display: flex; gap: 8px;">
+            <select class="form-control" id="entryClass" style="flex: 1;"></select>
+            <select class="form-control" id="entrySection" style="width: 80px;">
+              <option>A</option><option>B</option><option>C</option><option>D</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" class="form-control" id="entrySubject" placeholder="e.g. Mathematics">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Room Number</label>
+            <input type="text" class="form-control" id="entryRoom" placeholder="e.g. 201">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teacher</label>
+            <input type="text" class="form-control" id="entryTeacherDisplay" disabled>
+            <input type="hidden" id="entryTeacherId">
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" onclick="saveEntry()" style="flex: 1;">💾 Save</button>
+          <button class="btn" onclick="clearEntry()" style="border: 1px solid var(--danger); color: var(--danger);">🗑️ Clear Slot</button>
+          <button class="btn" onclick="App.closeModal('entryModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    
-  let selectedDayIndex = 0;
-  let selectedPeriodIndex = 0;
-  const timeSlots = [
-    '08:00 - 08:45 AM',
-    '08:45 - 09:30 AM',
-    '09:30 - 10:15 AM',
-    '10:15 - 11:00 AM',
-    '11:00 - 11:45 AM',
-    '11:45 - 12:30 PM',
-    '12:30 - 01:15 PM'
-  ];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-  window.addEventListener('load', () => {
-    loadClassesDropdown(() => {
-      loadTimetable();
-      loadSlotDropdowns();
-    });
-  });
-
-  window.addEventListener('lms-sync-classes', () => {
-    loadClassesDropdown(() => {
-      loadTimetable();
-      loadSlotDropdowns();
-    });
-  });
-
-  function loadClassesDropdown(callback) {
-    const classes = AppState.getData('lms_classes');
-    const select = document.getElementById('ttClassSelect');
-    select.innerHTML = '';
-    classes.forEach(c => {
-      select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-    });
-    if(callback) callback();
-  }
-
-  function getTimetableStateKey() {
-    const c = document.getElementById('ttClassSelect').value;
-    const s = document.getElementById('ttSectionSelect').value;
-    return 'tt_' + c.replace(' ', '_') + '_' + s;
-  }
-
-  function loadTimetable() {
-    const key = getTimetableStateKey();
-    const tt = AppState.getData(key) || {};
-    const tbody = document.getElementById('timetableBody');
-    tbody.innerHTML = '';
-
-    timeSlots.forEach((slot, pIdx) => {
-      let rowHtml = `<tr><td><b>${slot}</b></td>`;
-      days.forEach((day, dIdx) => {
-        const item = tt[`${pIdx}_${dIdx}`] || { sub: '--', tch: '--' };
-        rowHtml += `<td onclick="openSlotEditor(${pIdx}, ${dIdx})" style="cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
-          <div><b>${item.sub}</b></div>
-          <div style="font-size:11px; color:var(--text-muted);">${item.tch}</div>
-        </td>`;
-      });
-      rowHtml += `</tr>`;
-      tbody.appendChild(rowHtml);
-    });
-  }
-
-  function loadSlotDropdowns() {
-    const subs = AppState.getData('lms_subjects');
-    const tchs = AppState.getData('lms_teachers');
-
-    const sSel = document.getElementById('slotSubSelect');
-    sSel.innerHTML = '<option value="--">Free Period</option>';
-    subs.forEach(s => {
-      sSel.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-    });
-
-    const tSel = document.getElementById('slotTchSelect');
-    tSel.innerHTML = '<option value="--">No Teacher</option>';
-    tchs.forEach(t => {
-      tSel.innerHTML += `<option value="${t.name}">${t.name}</option>`;
-    });
-  }
-
-  function openSlotEditor(pIdx, dIdx) {
-    selectedPeriodIndex = pIdx;
-    selectedDayIndex = dIdx;
-    const key = getTimetableStateKey();
-    const tt = AppState.getData(key) || {};
-    const item = tt[`${pIdx}_${dIdx}`] || { sub: '--', tch: '--' };
-
-    document.getElementById('slotSubSelect').value = item.sub;
-    document.getElementById('slotTchSelect').value = item.tch;
-
-    App.openModal('editSlotModal');
-  }
-
-  function saveSlot() {
-    const key = getTimetableStateKey();
-    const tt = AppState.getData(key) || {};
-    tt[`${selectedPeriodIndex}_${selectedDayIndex}`] = {
-      sub: document.getElementById('slotSubSelect').value,
-      tch: document.getElementById('slotTchSelect').value
+    const PERIODS = [1,2,3,4,5,6,7,8];
+    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const PERIOD_TIMES = {
+      1:'9:00–9:45', 2:'9:45–10:30', 3:'10:45–11:30',
+      4:'11:30–12:15', 5:'1:00–1:45', 6:'1:45–2:30',
+      7:'2:30–3:15', 8:'3:15–4:00'
     };
-    AppState.saveData(key, tt);
-    App.closeModal('editSlotModal');
-    loadTimetable();
-    App.showToast('Schedule period saved.');
-  }
 
-  function aiGenerateTimetable() {
-    const loader = document.getElementById('aiLoader');
-    loader.classList.add('active');
-    setTimeout(() => {
-      loader.classList.remove('active');
-      
-      const key = getTimetableStateKey();
-      const tt = {};
-      const subsList = AppState.getData('lms_subjects').map(s=>s.name);
-      const tchsList = AppState.getData('lms_teachers').map(t=>t.name);
+    let allTeachers = [];
+    let allClasses = [];
+    let currentTeacherId = '';
+    let teacherScheduleData = [];
 
-      timeSlots.forEach((slot, pIdx) => {
-        days.forEach((day, dIdx) => {
-          const randSub = subsList[Math.floor(Math.random()*subsList.length)] || 'Free Period';
-          const randTch = tchsList[Math.floor(Math.random()*tchsList.length)] || '--';
-          tt[`${pIdx}_${dIdx}`] = { sub: randSub, tch: randTch };
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    async function initPage() {
+      App.initDark();
+      App.initSidebar();
+      App.highlightActiveNav();
+
+      try {
+        const [classRes, teacherRes] = await Promise.all([
+          API.get('classes'),
+          API.get('teachers')
+        ]);
+
+        if (classRes.success) {
+          allClasses = classRes.data;
+          const classSelect = document.getElementById('ttClassSelect');
+          const entryClass = document.getElementById('entryClass');
+          classSelect.innerHTML = '';
+          entryClass.innerHTML = '<option value="">-- Select Class --</option>';
+          allClasses.forEach(c => {
+            classSelect.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+            entryClass.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+          });
+          loadUploadedTimetable();
+        }
+
+        if (teacherRes.success) {
+          allTeachers = teacherRes.data;
+          const schedSel = document.getElementById('schedTeacher');
+          allTeachers.forEach(t => {
+            schedSel.innerHTML += `<option value="${t.teacher_id}">${t.name} (${t.teacher_id})</option>`;
+          });
+        }
+      } catch (err) {
+        console.error('Init failed:', err);
+      }
+    }
+
+    // ──────── CLASS TIMETABLE UPLOAD TAB ────────
+    async function loadUploadedTimetable() {
+      const c = document.getElementById('ttClassSelect').value;
+      const s = document.getElementById('ttSectionSelect').value;
+      if (!c || !s) return;
+      try {
+        const res = await API.get('timetable/uploaded', { class_name: c, section: s });
+        const status = document.getElementById('timetableStatusContainer');
+        const details = document.getElementById('timetableDetailsContainer');
+        if (!res.success || !res.data) {
+          status.style.display = 'block';
+          status.textContent = 'No timetable uploaded yet for this class and section.';
+          details.style.display = 'none';
+          return;
+        }
+        status.style.display = 'none';
+        details.style.display = 'block';
+        const item = res.data;
+        document.getElementById('lblFileName').textContent = item.file_name || 'N/A';
+        document.getElementById('lblUploadDate').textContent = App.formatDate(item.upload_date);
+        if (item.file_size) {
+          document.getElementById('rowFileSize').style.display = 'block';
+          document.getElementById('lblFileSize').textContent = (item.file_size / 1024).toFixed(1) + ' KB';
+        } else { document.getElementById('rowFileSize').style.display = 'none'; }
+        if (item.external_url) {
+          document.getElementById('rowExternalUrl').style.display = 'block';
+          document.getElementById('lblExternalUrl').href = item.external_url;
+        } else { document.getElementById('rowExternalUrl').style.display = 'none'; }
+        const preview = document.getElementById('timetablePreviewArea');
+        preview.innerHTML = '';
+        if (item.file_path) {
+          const ext = item.file_path.split('.').pop().toLowerCase();
+          if (['jpg','jpeg','png','webp'].includes(ext)) {
+            preview.innerHTML = `<img src="${item.file_path}" style="max-width:100%; max-height:350px; object-fit:contain; border-radius:8px;">`;
+          } else if (ext === 'pdf') {
+            preview.innerHTML = `<iframe src="${item.file_path}" style="width:100%; height:350px; border:none;"></iframe>`;
+          } else {
+            preview.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:30px;"><span style="font-size:36px;">📄</span><br>Preview not available for .${ext} files.</div>`;
+          }
+        } else if (item.external_url) {
+          preview.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:30px;"><span style="font-size:36px;">🔗</span><br><a href="${item.external_url}" target="_blank" style="color:var(--primary);">Open External Link</a></div>`;
+        }
+      } catch (e) { console.error('Load timetable error:', e); }
+    }
+
+    async function handleUpload(e) {
+      e.preventDefault();
+      const c = document.getElementById('ttClassSelect').value;
+      const s = document.getElementById('ttSectionSelect').value;
+      const fileInput = document.getElementById('timetableFile');
+      const urlInput = document.getElementById('timetableUrl');
+      if (!c || !s) return App.showToast('Select a class and section first.', 'error');
+      if (!fileInput.files.length && !urlInput.value.trim()) return App.showToast('Choose a file or enter an external URL.', 'error');
+      const formData = new FormData();
+      formData.append('class_name', c);
+      formData.append('section', s);
+      if (fileInput.files.length > 0) formData.append('timetableFile', fileInput.files[0]);
+      else formData.append('external_url', urlInput.value.trim());
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await fetch('/api/timetable/upload', {
+          method: 'POST',
+          headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+          body: formData
         });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed.');
+        App.showToast('Timetable uploaded successfully!');
+        fileInput.value = ''; urlInput.value = '';
+        loadUploadedTimetable();
+      } catch (err) { App.showToast(err.message || 'Upload failed.', 'error'); }
+    }
+
+    function downloadTimetable() {
+      const c = document.getElementById('ttClassSelect').value;
+      const s = document.getElementById('ttSectionSelect').value;
+      if (c && s) window.location.href = `/api/timetable/download?class_name=${encodeURIComponent(c)}&section=${encodeURIComponent(s)}`;
+    }
+
+    // ──────── TEACHER SCHEDULE BUILDER TAB ────────
+    async function loadTeacherSchedule() {
+      const teacherId = document.getElementById('schedTeacher').value;
+      if (!teacherId) return;
+      currentTeacherId = teacherId;
+      const teacher = allTeachers.find(t => t.teacher_id === teacherId);
+      document.getElementById('schedTeacherName').textContent = teacher ? `${teacher.name} — ${teacher.subjects || ''}` : '';
+      document.getElementById('schedLoadingMsg').innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><div class="loading-spinner"></div> Loading schedule...</div>';
+      document.getElementById('schedLoadingMsg').style.display = 'block';
+      document.getElementById('teacherGridWrap').style.display = 'none';
+      try {
+        const res = await API.get(`timetable/teacher/${encodeURIComponent(teacherId)}`);
+        teacherScheduleData = (res.success && res.data) ? res.data : [];
+        document.getElementById('schedLoadingMsg').style.display = 'none';
+        document.getElementById('teacherGridWrap').style.display = 'block';
+        renderTeacherGrid(teacherScheduleData);
+      } catch (err) {
+        document.getElementById('schedLoadingMsg').textContent = 'Failed to load schedule.';
+        console.error(err);
+      }
+    }
+
+    function renderTeacherGrid(rows) {
+      const grid = {};
+      rows.forEach(r => {
+        if (!grid[r.period]) grid[r.period] = {};
+        grid[r.period][r.day] = r;
       });
+      const tbody = document.getElementById('teacherGridBody');
+      tbody.innerHTML = '';
+      PERIODS.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>Period ${p}</strong><br><small style="color:var(--text-muted)">${PERIOD_TIMES[p]||''}</small></td>`;
+        DAYS.forEach(day => {
+          const entry = grid[p] && grid[p][day];
+          if (entry) {
+            tr.innerHTML += `
+              <td onclick="openEntryModal('${day}', ${p}, '${entry.id}', '${escHtml(entry.subject||'')}', '${escHtml(entry.class_name||'')}', '${escHtml(entry.section||'')}', '${escHtml(entry.room_number||'')}')">
+                <div class="tch-cell filled">
+                  <span class="tch-cell-sub">${escHtml(entry.subject||'')}</span>
+                  <span class="tch-cell-class">${escHtml(entry.class_name||'')} ${entry.section||''}</span>
+                  ${entry.room_number ? `<span class="tch-cell-room">🚪${entry.room_number}</span>` : ''}
+                </div>
+              </td>`;
+          } else {
+            tr.innerHTML += `<td onclick="openEntryModal('${day}', ${p})"><div class="tch-cell"><span class="tch-cell-empty">+ Add</span></div></td>`;
+          }
+        });
+        tbody.appendChild(tr);
+      });
+    }
 
-      AppState.saveData(key, tt);
-      loadTimetable();
-      App.showToast('Schedule AI generated matching CBSE norms!', 'success');
-    }, 1500);
-  }
+    function openEntryModal(day, period, existingId='', subject='', className='', section='', room='') {
+      if (!currentTeacherId) return App.showToast('Please select a teacher first.', 'error');
+      document.getElementById('entryDay').value = day;
+      document.getElementById('entryPeriod').value = period;
+      document.getElementById('entryExistingId').value = existingId;
+      document.getElementById('entryDayLabel').value = day;
+      document.getElementById('entryPeriodLabel').value = `Period ${period} (${PERIOD_TIMES[period]||''})`;
+      document.getElementById('entrySubject').value = subject;
+      document.getElementById('entryRoom').value = room;
+      document.getElementById('entrySection').value = section || 'A';
+      if (className) document.getElementById('entryClass').value = className;
+      const teacher = allTeachers.find(t => t.teacher_id === currentTeacherId);
+      document.getElementById('entryTeacherDisplay').value = teacher ? teacher.name : currentTeacherId;
+      document.getElementById('entryTeacherId').value = currentTeacherId;
+      document.getElementById('entryModalTitle').textContent = existingId ? `Edit Slot — ${day} Period ${period}` : `Assign Slot — ${day} Period ${period}`;
+      App.openModal('entryModal');
+    }
 
+    async function saveEntry() {
+      const day = document.getElementById('entryDay').value;
+      const period = parseInt(document.getElementById('entryPeriod').value);
+      const subject = document.getElementById('entrySubject').value.trim();
+      const className = document.getElementById('entryClass').value;
+      const section = document.getElementById('entrySection').value;
+      const room = document.getElementById('entryRoom').value.trim();
+      const teacherId = document.getElementById('entryTeacherId').value;
+      if (!subject) return App.showToast('Subject is required.', 'error');
+      if (!className) return App.showToast('Class is required.', 'error');
+      try {
+        const res = await API.post('timetable', {
+          class_name: className, section, day, period, subject, teacher_id: teacherId, room_number: room
+        });
+        if (res.success) {
+          App.showToast('Timetable slot saved!');
+          App.closeModal('entryModal');
+          loadTeacherSchedule();
+        } else { App.showToast(res.message || 'Failed to save.', 'error'); }
+      } catch (err) { App.showToast('Error saving slot.', 'error'); }
+    }
+
+    async function clearEntry() {
+      const existingId = document.getElementById('entryExistingId').value;
+      if (!existingId) { App.closeModal('entryModal'); return; }
+      if (!confirm('Remove this period from the schedule?')) return;
+      try {
+        const res = await API.delete(`timetable/${existingId}`);
+        if (res.success) {
+          App.showToast('Slot cleared.');
+          App.closeModal('entryModal');
+          loadTeacherSchedule();
+        } else { App.showToast(res.message || 'Failed to delete.', 'error'); }
+      } catch (err) { App.showToast('Error clearing slot.', 'error'); }
+    }
+
+    function escHtml(str) { return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+    window.addEventListener('DOMContentLoaded', initPage);
   </script>
 </body>
 </html>

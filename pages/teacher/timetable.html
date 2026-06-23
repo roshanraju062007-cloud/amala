@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Timetable - Amala HSS EduSphere</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <style>
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --primary-light: #ECFDF5;
+    }
+
+    /* Timetable grid */
+    .timetable-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius);
+    }
+
+    .timetable-grid {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+      font-size: 13px;
+    }
+
+    .timetable-grid th {
+      background: linear-gradient(135deg, #059669, #10B981);
+      color: #fff;
+      padding: 12px 10px;
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .timetable-grid th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: linear-gradient(135deg, #047857, #059669);
+    }
+
+    .timetable-grid td {
+      border: 1px solid var(--border-color);
+      padding: 0;
+      text-align: center;
+      vertical-align: middle;
+      min-width: 120px;
+      height: 80px;
+    }
+
+    .timetable-grid td:first-child {
+      position: sticky;
+      left: 0;
+      background: var(--bg-card);
+      z-index: 1;
+      font-weight: 600;
+      color: var(--primary);
+      padding: 8px;
+      border-right: 2px solid var(--border-color);
+    }
+
+    .period-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .period-time {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .cell-content {
+      padding: 8px 6px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .cell-content.has-class {
+      background: linear-gradient(145deg, #ECFDF5, #D1FAE5);
+      border-left: 3px solid #10B981;
+      transition: background 0.2s;
+    }
+
+    .dark .cell-content.has-class {
+      background: linear-gradient(145deg, #022c22, #064e3b);
+    }
+
+    .cell-content.has-class:hover {
+      background: linear-gradient(145deg, #D1FAE5, #A7F3D0);
+    }
+
+    .cell-subject {
+      font-weight: 700;
+      font-size: 12px;
+      color: #065f46;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .dark .cell-subject { color: #6ee7b7; }
+
+    .cell-class {
+      font-size: 11px;
+      color: #047857;
+      font-weight: 500;
+    }
+
+    .dark .cell-class { color: #34d399; }
+
+    .cell-room {
+      font-size: 10px;
+      color: #6b7280;
+      background: rgba(16,185,129,0.1);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .cell-empty {
+      color: var(--text-muted);
+      font-size: 11px;
+      opacity: 0.5;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .tt-stats {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .tt-stat-card {
+      flex: 1;
+      min-width: 130px;
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      text-align: center;
+      border: 1px solid rgba(16,185,129,0.2);
+    }
+
+    .tt-stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      display: block;
+    }
+
+    .tt-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .loading-skeleton {
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+      background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-app) 50%, var(--border-color) 75%);
+      background-size: 200% 100%;
+      border-radius: 8px;
+      height: 80px;
+    }
+
+    @keyframes skeleton-pulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Print styles */
+    @media print {
+      .sidebar, .header, .no-print { display: none !important; }
+      .main-content { margin-left: 0 !important; }
+      .content-area { padding: 0 !important; }
+      .timetable-grid th { background: #059669 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .cell-content.has-class { background: #ECFDF5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { font-size: 11px; }
+    }
+
+    @media (max-width: 768px) {
+      .tt-stats { gap: 10px; }
+      .tt-stat-card { padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg viewBox="0 0 500 500" class="sidebar-logo" fill="none">
+          <circle cx="250" cy="250" r="230" fill="#FFF"/>
+          <circle cx="250" cy="250" r="180" fill="#10B981"/>
+          <text x="250" y="290" fill="#FFF" font-size="120" font-weight="900" text-anchor="middle">A</text>
+        </svg>
+        <div class="sidebar-title">
+          AMALA HSS
+          <span>EduSphere LMS</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-header">Teacher</li>
+        <li class="sidebar-item"><a href="dashboard.html">📊 Dashboard</a></li>
+        <li class="sidebar-item"><a href="my-classes.html">🏫 My Classes</a></li>
+        <li class="sidebar-item active"><a href="timetable.html">📅 My Timetable</a></li>
+        <li class="sidebar-item"><a href="attendance.html">📝 Attendance</a></li>
+        <li class="sidebar-item"><a href="assignments.html">📎 Assignments</a></li>
+        <li class="sidebar-item"><a href="study-materials.html">📚 Study Materials</a></li>
+        <li class="sidebar-item"><a href="exams.html">✍️ Exams &amp; Marks</a></li>
+        <li class="sidebar-item"><a href="messages.html">💬 Messages</a></li>
+        <li class="sidebar-item"><a href="profile.html">👤 Profile</a></li>
+        <li style="margin-top: 20px;" class="sidebar-item">
+          <a href="#" onclick="App.logout()">🚪 Logout</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <div class="header-left">
+          <button class="hamburger" id="hamburger">☰</button>
+          <h1 class="page-title">My Timetable</h1>
+        </div>
+        <div class="header-right">
+          <div class="search-bar no-print">
+            🔍 <input type="text" placeholder="Search anything...">
+          </div>
+          <button class="header-btn no-print" id="darkModeToggle" onclick="App.toggleDark()">🌙</button>
+          <button class="header-btn no-print">
+            🔔 <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar-circle" id="userAvatar">T</div>
+            <div style="font-weight: 600;" id="userDisplayName">Teacher</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- Loading state -->
+        <div id="loadingState" class="card" style="padding: 20px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="font-size: 20px;">⏳</div>
+            <div style="font-weight: 600; color: var(--text-muted);">Loading your timetable...</div>
+          </div>
+          <div class="loading-skeleton" style="margin-bottom: 10px;"></div>
+          <div class="loading-skeleton" style="margin-bottom: 10px;"></div>
+          <div class="loading-skeleton"></div>
+        </div>
+
+        <!-- Timetable content (hidden until loaded) -->
+        <div id="timetableContent" style="display: none;">
+          <!-- Stats bar -->
+          <div class="tt-stats" id="statsBar"></div>
+
+          <!-- Timetable card -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+              <div>
+                <h3 class="card-title" style="margin-bottom: 4px;">Weekly Schedule</h3>
+                <p style="font-size: 13px; color: var(--text-muted);" id="teacherSubtitle">Your assigned teaching slots</p>
+              </div>
+              <div style="display: flex; gap: 10px;" class="no-print">
+                <button class="btn btn-primary" onclick="window.print()" id="printBtn">
+                  🖨️ Print / Save as PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+              <span class="empty-icon">📅</span>
+              <h3>Your timetable has not been assigned yet.</h3>
+              <p>Your class schedule will appear here once the administrator assigns your subjects and time slots. Please contact the admin if you believe this is an error.</p>
+            </div>
+
+            <!-- Grid -->
+            <div id="gridWrapper" class="timetable-wrapper" style="display: none;">
+              <table class="timetable-grid" id="timetableTable">
+                <thead>
+                  <tr id="headerRow">
+                    <th style="min-width: 110px;">Period</th>
+                    <!-- Day columns added dynamically -->
+                  </tr>
+                </thead>
+                <tbody id="timetableBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/app.js"></script>
+  <script src="../../js/auth-check.js"></script>
+  <script>
+    // Period time slots (8 periods per day)
+    const PERIOD_TIMES = [
+      { label: 'Period 1', time: '9:00 – 9:45' },
+      { label: 'Period 2', time: '9:45 – 10:30' },
+      { label: 'Break',   time: '10:30 – 10:45', isBreak: true },
+      { label: 'Period 3', time: '10:45 – 11:30' },
+      { label: 'Period 4', time: '11:30 – 12:15' },
+      { label: 'Lunch',   time: '12:15 – 1:00',  isBreak: true },
+      { label: 'Period 5', time: '1:00 – 1:45' },
+      { label: 'Period 6', time: '1:45 – 2:30' },
+      { label: 'Period 7', time: '2:30 – 3:15' },
+      { label: 'Period 8', time: '3:15 – 4:00' },
+    ];
+
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const DAY_SHORT = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat' };
+
+    async function loadMyTimetable() {
+      const teacherId = localStorage.getItem('userId');
+      if (!teacherId) return;
+
+      try {
+        const res = await API.get(`timetable/teacher/${encodeURIComponent(teacherId)}`);
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('timetableContent').style.display = 'block';
+
+        if (!res.success || !res.data || res.data.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          document.getElementById('gridWrapper').style.display = 'none';
+          renderStats([], teacherId);
+          return;
+        }
+
+        const rows = res.data;
+        renderStats(rows, teacherId);
+        renderGrid(rows);
+      } catch (err) {
+        console.error('Failed to load timetable:', err);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('timetableContent').style.display = 'block';
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('emptyState').querySelector('h3').textContent = 'Your timetable has not been assigned yet.';
+      }
+    }
+
+    function renderStats(rows, teacherId) {
+      const totalPeriods = rows.length;
+      const uniqueClasses = [...new Set(rows.map(r => r.class_name).filter(Boolean))].length;
+      const uniqueSubjects = [...new Set(rows.map(r => r.subject).filter(Boolean))].length;
+      const activeDays = [...new Set(rows.map(r => r.day))].length;
+
+      document.getElementById('statsBar').innerHTML = `
+        <div class="tt-stat-card">
+          <span class="tt-stat-num">${totalPeriods}</span>
+          <span class="tt-stat-label">Periods / Week</span>
+        </div>
+        <div class="tt-stat-card">
+          <span class="tt-stat-num">${uniqueClasses}</span>
+          <span class="tt-stat-label">Classes</span>
+        </div>
+        <div class="tt-stat-card">
+          <span class="tt-stat-num">${uniqueSubjects}</span>
+          <span class="tt-stat-label">Subjects</span>
+        </div>
+        <div class="tt-stat-card">
+          <span class="tt-stat-num">${activeDays}</span>
+          <span class="tt-stat-label">Active Days</span>
+        </div>
+      `;
+
+      document.getElementById('teacherSubtitle').textContent =
+        totalPeriods > 0
+          ? `${totalPeriods} periods across ${uniqueClasses} class(es) — Teacher ID: ${teacherId}`
+          : 'No schedule assigned yet';
+    }
+
+    function renderGrid(rows) {
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('gridWrapper').style.display = 'block';
+
+      // Build a lookup: grid[period][day] = row
+      const grid = {};
+      for (const row of rows) {
+        if (!grid[row.period]) grid[row.period] = {};
+        grid[row.period][row.day] = row;
+      }
+
+      // Find which days have at least one entry
+      const activeDays = DAYS.filter(d => rows.some(r => r.day === d));
+      // If no days detected, show all days
+      const displayDays = activeDays.length > 0 ? activeDays : DAYS;
+
+      // Build header
+      const headerRow = document.getElementById('headerRow');
+      headerRow.innerHTML = '<th style="min-width: 120px; text-align: left; padding-left: 12px;">Period</th>';
+      displayDays.forEach(day => {
+        headerRow.innerHTML += `<th>${day}</th>`;
+      });
+
+      // Find max period number
+      const maxPeriod = rows.length > 0 ? Math.max(...rows.map(r => r.period)) : 8;
+      const periodCount = Math.max(maxPeriod, 8);
+
+      // Build body
+      const tbody = document.getElementById('timetableBody');
+      tbody.innerHTML = '';
+
+      // Period slot definitions (8 academic periods, 0-indexed mapping)
+      // We map period numbers 1-8 to display slots
+      const periodSlots = [];
+      let pNum = 0;
+      for (const slot of PERIOD_TIMES) {
+        if (slot.isBreak) {
+          periodSlots.push({ isBreak: true, label: slot.label, time: slot.time });
+        } else {
+          pNum++;
+          periodSlots.push({ isBreak: false, label: slot.label, time: slot.time, periodNum: pNum });
+        }
+      }
+
+      for (const slot of periodSlots) {
+        const tr = document.createElement('tr');
+
+        if (slot.isBreak) {
+          // Break row
+          tr.innerHTML = `
+            <td style="background: var(--bg-app); padding: 6px 12px; border-right: 2px solid var(--border-color);">
+              <span class="period-label" style="color: var(--text-muted); font-size: 11px;">${slot.label}</span>
+              <span class="period-time">${slot.time}</span>
+            </td>
+          `;
+          displayDays.forEach(() => {
+            tr.innerHTML += `<td style="background: var(--bg-app);"><div class="cell-content"><span style="font-size:11px; color:var(--text-muted);">—</span></div></td>`;
+          });
+        } else {
+          // Academic period row
+          tr.innerHTML = `
+            <td>
+              <span class="period-label">${slot.label}</span>
+              <span class="period-time">${slot.time}</span>
+            </td>
+          `;
+
+          displayDays.forEach(day => {
+            const entry = grid[slot.periodNum] && grid[slot.periodNum][day];
+            if (entry) {
+              const classSection = `${entry.class_name || ''}${entry.section ? ' – ' + entry.section : ''}`;
+              const roomText = entry.room_number ? `🚪 Room ${entry.room_number}` : '';
+              tr.innerHTML += `
+                <td>
+                  <div class="cell-content has-class">
+                    <span class="cell-subject">${escapeHtml(entry.subject || '')}</span>
+                    <span class="cell-class">${escapeHtml(classSection)}</span>
+                    ${roomText ? `<span class="cell-room">${escapeHtml(roomText)}</span>` : ''}
+                  </div>
+                </td>
+              `;
+            } else {
+              tr.innerHTML += `<td><div class="cell-content"><span class="cell-empty">Free</span></div></td>`;
+            }
+          });
+        }
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      App.initDark();
+      App.initSidebar();
+      App.highlightActiveNav();
+      loadMyTimetable();
+    });
+  </script>
+</body>
+</html>
