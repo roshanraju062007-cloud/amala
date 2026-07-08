@@ -135,7 +135,10 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    window.addEventListener('load', () => {
+    window.addEventListener('DOMContentLoaded', () => {
+      App.initDark();
+      App.initSidebar();
+      App.highlightActiveNav();
       loadAnalyticsData();
     });
 
@@ -146,16 +149,14 @@
 
         const data = res.data;
 
-        // Populate stat cards
         document.getElementById('avgScoreValue').innerText = data.overallAvgScore + '%';
         document.getElementById('passRateValue').innerText = data.passRate + '%';
         document.getElementById('attendanceRateValue').innerText = data.attendanceRate + '%';
         document.getElementById('staffRatioValue').innerText = data.ratio;
 
-        // Render top performers
         const perfBody = document.getElementById('performersTableBody');
         perfBody.innerHTML = '';
-        if (data.topPerformers.length === 0) {
+        if (!data.topPerformers || data.topPerformers.length === 0) {
           perfBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">No exam results published yet.</td></tr>';
         } else {
           const ranks = ['🏆 1', '🥈 2', '🥉 3', '4', '5'];
@@ -169,13 +170,10 @@
           });
         }
 
-        // Draw bar chart
         const chartLabels = data.subjectScores.map(s => s.subject);
         const chartValues = data.subjectScores.map(s => parseFloat(s.avg_score));
-        
-        const labels = chartLabels.length > 0 ? chartLabels : ['Math', 'Science', 'English', 'Social Science', 'Hindi'];
+        const labels = chartLabels.length > 0 ? chartLabels : ['Math', 'Science', 'English', 'Social', 'Hindi'];
         const values = chartValues.length > 0 ? chartValues : [78, 80, 85, 75, 79];
-
         drawBarChart('scoresChart', labels, values, 'var(--primary)');
 
       } catch (err) {

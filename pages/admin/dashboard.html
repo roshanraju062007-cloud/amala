@@ -196,88 +196,88 @@
   <script src="../../js/app.js"></script>
   <script src="../../js/auth-check.js"></script>
   <script>
-    window.addEventListener('load', () => {
+    window.addEventListener('DOMContentLoaded', () => {
+      App.initDark();
+      App.initSidebar();
+      App.highlightActiveNav();
       loadDashboardStats();
       drawCharts();
     });
 
-    window.addEventListener('lms-sync-students', () => loadDashboardStats());
-    window.addEventListener('lms-sync-teachers', () => loadDashboardStats());
-    window.addEventListener('lms-sync-classes', () => loadDashboardStats());
-    window.addEventListener('lms-sync-notices', () => loadDashboardStats());
+    async function loadDashboardStats() {
+      try {
+        const [studRes, tchRes, clsRes, notRes, examRes, transRes] = await Promise.all([
+          API.get('students'),
+          API.get('teachers'),
+          API.get('classes'),
+          API.get('notices'),
+          API.get('exams'),
+          API.get('transport/assignments'),
+        ]);
 
-  async function loadDashboardStats() {
-    try {
-      // Parallel API calls to PostgreSQL
-      const [studRes, tchRes, clsRes, notRes] = await Promise.all([
-        API.get('students'),
-        API.get('teachers'),
-        API.get('classes'),
-        API.get('notices'),
-      ]);
+        document.getElementById('stat-students').innerText = (studRes.data || []).length;
+        document.getElementById('stat-teachers').innerText = (tchRes.data || []).length;
+        document.getElementById('stat-classes').innerText  = (clsRes.data || []).length;
+        document.getElementById('stat-exams').innerText    = (examRes.data || []).length;
+        document.getElementById('stat-van-students').innerText = (transRes.data || []).length;
 
-      document.getElementById('stat-students').innerText = (studRes.data || []).length;
-      document.getElementById('stat-teachers').innerText = (tchRes.data || []).length;
-      document.getElementById('stat-classes').innerText  = (clsRes.data || []).length;
-      document.getElementById('stat-exams').innerText    = 'Live';
+        // Activity log from notices
+        const log = document.getElementById('activity-log');
+        const notices = notRes.data || [];
+        log.innerHTML = '';
+        if (notices.length === 0) {
+          log.innerHTML = '<li style="padding:10px 0;color:var(--text-muted);">No recent notices.</li>';
+        } else {
+          notices.slice(0, 6).forEach(n => {
+            const t = new Date(n.posted_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+            const displayText = n.title || n.message || 'Notice';
+            log.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid var(--border-color)">🕒 <b>${t}</b> — ${displayText}</li>`;
+          });
+        }
 
-      // Load Van Students count
-      const vanStudents = JSON.parse(localStorage.getItem('lms_van_students')) || [];
-      document.getElementById('stat-van-students').innerText = vanStudents.length;
+        // Classes overview
+        const clBody = document.getElementById('classes-summary-body');
+        const classes = (clsRes.data || []);
+        clBody.innerHTML = '';
+        if (classes.length === 0) {
+          clBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">No classes found.</td></tr>';
+        } else {
+          classes.slice(0, 8).forEach(c => {
+            const secs = Array.isArray(c.sections) ? c.sections.join(', ') : (c.sections || 'A');
+            clBody.innerHTML += `<tr><td>${c.name}</td><td>${secs}</td><td>${c.students_count || 0}</td></tr>`;
+          });
+        }
 
-      // Activity log from notices
-      const log = document.getElementById('activity-log');
-      const notices = notRes.data || [];
-      log.innerHTML = '';
-      if (notices.length === 0) {
-        log.innerHTML = '<li style="padding:10px 0;color:var(--text-muted);">No recent notices.</li>';
-      } else {
-        notices.slice(0, 6).forEach(n => {
-          const t = new Date(n.posted_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-          log.innerHTML += `<li style="padding:10px 0; border-bottom:1px solid var(--border-color)">🕒 <b>${t}</b> — ${n.message}</li>`;
-        });
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        App.showToast('Could not load dashboard data from server.', 'error');
       }
-
-      // Classes overview
-      const clBody = document.getElementById('classes-summary-body');
-      const classes = (clsRes.data || []);
-      clBody.innerHTML = '';
-      classes.slice(0, 5).forEach(c => {
-        const secs = Array.isArray(c.sections) ? c.sections.join(', ') : c.sections;
-        clBody.innerHTML += `<tr><td>${c.name}</td><td>${secs}</td><td>${c.students_count || 0}</td></tr>`;
-      });
-
-    } catch (err) {
-      console.error('Dashboard load error:', err);
-      App.showToast('Could not load dashboard data from server.', 'error');
     }
-  }
 
-  function drawCharts() {
-    drawBarChart('feeChart', ['Jan','Feb','Mar','Apr','May','Jun'], [8.2,9.5,11.2,10.4,9.8,12.4], 'var(--danger)');
-    drawLineChart('attendanceChart', ['01 Jun','03 Jun','05 Jun','07 Jun','09 Jun','11 Jun','13 Jun'], [92,91,93,89,94,91,95], 'var(--primary)');
-  }
-
-  async function broadcastNotice() {
-    const msg    = document.getElementById('notice-msg').value.trim();
-    const target = document.getElementById('notice-target').value;
-    if (!msg) return alert('Message cannot be empty.');
-    const res = await API.post('notices', { message: `Notice to ${target}: ${msg}` });
-    if (res.success) {
-      App.closeModal('noticeModal');
-      loadDashboardStats();
-      App.showToast('Broadcasted successfully!', 'success');
-      document.getElementById('notice-msg').value = '';
-    } else {
-      App.showToast(res.message || 'Failed to post notice.', 'error');
+    function drawCharts() {
+      drawBarChart('feeChart', ['Jan','Feb','Mar','Apr','May','Jun'], [8.2,9.5,11.2,10.4,9.8,12.4], 'var(--danger)');
+      drawLineChart('attendanceChart', ['01 Jun','03 Jun','05 Jun','07 Jun','09 Jun','11 Jun','13 Jun'], [92,91,93,89,94,91,95], 'var(--primary)');
     }
-  }
 
-  function runBackup() {
-    App.showToast('PostgreSQL pg_dump backup initiated...');
-    setTimeout(() => App.showToast('Backup process triggered on server!', 'success'), 1500);
-  }
+    async function broadcastNotice() {
+      const msg    = document.getElementById('notice-msg').value.trim();
+      const target = document.getElementById('notice-target').value;
+      if (!msg) return alert('Message cannot be empty.');
+      const res = await API.post('notices', { title: `Notice to ${target}`, message: msg, target_audience: 'all' });
+      if (res.success) {
+        App.closeModal('noticeModal');
+        loadDashboardStats();
+        App.showToast('Broadcasted successfully!', 'success');
+        document.getElementById('notice-msg').value = '';
+      } else {
+        App.showToast(res.message || 'Failed to post notice.', 'error');
+      }
+    }
 
+    function runBackup() {
+      App.showToast('PostgreSQL pg_dump backup initiated...');
+      setTimeout(() => App.showToast('Backup process triggered on server!', 'success'), 1500);
+    }
   </script>
 </body>
 </html>

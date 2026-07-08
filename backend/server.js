@@ -19,7 +19,8 @@ const io     = socketIo(server, {
   cors: { origin: '*', methods: ['GET','POST'] }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
+const MAX_PORT_TRIES = 10;
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────────────────
 app.use(compression()); // Compress all responses
@@ -226,13 +227,33 @@ io.on('connection', (socket) => {
 });
 
 // ── START SERVER ──────────────────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log('\n╔══════════════════════════════════════════════════╗');
-  console.log('║        EduSphere LMS — Server Started            ║');
-  console.log('╠══════════════════════════════════════════════════╣');
-  console.log(`║  URL:      http://localhost:${PORT}                   ║`);
-  console.log(`║  Database: PostgreSQL @ ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}            ║`);
-  console.log(`║  Auth:     JWT + bcrypt                           ║`);
-  console.log(`║  Mode:     ${process.env.NODE_ENV || 'development'}                           ║`);
-  console.log('╚══════════════════════════════════════════════════╝\n');
-});
+function startServer(port, attempt = 0) {
+  const onError = (err) => {
+    if (err.code === 'EADDRINUSE' && attempt < MAX_PORT_TRIES) {
+      const nextPort = port + 1;
+      console.warn(`Port ${port} is already in use. Trying ${nextPort}...`);
+      server.removeListener('error', onError);
+      startServer(nextPort, attempt + 1);
+      return;
+    }
+
+    console.error(`Failed to start server on port ${port}:`, err.message);
+    process.exit(1);
+  };
+
+  server.once('error', onError);
+
+  server.listen(port, () => {
+    server.removeListener('error', onError);
+    console.log('\n╔══════════════════════════════════════════════════╗');
+    console.log('║        EduSphere LMS — Server Started            ║');
+    console.log('╠══════════════════════════════════════════════════╣');
+    console.log(`║  URL:      http://localhost:${port}                   ║`);
+    console.log(`║  Database: PostgreSQL @ ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}            ║`);
+    console.log(`║  Auth:     JWT + bcrypt                           ║`);
+    console.log(`║  Mode:     ${process.env.NODE_ENV || 'development'}                           ║`);
+    console.log('╚══════════════════════════════════════════════════╝\n');
+  });
+}
+
+startServer(PORT);
