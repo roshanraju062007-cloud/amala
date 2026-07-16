@@ -184,6 +184,16 @@ This will seed:
 
 > 💡 **Quick Fill:** Click the **"Use Demo"** badge under the login form to automatically select the role tab, fill in the correct User ID and password, and automatically fill in the security CAPTCHA code!
 
+## 🤖 AI assistant setup
+
+The AI assistant uses `ANTHROPIC_API_KEY` from your local `.env` file.
+
+- Copy `.env.example` to `.env` for a fresh setup.
+- Replace `ANTHROPIC_API_KEY=your_anthropic_api_key_here` with your own key.
+- Keep `.env` out of GitHub; only commit `.env.example`.
+
+There is no safe or legitimate way to ship a "free permanent" API key in the repository. Use your own account key and keep it server-side only.
+
 ---
 
 ## 🌐 Public Access via Tunnel
