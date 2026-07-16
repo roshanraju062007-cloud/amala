@@ -11,15 +11,37 @@ function getAuthToken() {
 function getApiBaseUrl() {
   const fromWindow = typeof window !== 'undefined' && window.API_BASE_URL ? String(window.API_BASE_URL).trim() : '';
   const fromStorage = typeof localStorage !== 'undefined' ? String(localStorage.getItem('apiBaseUrl') || '').trim() : '';
-  return fromWindow || fromStorage || '';
+  const fromMeta = typeof document !== 'undefined'
+    ? String(document.querySelector('meta[name="api-base-url"]')?.content || '').trim()
+    : '';
+  return fromWindow || fromStorage || fromMeta || '';
+}
+
+function setApiBaseUrl(url) {
+  const clean = String(url || '').trim().replace(/\/+$/, '');
+  if (typeof localStorage !== 'undefined') {
+    if (clean) localStorage.setItem('apiBaseUrl', clean);
+    else localStorage.removeItem('apiBaseUrl');
+  }
+  if (typeof window !== 'undefined') {
+    window.API_BASE_URL = clean;
+    window.AppApiBaseUrl = clean;
+  }
+  return clean;
+}
+
+function buildApiUrl(endpoint) {
+  const baseUrl = getApiBaseUrl();
+  const cleanEndpoint = String(endpoint || '').replace(/^\//, '');
+  return baseUrl
+    ? `${baseUrl}/api/${cleanEndpoint}`
+    : `/api/${cleanEndpoint}`;
 }
 
 async function requestJson(endpoint, options = {}) {
-  const baseUrl = getApiBaseUrl();
-  const cleanEndpoint = endpoint.replace(/^\//, '');
   const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
     ? endpoint
-    : `${baseUrl}/api/${cleanEndpoint}`;
+    : buildApiUrl(endpoint);
 
   const res = await fetch(url, { credentials: 'include', ...options });
   const rawText = await res.text();
@@ -40,6 +62,8 @@ async function requestJson(endpoint, options = {}) {
 if (typeof window !== 'undefined') {
   window.AppRequestJson = requestJson;
   window.AppApiBaseUrl = getApiBaseUrl();
+  window.AppSetApiBaseUrl = setApiBaseUrl;
+  window.AppBuildApiUrl = buildApiUrl;
 }
 
 function getAuthHeaders() {

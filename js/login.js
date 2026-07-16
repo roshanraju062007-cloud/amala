@@ -103,17 +103,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle Form Submission
   if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const getStoredApiBase = () => (localStorage.getItem('apiBaseUrl') || '').trim();
 
-      // Validate Captcha
-      const captchaVal = (document.getElementById('captchaInput')?.value || '').trim().toUpperCase();
-      if (captchaVal !== currentCaptcha) {
-        alert('Incorrect Security Verification Code (Captcha). Please try again.');
-        generateCaptcha();
-        return;
-      }
+    const promptForApiBase = (suggested = '') => {
+      const current = getStoredApiBase();
+      const fallback = suggested || current || '';
+      const entered = window.prompt(
+        'Backend API URL is not configured. Enter the full backend base URL once (for example: https://api.example.com or http://localhost:3000).',
+        fallback
+      );
+      if (!entered) return '';
+      const clean = entered.trim().replace(/\/+$/, '');
+      if (window.AppSetApiBaseUrl) window.AppSetApiBaseUrl(clean);
+      else localStorage.setItem('apiBaseUrl', clean);
+      return clean;
+    };
 
+    const loginAttempt = async ({ retryOnMissingApi = true } = {}) => {
       const userId = (emailInput?.value || '').trim();
       const password = passInput?.value || '';
       const rememberMe = document.getElementById('remember')?.checked || false;
@@ -127,20 +133,36 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loader) loader.style.display = 'flex';
 
       try {
-        const apiBase = window.AppApiBaseUrl || '';
-        const response = await fetch(`${apiBase}/api/auth/login`, {
+        const apiBase = window.AppApiBaseUrl || getStoredApiBase();
+        const loginUrl = window.AppBuildApiUrl
+          ? window.AppBuildApiUrl('auth/login')
+          : (apiBase ? `${apiBase}/api/auth/login` : '/api/auth/login');
+
+        const response = await fetch(loginUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include', // Include cookie
           body: JSON.stringify({ user_id: userId, password, role: activeRole, rememberMe }),
         });
 
+        const contentType = response.headers.get('content-type') || '';
         const rawText = await response.text();
         let data;
         try {
           data = rawText ? JSON.parse(rawText) : {};
         } catch {
           const preview = rawText.replace(/\s+/g, ' ').slice(0, 140);
+          const isMissingApi = response.status === 404 || /not found|not_found|page could not be found/i.test(preview);
+          if (retryOnMissingApi && isMissingApi && !getStoredApiBase()) {
+            const suggested = window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1'
+              ? 'http://localhost:3000'
+              : '';
+            const configured = promptForApiBase(suggested);
+            if (configured) {
+              if (loader) loader.style.display = 'none';
+              return loginAttempt({ retryOnMissingApi: false });
+            }
+          }
           throw new Error(`Login failed: server returned non-JSON (${response.status} ${response.statusText}). ${preview}`);
         }
 
@@ -180,6 +202,27 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(err.message || 'An error occurred during authentication.');
         generateCaptcha();
       }
+    };
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Validate Captcha
+      const captchaVal = (document.getElementById('captchaInput')?.value || '').trim().toUpperCase();
+      if (captchaVal !== currentCaptcha) {
+        alert('Incorrect Security Verification Code (Captcha). Please try again.');
+        generateCaptcha();
+        return;
+      }
+
+      await loginAttempt({ retryOnMissingApi: true });
     });
+
+    const apiConfigBtn = document.getElementById('apiConfigBtn');
+    if (apiConfigBtn) {
+      apiConfigBtn.addEventListener('click', () => {
+        promptForApiBase();
+      });
+    }
   }
 });
