@@ -194,6 +194,14 @@ The AI assistant uses `ANTHROPIC_API_KEY` from your local `.env` file.
 
 There is no safe or legitimate way to ship a "free permanent" API key in the repository. Use your own account key and keep it server-side only.
 
+## 🌐 Vercel deployment
+
+If you host the frontend on Vercel and the Express backend elsewhere, set this in the Vercel project environment variables:
+
+- `BACKEND_URL=https://your-backend-domain.com`
+
+The Vercel API route at `/api/*` will proxy requests to that backend, so the login page and the rest of the app can keep using `/api/...` without manual URL prompts.
+
 ---
 
 ## 🌐 Public Access via Tunnel
