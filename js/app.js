@@ -8,6 +8,40 @@ function getAuthToken() {
   return localStorage.getItem('authToken') || '';
 }
 
+function getApiBaseUrl() {
+  const fromWindow = typeof window !== 'undefined' && window.API_BASE_URL ? String(window.API_BASE_URL).trim() : '';
+  const fromStorage = typeof localStorage !== 'undefined' ? String(localStorage.getItem('apiBaseUrl') || '').trim() : '';
+  return fromWindow || fromStorage || '';
+}
+
+async function requestJson(endpoint, options = {}) {
+  const baseUrl = getApiBaseUrl();
+  const cleanEndpoint = endpoint.replace(/^\//, '');
+  const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
+    ? endpoint
+    : `${baseUrl}/api/${cleanEndpoint}`;
+
+  const res = await fetch(url, { credentials: 'include', ...options });
+  const rawText = await res.text();
+
+  let data = null;
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      const preview = rawText.replace(/\s+/g, ' ').slice(0, 140);
+      throw new Error(`API returned non-JSON (${res.status} ${res.statusText}). ${preview}`);
+    }
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+if (typeof window !== 'undefined') {
+  window.AppRequestJson = requestJson;
+  window.AppApiBaseUrl = getApiBaseUrl();
+}
+
 function getAuthHeaders() {
   const token = getAuthToken();
   return {
@@ -20,42 +54,39 @@ function getAuthHeaders() {
 const API = {
   async get(endpoint, params = {}) {
     const qs = new URLSearchParams(params).toString();
-    const url = '/api/' + endpoint + (qs ? '?' + qs : '');
-    const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
+    const path = endpoint + (qs ? '?' + qs : '');
+    const res = await requestJson(path, { headers: getAuthHeaders(), method: 'GET' });
     if (res.status === 401) { App.logout(true); return { success: false, data: [] }; }
-    return res.json();
+    return res.data;
   },
 
   async post(endpoint, body = {}) {
-    const res = await fetch('/api/' + endpoint, {
+    const res = await requestJson(endpoint, {
       method: 'POST',
       headers: getAuthHeaders(),
-      credentials: 'include',
       body: JSON.stringify(body),
     });
     if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.json();
+    return res.data;
   },
 
   async put(endpoint, body = {}) {
-    const res = await fetch('/api/' + endpoint, {
+    const res = await requestJson(endpoint, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      credentials: 'include',
       body: JSON.stringify(body),
     });
     if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.json();
+    return res.data;
   },
 
   async delete(endpoint) {
-    const res = await fetch('/api/' + endpoint, {
+    const res = await requestJson(endpoint, {
       method: 'DELETE',
       headers: getAuthHeaders(),
-      credentials: 'include',
     });
     if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.json();
+    return res.data;
   },
 };
 

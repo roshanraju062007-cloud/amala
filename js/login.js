@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const userId = (emailInput?.value || '').trim();
       const password = passInput?.value || '';
+      const rememberMe = document.getElementById('remember')?.checked || false;
 
       if (!userId || !password) {
         alert('Please enter both User ID and Password.');
@@ -126,14 +127,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loader) loader.style.display = 'flex';
 
       try {
-        const response = await fetch('/api/auth/login', {
+        const apiBase = window.AppApiBaseUrl || '';
+        const response = await fetch(`${apiBase}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include', // Include cookie
-          body: JSON.stringify({ user_id: userId, password, role: activeRole }),
+          body: JSON.stringify({ user_id: userId, password, role: activeRole, rememberMe }),
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+        let data;
+        try {
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          const preview = rawText.replace(/\s+/g, ' ').slice(0, 140);
+          throw new Error(`Login failed: server returned non-JSON (${response.status} ${response.statusText}). ${preview}`);
+        }
 
         if (!response.ok || !data.success) {
           throw new Error(data.message || 'Authentication failed.');

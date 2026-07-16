@@ -11,7 +11,7 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { user_id, password, role } = req.body;
+    const { user_id, password, role, rememberMe } = req.body;
 
     if (!user_id || !password || !role) {
       return res.status(400).json({ success: false, message: 'User ID, password, and role are required.' });
@@ -57,12 +57,14 @@ router.post('/login', async (req, res) => {
     const payload = { userId: user.user_id, dbId: user.id, role: user.role, name: user.name };
     const token   = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 
+    const cookieMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+
     // Set HTTP-only cookie
     res.cookie('edusphere_token', token, {
       httpOnly: true,
       secure:   process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge:   7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge:   cookieMaxAge,
     });
 
     return res.json({
