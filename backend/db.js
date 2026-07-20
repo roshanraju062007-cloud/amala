@@ -5,12 +5,25 @@ const { AsyncLocalStorage } = require('async_hooks');
 
 const authStorage = new AsyncLocalStorage();
 
+const databaseUrl = (process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || '').trim();
+const useSsl = process.env.DB_SSL ? process.env.DB_SSL !== 'false' : Boolean(databaseUrl);
+
+const baseConfig = databaseUrl
+  ? {
+      connectionString: databaseUrl,
+      ssl: useSsl ? { rejectUnauthorized: false } : false,
+    }
+  : {
+      host:     process.env.DB_HOST || 'localhost',
+      port:     parseInt(process.env.DB_PORT) || 5432,
+      database: process.env.DB_NAME || 'edusphere_db',
+      user:     process.env.DB_APP_USER || process.env.DB_USER || 'postgres',
+      password: process.env.DB_APP_PASSWORD || process.env.DB_PASSWORD || 'postgres',
+      ssl:      useSsl ? { rejectUnauthorized: false } : false,
+    };
+
 const pool = new Pool({
-  host:     process.env.DB_HOST || 'localhost',
-  port:     parseInt(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'edusphere_db',
-  user:     process.env.DB_APP_USER || process.env.DB_USER || 'postgres',
-  password: process.env.DB_APP_PASSWORD || process.env.DB_PASSWORD || 'postgres',
+  ...baseConfig,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
@@ -60,4 +73,4 @@ const queryAll = async (text, params) => {
   return res.rows;
 };
 
-module.exports = { pool, query, queryOne, queryAll, authStorage };
+module.exports = { pool, query, queryOne, queryAll, authStorage, databaseUrl: databaseUrl || null };

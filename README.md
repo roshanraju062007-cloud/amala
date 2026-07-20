@@ -194,6 +194,32 @@ The AI assistant uses `ANTHROPIC_API_KEY` from your local `.env` file.
 
 There is no safe or legitimate way to ship a "free permanent" API key in the repository. Use your own account key and keep it server-side only.
 
+## 🐘 Supabase integration
+
+This app can run on Supabase Postgres without the embedded local database.
+
+### Environment variables
+
+Set these in your local `.env` or hosting provider:
+
+- `DATABASE_URL` — your Supabase PostgreSQL connection string
+- `DB_SSL=true` — recommended for hosted Postgres
+- `BACKEND_URL` — your deployed Express backend URL if frontend and backend are separate
+
+### How it works
+
+- `backend/db.js` uses `DATABASE_URL` when present.
+- `start.js` skips the embedded Postgres bootstrap when a remote database URL is configured.
+- `database/setup.js` connects directly to Supabase and applies schema/seed data there.
+
+### Typical Supabase flow
+
+1. Create a Supabase project.
+2. Copy the PostgreSQL connection string into `DATABASE_URL`.
+3. Set `DB_SSL=true`.
+4. Run the seed/setup script once to create tables and demo data.
+5. Deploy the frontend with `BACKEND_URL` pointing at your Express API.
+
 ## 🌐 Vercel deployment
 
 If you host the frontend on Vercel and the Express backend elsewhere, set this in the Vercel project environment variables:

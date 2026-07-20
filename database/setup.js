@@ -9,15 +9,30 @@ const bcrypt     = require('bcryptjs');
 const fs         = require('fs');
 const path       = require('path');
 
+const databaseUrl = (process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || '').trim();
+const useExternalDb = Boolean(databaseUrl);
+
 const DB_CONFIG = {
-  host:     process.env.DB_HOST || 'localhost',
-  port:     parseInt(process.env.DB_PORT) || 5432,
-  user:     process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  ...(useExternalDb
+    ? {
+        connectionString: databaseUrl,
+        ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
+      }
+    : {
+        host:     process.env.DB_HOST || 'localhost',
+        port:     parseInt(process.env.DB_PORT) || 5432,
+        user:     process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'postgres',
+      }),
 };
 const DB_NAME = process.env.DB_NAME || 'edusphere_db';
 
 async function createDatabase() {
+  if (useExternalDb) {
+    console.log('ℹ️  DATABASE_URL detected — skipping database creation step.');
+    return;
+  }
+
   const client = new Client({ ...DB_CONFIG, database: 'postgres' });
   await client.connect();
   const exists = await client.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [DB_NAME]);
@@ -121,14 +136,21 @@ async function seedData(client) {
 
 async function main() {
   console.log('\n🚀 EduSphere LMS — Database Setup\n');
-  console.log(`   Host:     ${DB_CONFIG.host}:${DB_CONFIG.port}`);
-  console.log(`   Database: ${DB_NAME}`);
-  console.log(`   User:     ${DB_CONFIG.user}\n`);
+  if (useExternalDb) {
+    console.log('   Mode:     Supabase / hosted PostgreSQL');
+    console.log(`   Source:   ${databaseUrl.replace(/:[^:@/]+@/, ':***@')}`);
+  } else {
+    console.log(`   Host:     ${DB_CONFIG.host}:${DB_CONFIG.port}`);
+    console.log(`   Database: ${DB_NAME}`);
+    console.log(`   User:     ${DB_CONFIG.user}\n`);
+  }
 
   try {
     await createDatabase();
 
-    const client = new Client({ ...DB_CONFIG, database: DB_NAME });
+    const client = useExternalDb
+      ? new Client(DB_CONFIG)
+      : new Client({ ...DB_CONFIG, database: DB_NAME });
     await client.connect();
     console.log('✅ Connected to database.');
 

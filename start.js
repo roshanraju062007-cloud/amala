@@ -9,41 +9,48 @@ const path = require('path');
 
 const DB_NAME = process.env.DB_NAME || 'edusphere_db';
 const PG_PORT = parseInt(process.env.DB_PORT) || 5432;
+const USE_EXTERNAL_DB = Boolean((process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || '').trim());
 
 async function main() {
   console.log('\n╔══════════════════════════════════════════════════╗');
-  console.log('║     EduSphere LMS — Starting with Embedded PG   ║');
+  console.log(`║  EduSphere LMS — Starting with ${USE_EXTERNAL_DB ? 'Supabase/Remote PG' : 'Embedded PG'}  ║`);
   console.log('╚══════════════════════════════════════════════════╝\n');
 
-  // Step 1: Start embedded PostgreSQL
-  const pg = new EmbeddedPostgres({
-    databaseDir: path.join(__dirname, '.pgdata'),
-    user:        process.env.DB_USER || 'postgres',
-    password:    process.env.DB_PASSWORD || 'postgres',
-    port:        PG_PORT,
-    persistent:  true,
-  });
+  let pg = null;
 
   try {
-    const pgVersionExists = require('fs').existsSync(path.join(__dirname, '.pgdata', 'PG_VERSION'));
-    if (!pgVersionExists) {
-      console.log('⏳ Initialising embedded PostgreSQL...');
-      await pg.initialise();
-    }
-    console.log('⏳ Starting embedded PostgreSQL...');
-    await pg.start();
-    console.log(`✅ PostgreSQL started on port ${PG_PORT}`);
+    if (!USE_EXTERNAL_DB) {
+      // Step 1: Start embedded PostgreSQL
+      pg = new EmbeddedPostgres({
+        databaseDir: path.join(__dirname, '.pgdata'),
+        user:        process.env.DB_USER || 'postgres',
+        password:    process.env.DB_PASSWORD || 'postgres',
+        port:        PG_PORT,
+        persistent:  true,
+      });
 
-    // Create database if it doesn't exist
-    try {
-      await pg.createDatabase(DB_NAME);
-      console.log(`✅ Database "${DB_NAME}" ready`);
-    } catch (dbCreateErr) {
-      if (dbCreateErr && dbCreateErr.message && dbCreateErr.message.includes('already exists')) {
-        console.log(`✅ Database "${DB_NAME}" already exists`);
-      } else {
-        throw dbCreateErr;
+      const pgVersionExists = require('fs').existsSync(path.join(__dirname, '.pgdata', 'PG_VERSION'));
+      if (!pgVersionExists) {
+        console.log('⏳ Initialising embedded PostgreSQL...');
+        await pg.initialise();
       }
+      console.log('⏳ Starting embedded PostgreSQL...');
+      await pg.start();
+      console.log(`✅ PostgreSQL started on port ${PG_PORT}`);
+
+      // Create database if it doesn't exist
+      try {
+        await pg.createDatabase(DB_NAME);
+        console.log(`✅ Database "${DB_NAME}" ready`);
+      } catch (dbCreateErr) {
+        if (dbCreateErr && dbCreateErr.message && dbCreateErr.message.includes('already exists')) {
+          console.log(`✅ Database "${DB_NAME}" already exists`);
+        } else {
+          throw dbCreateErr;
+        }
+    }
+    } else {
+      console.log('✅ Using external Supabase/hosted PostgreSQL via DATABASE_URL');
     }
 
     // Step 2: Run schema + seed if first time
@@ -141,7 +148,9 @@ async function main() {
 
   } catch (pgErr) {
     console.error('\n⚠️  Embedded PG failed:', pgErr ? pgErr.message || pgErr : 'Unknown error');
-    console.log(`   Trying to connect to system PostgreSQL on port ${PG_PORT}...\n`);
+    if (!USE_EXTERNAL_DB) {
+      console.log(`   Trying to connect to system PostgreSQL on port ${PG_PORT}...\n`);
+    }
     // Fall through to start server anyway
   }
 
@@ -151,7 +160,7 @@ async function main() {
   // Graceful shutdown
   process.on('SIGINT', async () => {
     console.log('\n🛑 Shutting down...');
-    try { await pg.stop(); } catch (e) {}
+    try { if (pg) await pg.stop(); } catch (e) {}
     process.exit(0);
   });
 }
