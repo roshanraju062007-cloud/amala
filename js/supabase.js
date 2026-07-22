@@ -3,8 +3,8 @@
  * Shared across all pages. Must be loaded AFTER the Supabase CDN script.
  */
 
-const SUPABASE_URL = 'https://wlmqvikxrfqfyhniavlb.supabase.co';
-const SUPABASE_ANON_KEY = ''; // Will be set below from meta tag or hardcoded
+const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // e.g. https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = ''; // Paste your anon public key here
 
 // Read anon key from a <meta> tag if available, otherwise use the hardcoded value
 const _metaKey = document.querySelector('meta[name="supabase-anon-key"]');
