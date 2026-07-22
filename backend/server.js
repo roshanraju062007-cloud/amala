@@ -87,7 +87,6 @@ const libraryRoutes   = require('./routes/library');
 const transportRoutes = require('./routes/transport');
 const analyticsRoutes = require('./routes/analytics');
 const settingsRoutes  = require('./routes/settings');
-const aiRoutes        = require('./routes/ai');
 const examRoutes      = require('./routes/exams');
 const messageRoutes   = require('./routes/messages');
 
@@ -114,7 +113,6 @@ app.use('/api/library',     libraryRoutes);
 app.use('/api/transport',   transportRoutes);
 app.use('/api/analytics',   analyticsRoutes);
 app.use('/api/settings',    settingsRoutes);
-app.use('/api/ai',          aiRoutes);
 app.use('/api/exams',       examRoutes);
 app.use('/api/messages',    messageRoutes);
 
