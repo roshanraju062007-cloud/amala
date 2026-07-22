@@ -1,6 +1,6 @@
 /**
- * EduSphere LMS — Real Authentication (PostgreSQL + JWT)
- * Replaces old localStorage-based login
+ * EduSphere LMS — Login (Supabase Edition)
+ * Authenticates via Supabase RPC function instead of Express backend
  */
 
 let currentCaptcha = '';
@@ -103,23 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle Form Submission
   if (loginForm) {
-    const getStoredApiBase = () => (localStorage.getItem('apiBaseUrl') || '').trim();
-
-    const promptForApiBase = (suggested = '') => {
-      const current = getStoredApiBase();
-      const fallback = suggested || current || '';
-      const entered = window.prompt(
-        'Backend API URL is not configured. Enter the full backend base URL once (for example: https://api.example.com or http://localhost:3000).',
-        fallback
-      );
-      if (!entered) return '';
-      const clean = entered.trim().replace(/\/+$/, '');
-      if (window.AppSetApiBaseUrl) window.AppSetApiBaseUrl(clean);
-      else localStorage.setItem('apiBaseUrl', clean);
-      return clean;
-    };
-
-    const loginAttempt = async ({ retryOnMissingApi = true } = {}) => {
+    const loginAttempt = async () => {
       const userId = (emailInput?.value || '').trim();
       const password = passInput?.value || '';
       const rememberMe = document.getElementById('remember')?.checked || false;
@@ -133,57 +117,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loader) loader.style.display = 'flex';
 
       try {
-        const apiBase = window.AppApiBaseUrl || getStoredApiBase();
-        const loginUrl = window.AppBuildApiUrl
-          ? window.AppBuildApiUrl('auth/login')
-          : (apiBase ? `${apiBase}/api/auth/login` : '/api/auth/login');
+        const sb = window.EduSupabase;
+        if (!sb) throw new Error('Supabase client not initialized. Check your configuration.');
 
-        const response = await fetch(loginUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // Include cookie
-          body: JSON.stringify({ user_id: userId, password, role: activeRole, rememberMe }),
+        // Call the Supabase RPC function for authentication
+        const { data, error } = await sb.rpc('authenticate_user', {
+          p_user_id: userId.trim(),
+          p_password: password,
+          p_role: activeRole
         });
 
-        const contentType = response.headers.get('content-type') || '';
-        const rawText = await response.text();
-        let data;
-        try {
-          data = rawText ? JSON.parse(rawText) : {};
-        } catch {
-          const preview = rawText.replace(/\s+/g, ' ').slice(0, 140);
-          const isMissingApi = response.status === 404 || /not found|not_found|page could not be found/i.test(preview);
-          if (retryOnMissingApi && isMissingApi && !getStoredApiBase()) {
-            const suggested = window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1'
-              ? 'http://localhost:3000'
-              : '';
-            const configured = promptForApiBase(suggested);
-            if (configured) {
-              if (loader) loader.style.display = 'none';
-              return loginAttempt({ retryOnMissingApi: false });
-            }
-          }
-          throw new Error(`Login failed: server returned non-JSON (${response.status} ${response.statusText}). ${preview}`);
-        }
+        if (error) throw new Error(error.message || 'Authentication failed.');
+        if (!data || !data.success) throw new Error((data && data.message) || 'Invalid User ID or Password.');
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Authentication failed.');
-        }
+        const user = data.user;
 
         // Store session info
-        sessionStorage.setItem('userRole', data.user.role);
-        sessionStorage.setItem('userId', data.user.userId);
-        sessionStorage.setItem('userName', data.user.name);
-        sessionStorage.setItem('userAvatar', data.user.avatar || '');
-        if (data.user.childId) sessionStorage.setItem('childId', data.user.childId);
+        sessionStorage.setItem('userRole', user.role);
+        sessionStorage.setItem('userId', user.userId);
+        sessionStorage.setItem('userName', user.name);
+        sessionStorage.setItem('userAvatar', user.avatar || '');
+        if (user.childId) sessionStorage.setItem('childId', user.childId);
 
-        // Backup to localStorage for older static pages
-        localStorage.setItem('userRole', data.user.role);
-        localStorage.setItem('userId', data.user.userId);
-        localStorage.setItem('userName', data.user.name);
-        localStorage.setItem('userAvatar', data.user.avatar || '');
-        localStorage.setItem('authToken', data.token);
-        if (data.user.childId) localStorage.setItem('childId', data.user.childId);
+        // Backup to localStorage
+        localStorage.setItem('userRole', user.role);
+        localStorage.setItem('userId', user.userId);
+        localStorage.setItem('userName', user.name);
+        localStorage.setItem('userAvatar', user.avatar || '');
+        localStorage.setItem('authToken', 'supabase-authenticated');
+        if (user.childId) localStorage.setItem('childId', user.childId);
 
         // Redirect to portal dashboard
         const redirectMap = {
@@ -191,9 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
           teacher: 'pages/teacher/dashboard.html',
           student: 'pages/student/dashboard.html',
           parent:  'pages/parent/dashboard.html',
-          parent:  'pages/parent/dashboard.html',
         };
-        const dest = redirectMap[data.user.role] || 'pages/admin/dashboard.html';
+        const dest = redirectMap[user.role] || 'pages/admin/dashboard.html';
 
         setTimeout(() => { window.location.href = dest; }, 500);
 
@@ -215,14 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      await loginAttempt({ retryOnMissingApi: true });
+      await loginAttempt();
     });
-
-    const apiConfigBtn = document.getElementById('apiConfigBtn');
-    if (apiConfigBtn) {
-      apiConfigBtn.addEventListener('click', () => {
-        promptForApiBase();
-      });
-    }
   }
 });

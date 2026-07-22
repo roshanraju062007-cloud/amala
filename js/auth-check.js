@@ -1,6 +1,6 @@
 /**
- * EduSphere LMS — Real Auth Check (PostgreSQL + JWT)
- * Validates session via /api/auth/me on every protected page
+ * EduSphere LMS — Auth Check (Supabase Edition)
+ * Validates session using localStorage + Supabase query on every protected page
  */
 
 (async function() {
@@ -29,50 +29,54 @@
     return;
   }
 
-  // Validate token with the server (verify against PostgreSQL)
+  // Validate user exists in Supabase
   try {
-    const res = await fetch('/api/auth/me', {
-      headers: { 'Authorization': 'Bearer ' + token },
-      credentials: 'include',
-    });
+    const sb = window.EduSupabase;
+    if (sb) {
+      const { data, error } = await sb
+        .from('users')
+        .select('user_id, name, role, email, avatar')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single();
 
-    if (!res.ok) {
-      redirectToLogin();
-      return;
-    }
-
-    const data = await res.json();
-    if (!data.success) {
-      redirectToLogin();
-      return;
-    }
-
-    // Update displayed user name in header
-    const nameEl   = document.getElementById('userDisplayName');
-    const avatarEl = document.getElementById('userAvatar');
-    const displayName = data.user.name || name || userId;
-
-    if (nameEl) nameEl.textContent = displayName;
-    if (avatarEl) {
-      const avatarUrl = data.user.avatar || localStorage.getItem('userAvatar');
-      if (avatarUrl) {
-        avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-        avatarEl.style.background = 'transparent';
-      } else {
-        const parts = displayName.split(' ');
-        avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
-        avatarEl.style.background = '';
+      if (error || !data) {
+        redirectToLogin();
+        return;
       }
+
+      // Update displayed user name in header
+      const nameEl   = document.getElementById('userDisplayName');
+      const avatarEl = document.getElementById('userAvatar');
+      const displayName = data.name || name || userId;
+
+      if (nameEl) nameEl.textContent = displayName;
+      if (avatarEl) {
+        const avatarUrl = data.avatar || localStorage.getItem('userAvatar');
+        if (avatarUrl) {
+          avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+          avatarEl.style.background = 'transparent';
+        } else {
+          const parts = displayName.split(' ');
+          avatarEl.textContent = parts.map(p => p[0]).join('').toUpperCase().substring(0, 2);
+          avatarEl.style.background = '';
+        }
+      }
+
+      // Keep localStorage in sync
+      localStorage.setItem('userName', data.name);
+      localStorage.setItem('userAvatar', data.avatar || '');
+    } else {
+      // Supabase not loaded yet — use cached data
+      updateUIFromCache();
     }
-
-    // Keep localStorage in sync
-    localStorage.setItem('userName', data.user.name);
-    localStorage.setItem('userAvatar', data.user.avatar || '');
-
   } catch (err) {
-    // If server is unreachable but we have a token, allow through (offline mode)
-    console.warn('Auth check failed - server unreachable. Using cached session.', err.message);
-    // Still update UI with cached name
+    // If Supabase is unreachable, allow through with cached data (offline mode)
+    console.warn('Auth check failed - Supabase unreachable. Using cached session.', err.message);
+    updateUIFromCache();
+  }
+
+  function updateUIFromCache() {
     const nameEl   = document.getElementById('userDisplayName');
     const avatarEl = document.getElementById('userAvatar');
     if (nameEl) nameEl.textContent = name || userId;

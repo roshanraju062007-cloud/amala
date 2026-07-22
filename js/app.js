@@ -1,116 +1,423 @@
 /**
- * EduSphere LMS — Shared App Utilities
- * PostgreSQL-backed version with dynamic local-sync bridge (AppState)
+ * EduSphere LMS — Shared App Utilities (Supabase Edition)
+ * All API calls go directly to Supabase via the JS client.
+ * Requires js/supabase.js to be loaded first.
  */
 
-// ── AUTH TOKEN HELPER ─────────────────────────────────────────────────────────
-function getAuthToken() {
-  return localStorage.getItem('authToken') || '';
-}
+// ── SUPABASE-BACKED API ──────────────────────────────────────────────────────
+// Drop-in replacement for the old fetch-based API object.
+// Pages still call API.get('students'), API.post('students', body), etc.
+// This layer translates those calls to Supabase queries.
 
-function getApiBaseUrl() {
-  const fromWindow = typeof window !== 'undefined' && window.API_BASE_URL ? String(window.API_BASE_URL).trim() : '';
-  const fromStorage = typeof localStorage !== 'undefined' ? String(localStorage.getItem('apiBaseUrl') || '').trim() : '';
-  const fromMeta = typeof document !== 'undefined'
-    ? String(document.querySelector('meta[name="api-base-url"]')?.content || '').trim()
-    : '';
-  return fromWindow || fromStorage || fromMeta || '';
-}
-
-function setApiBaseUrl(url) {
-  const clean = String(url || '').trim().replace(/\/+$/, '');
-  if (typeof localStorage !== 'undefined') {
-    if (clean) localStorage.setItem('apiBaseUrl', clean);
-    else localStorage.removeItem('apiBaseUrl');
-  }
-  if (typeof window !== 'undefined') {
-    window.API_BASE_URL = clean;
-    window.AppApiBaseUrl = clean;
-  }
-  return clean;
-}
-
-function buildApiUrl(endpoint) {
-  const baseUrl = getApiBaseUrl();
-  const cleanEndpoint = String(endpoint || '').replace(/^\//, '');
-  return baseUrl
-    ? `${baseUrl}/api/${cleanEndpoint}`
-    : `/api/${cleanEndpoint}`;
-}
-
-async function requestJson(endpoint, options = {}) {
-  const url = endpoint.startsWith('http://') || endpoint.startsWith('https://')
-    ? endpoint
-    : buildApiUrl(endpoint);
-
-  const res = await fetch(url, { credentials: 'include', ...options });
-  const rawText = await res.text();
-
-  let data = null;
-  if (rawText) {
-    try {
-      data = JSON.parse(rawText);
-    } catch {
-      const preview = rawText.replace(/\s+/g, ' ').slice(0, 140);
-      throw new Error(`API returned non-JSON (${res.status} ${res.statusText}). ${preview}`);
-    }
-  }
-
-  return { ok: res.ok, status: res.status, data };
-}
-
-if (typeof window !== 'undefined') {
-  window.AppRequestJson = requestJson;
-  window.AppApiBaseUrl = getApiBaseUrl();
-  window.AppSetApiBaseUrl = setApiBaseUrl;
-  window.AppBuildApiUrl = buildApiUrl;
-}
-
-function getAuthHeaders() {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
-  };
-}
-
-// ── API HELPER ─────────────────────────────────────────────────────────────────
 const API = {
+  // Route map: endpoint string → Supabase table/handler
+  // Complex endpoints are handled by custom functions below
+  _tableMap: {
+    'classes':    'classes',
+    'subjects':   'subjects',
+    'students':   'students',
+    'teachers':   'teachers',
+    'parents':    'parents',
+    'results':    'results',
+    'attendance': 'attendance',
+    'notices':    'notices',
+    'assignments':'assignments',
+    'materials':  'materials',
+    'timetable':  'timetable',
+    'settings':   'school_settings',
+  },
+
+  _parseEndpoint(endpoint) {
+    const clean = endpoint.replace(/^\/?(api\/)?/, '').replace(/\/$/, '');
+    const parts = clean.split('/');
+    return { base: parts[0], rest: parts.slice(1), full: clean };
+  },
+
   async get(endpoint, params = {}) {
-    const qs = new URLSearchParams(params).toString();
-    const path = endpoint + (qs ? '?' + qs : '');
-    const res = await requestJson(path, { headers: getAuthHeaders(), method: 'GET' });
-    if (res.status === 401) { App.logout(true); return { success: false, data: [] }; }
-    return res.data;
+    const sb = window.EduSupabase;
+    if (!sb) return { success: false, data: [], message: 'Supabase not initialized' };
+
+    const { base, rest, full } = this._parseEndpoint(endpoint);
+
+    // ── Special endpoints ──
+    if (full === 'auth/me') return this._authMe();
+    if (full === 'analytics/overview') return this._analyticsOverview();
+    if (base === 'messages') return this._getMessages(rest, params);
+    if (full === 'messages/rooms') return this._getMessageRooms();
+    if (full === 'messages/users') return this._getMessageUsers();
+    if (base === 'library') return this._libraryGet(rest, params);
+    if (base === 'transport') return this._transportGet(rest, params);
+    if (base === 'exams') return this._examsGet(rest, params);
+    if (base === 'fees') return this._feesGet(rest, params);
+
+    // ── Standard table queries ──
+    const table = this._tableMap[base];
+    if (!table) {
+      console.warn('[API.get] Unknown endpoint:', endpoint);
+      return { success: false, data: [] };
+    }
+
+    // Single item by ID
+    if (rest.length === 1) {
+      const id = rest[0];
+      const { data, error } = await sb.from(table).select('*').eq('id', id).single();
+      if (error) return { success: false, message: error.message };
+      return { success: true, data };
+    }
+
+    // List with optional filters
+    let query = sb.from(table).select('*');
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        query = query.eq(key, value);
+      }
+    }
+
+    // Default ordering
+    if (table === 'notices') query = query.order('created_at', { ascending: false });
+    else if (table === 'classes') query = query.order('id');
+    else if (table === 'students') query = query.order('student_id');
+    else if (table === 'teachers') query = query.order('teacher_id');
+
+    const { data, error } = await query;
+    if (error) return { success: false, message: error.message, data: [] };
+
+    // Apply field mappings for backward compatibility
+    const mapped = this._mapFields(base, data);
+    return { success: true, data: mapped };
   },
 
   async post(endpoint, body = {}) {
-    const res = await requestJson(endpoint, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body),
-    });
-    if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.data;
+    const sb = window.EduSupabase;
+    if (!sb) return { success: false, message: 'Supabase not initialized' };
+
+    const { base, rest, full } = this._parseEndpoint(endpoint);
+
+    if (full === 'auth/login') return this._login(body);
+    if (full === 'auth/logout') return this._logout();
+    if (full === 'auth/change-password') return this._changePassword(body);
+    if (base === 'messages') return this._sendMessage(body);
+    if (base === 'library') return this._libraryPost(rest, body);
+    if (base === 'transport') return this._transportPost(rest, body);
+    if (base === 'attendance') return this._attendancePost(body);
+
+    const table = this._tableMap[base];
+    if (!table) {
+      console.warn('[API.post] Unknown endpoint:', endpoint);
+      return { success: false };
+    }
+
+    const { data, error } = await sb.from(table).insert(body).select().single();
+    if (error) return { success: false, message: error.message };
+    return { success: true, data };
   },
 
   async put(endpoint, body = {}) {
-    const res = await requestJson(endpoint, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body),
-    });
-    if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.data;
+    const sb = window.EduSupabase;
+    if (!sb) return { success: false, message: 'Supabase not initialized' };
+
+    const { base, rest, full } = this._parseEndpoint(endpoint);
+
+    if (full.startsWith('auth/admin/update-credentials')) return this._updateCredentials(body);
+    if (base === 'settings') return this._updateSettings(body);
+
+    const table = this._tableMap[base];
+    if (!table || rest.length === 0) {
+      console.warn('[API.put] Unknown endpoint:', endpoint);
+      return { success: false };
+    }
+
+    const id = rest[0];
+    const { data, error } = await sb.from(table).update(body).eq('id', id).select().single();
+    if (error) return { success: false, message: error.message };
+    return { success: true, data };
   },
 
   async delete(endpoint) {
-    const res = await requestJson(endpoint, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
+    const sb = window.EduSupabase;
+    if (!sb) return { success: false, message: 'Supabase not initialized' };
+
+    const { base, rest } = this._parseEndpoint(endpoint);
+
+    const table = this._tableMap[base];
+    if (!table || rest.length === 0) {
+      console.warn('[API.delete] Unknown endpoint:', endpoint);
+      return { success: false };
+    }
+
+    const id = rest[0];
+    // Classes are deleted by name, not by numeric id
+    if (base === 'classes') {
+      const { error } = await sb.from(table).delete().eq('name', id);
+      if (error) return { success: false, message: error.message };
+    } else {
+      const { error } = await sb.from(table).delete().eq('id', id);
+      if (error) return { success: false, message: error.message };
+    }
+    return { success: true, message: 'Deleted successfully.' };
+  },
+
+  // ── FIELD MAPPINGS (backward compatibility) ──────────────────────────────────
+  _mapFields(base, rows) {
+    if (!rows) return [];
+    if (base === 'subjects') {
+      return rows.map(sub => ({ ...sub, class: sub.class_name, teacherId: sub.teacher_id, periods: sub.periods_week }));
+    }
+    if (base === 'classes') {
+      return rows.map(c => ({ ...c, studentsCount: c.students_count || 0 }));
+    }
+    return rows;
+  },
+
+  // ── AUTH HANDLERS ────────────────────────────────────────────────────────────
+  async _login(body) {
+    const sb = window.EduSupabase;
+    const { user_id, password, role } = body;
+
+    // Call the login RPC function in Supabase
+    const { data, error } = await sb.rpc('authenticate_user', {
+      p_user_id: user_id.trim(),
+      p_password: password,
+      p_role: role
     });
-    if (res.status === 401) { App.logout(true); return { success: false }; }
-    return res.data;
+
+    if (error) return { success: false, message: error.message || 'Login failed.' };
+    if (!data || !data.success) return { success: false, message: (data && data.message) || 'Invalid credentials.' };
+
+    return {
+      success: true,
+      user: data.user,
+      token: data.token || 'supabase-session'
+    };
+  },
+
+  async _authMe() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return { success: false, message: 'Not authenticated.' };
+
+    const sb = window.EduSupabase;
+    const { data, error } = await sb.from('users').select('user_id, name, role, email, avatar').eq('user_id', userId).single();
+    if (error || !data) return { success: false, message: 'User not found.' };
+    return { success: true, user: data };
+  },
+
+  async _logout() {
+    // Clear local storage
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('authToken');
+    sessionStorage.clear();
+    return { success: true, message: 'Logged out successfully.' };
+  },
+
+  async _changePassword(body) {
+    const sb = window.EduSupabase;
+    const userId = localStorage.getItem('userId');
+    const { oldPassword, newPassword } = body;
+
+    const { data, error } = await sb.rpc('change_user_password', {
+      p_user_id: userId,
+      p_old_password: oldPassword,
+      p_new_password: newPassword
+    });
+
+    if (error) return { success: false, message: error.message };
+    if (!data || !data.success) return { success: false, message: (data && data.message) || 'Password change failed.' };
+    return { success: true, message: 'Password updated successfully.' };
+  },
+
+  async _updateCredentials(body) {
+    const sb = window.EduSupabase;
+    const { data, error } = await sb.rpc('admin_update_credentials', {
+      p_role: body.role,
+      p_old_id: body.old_id,
+      p_new_username: body.new_username,
+      p_new_password: body.new_password || null
+    });
+
+    if (error) return { success: false, message: error.message };
+    return { success: true, message: 'Credentials updated successfully.' };
+  },
+
+  // ── ATTENDANCE ───────────────────────────────────────────────────────────────
+  async _attendancePost(body) {
+    const sb = window.EduSupabase;
+    // Attendance can be a single record or batch
+    if (Array.isArray(body.records)) {
+      const { error } = await sb.from('attendance').upsert(body.records, { onConflict: 'student_id,date' });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Attendance saved.' };
+    }
+    const { data, error } = await sb.from('attendance').upsert(body, { onConflict: 'student_id,date' }).select().single();
+    if (error) return { success: false, message: error.message };
+    return { success: true, data };
+  },
+
+  // ── MESSAGES ─────────────────────────────────────────────────────────────────
+  async _getMessages(rest, params) {
+    const sb = window.EduSupabase;
+    if (rest[0] === 'rooms') return this._getMessageRooms();
+    if (rest[0] === 'users') return this._getMessageUsers();
+
+    const roomId = params.room_id;
+    let query = sb.from('messages').select('*').order('created_at', { ascending: true });
+    if (roomId) query = query.eq('room_id', roomId);
+    const { data, error } = await query;
+    if (error) return { success: false, data: [] };
+    return { success: true, data: data || [] };
+  },
+
+  async _getMessageRooms() {
+    const sb = window.EduSupabase;
+    const userId = localStorage.getItem('userId');
+    const { data, error } = await sb.from('message_rooms').select('*').or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+    if (error) return { success: false, data: [] };
+    return { success: true, data: data || [] };
+  },
+
+  async _getMessageUsers() {
+    const sb = window.EduSupabase;
+    const { data, error } = await sb.from('users').select('user_id, name, role, avatar').eq('is_active', true).order('name');
+    if (error) return { success: false, data: [] };
+    return { success: true, data: data || [] };
+  },
+
+  async _sendMessage(body) {
+    const sb = window.EduSupabase;
+    const { data, error } = await sb.from('messages').insert(body).select().single();
+    if (error) return { success: false, message: error.message };
+    return { success: true, data };
+  },
+
+  // ── LIBRARY ──────────────────────────────────────────────────────────────────
+  async _libraryGet(rest, params) {
+    const sb = window.EduSupabase;
+    if (rest[0] === 'books') {
+      const { data, error } = await sb.from('books').select('*').order('title');
+      if (error) return { success: false, data: [] };
+      return { success: true, data: data || [] };
+    }
+    if (rest[0] === 'issues') {
+      let query = sb.from('library_issues').select('*, books(title, author)');
+      if (params.student_id) query = query.eq('student_id', params.student_id);
+      const { data, error } = await query.order('issue_date', { ascending: false });
+      if (error) return { success: false, data: [] };
+      return { success: true, data: data || [] };
+    }
+    return { success: false, data: [] };
+  },
+
+  async _libraryPost(rest, body) {
+    const sb = window.EduSupabase;
+    if (rest[0] === 'books') {
+      const { data, error } = await sb.from('books').insert(body).select().single();
+      if (error) return { success: false, message: error.message };
+      return { success: true, data };
+    }
+    if (rest[0] === 'issue') {
+      const { data, error } = await sb.rpc('issue_book', {
+        p_book_id: body.book_id,
+        p_student_id: body.student_id,
+        p_due_date: body.due_date
+      });
+      if (error) return { success: false, message: error.message };
+      return { success: true, data };
+    }
+    if (rest[0] === 'return') {
+      const issueId = rest[1];
+      const { data, error } = await sb.rpc('return_book', { p_issue_id: parseInt(issueId) });
+      if (error) return { success: false, message: error.message };
+      return { success: true, data };
+    }
+    return { success: false };
+  },
+
+  // ── TRANSPORT ────────────────────────────────────────────────────────────────
+  async _transportGet(rest, params) {
+    const sb = window.EduSupabase;
+    if (rest[0] === 'vehicles') {
+      const { data, error } = await sb.from('transport_vehicles').select('*');
+      if (error) return { success: false, data: [] };
+      return { success: true, data: data || [] };
+    }
+    if (rest[0] === 'assignments') {
+      let query = sb.from('transport_assignments').select('*, transport_vehicles(vehicle_name, route)');
+      if (params.student_id) query = query.eq('student_id', params.student_id);
+      const { data, error } = await query;
+      if (error) return { success: false, data: [] };
+      return { success: true, data: data || [] };
+    }
+    return { success: false, data: [] };
+  },
+
+  async _transportPost(rest, body) {
+    const sb = window.EduSupabase;
+    const table = rest[0] === 'vehicles' ? 'transport_vehicles' : 'transport_assignments';
+    const { data, error } = await sb.from(table).insert(body).select().single();
+    if (error) return { success: false, message: error.message };
+    return { success: true, data };
+  },
+
+  // ── EXAMS ────────────────────────────────────────────────────────────────────
+  async _examsGet(rest, params) {
+    const sb = window.EduSupabase;
+    if (rest.length === 1) {
+      const { data, error } = await sb.from('exams').select('*').eq('id', rest[0]).single();
+      if (error) return { success: false };
+      return { success: true, data };
+    }
+    let query = sb.from('exams').select('*');
+    if (params.class_name) query = query.eq('class_name', params.class_name);
+    if (params.teacher_id) query = query.eq('teacher_id', params.teacher_id);
+    const { data, error } = await query.order('exam_date', { ascending: false });
+    if (error) return { success: false, data: [] };
+    return { success: true, data: data || [] };
+  },
+
+  // ── FEES ─────────────────────────────────────────────────────────────────────
+  async _feesGet(rest, params) {
+    const sb = window.EduSupabase;
+    let query = sb.from('fee_records').select('*');
+    if (params.student_id) query = query.eq('student_id', params.student_id);
+    if (params.class_name) query = query.eq('class_name', params.class_name);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) return { success: false, data: [] };
+    return { success: true, data: data || [] };
+  },
+
+  // ── SETTINGS ─────────────────────────────────────────────────────────────────
+  async _updateSettings(body) {
+    const sb = window.EduSupabase;
+    // Upsert settings as key-value pairs
+    const entries = Object.entries(body).map(([key, value]) => ({ key, value: String(value) }));
+    const { error } = await sb.from('school_settings').upsert(entries, { onConflict: 'key' });
+    if (error) return { success: false, message: error.message };
+    return { success: true, message: 'Settings saved.' };
+  },
+
+  // ── ANALYTICS ────────────────────────────────────────────────────────────────
+  async _analyticsOverview() {
+    const sb = window.EduSupabase;
+    try {
+      const [students, teachers, classes, parents] = await Promise.all([
+        sb.from('students').select('id', { count: 'exact', head: true }),
+        sb.from('teachers').select('id', { count: 'exact', head: true }),
+        sb.from('classes').select('id', { count: 'exact', head: true }),
+        sb.from('parents').select('id', { count: 'exact', head: true }),
+      ]);
+      return {
+        success: true,
+        data: {
+          totalStudents: students.count || 0,
+          totalTeachers: teachers.count || 0,
+          totalClasses: classes.count || 0,
+          totalParents: parents.count || 0,
+        }
+      };
+    } catch (e) {
+      return { success: false, message: e.message };
+    }
   },
 };
 
@@ -165,12 +472,12 @@ const App = {
 
   async logout(silent = false) {
     if (silent || confirm('Are you sure you want to log out?')) {
-      try { await API.post('auth/logout'); } catch (e) { /* ignore */ }
       localStorage.removeItem('userRole');
       localStorage.removeItem('userId');
       localStorage.removeItem('userName');
       localStorage.removeItem('childId');
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userAvatar');
       sessionStorage.clear();
       // Navigate to login page — works from any subdirectory depth
       const parts = window.location.pathname.split('/');
@@ -221,7 +528,7 @@ const App = {
   },
 };
 
-// ── APP STATE LOCAL-POSTGRES BRIDGE ─────────────────────────────────────────
+// ── APP STATE LOCAL-SUPABASE BRIDGE ─────────────────────────────────────────
 const AppState = {
   init() {
     this.syncDatabaseToLocal();
@@ -484,7 +791,7 @@ const AppState = {
       window.dispatchEvent(new CustomEvent(keyEventMap[key]));
     }
 
-    // Sync to PostgreSQL DB asynchronously
+    // Sync to Supabase asynchronously
     try {
       if (key.startsWith('tt_')) {
         const parts = key.split('_');

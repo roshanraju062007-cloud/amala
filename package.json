@@ -1,32 +1,7 @@
 {
   "name": "amala-edusphere-lms",
-  "version": "2.0.0",
-  "description": "EduSphere LMS - Amala Higher Secondary School (PostgreSQL + JWT Auth)",
-  "main": "backend/server.js",
-  "scripts": {
-    "start": "node backend/server.js",
-    "dev": "node backend/server.js",
-    "test": "echo \"No tests configured\" && exit 0"
-  },
-  "keywords": [
-    "lms",
-    "school",
-    "education",
-    "postgresql"
-  ],
-  "author": "Amala HSS",
-  "license": "ISC",
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "compression": "^1.8.1",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^2.2.0",
-    "pg": "^8.16.0",
-    "socket.io": "^4.8.3"
-  }
+  "version": "3.0.0",
+  "description": "EduSphere LMS - Amala Higher Secondary School (Supabase + Static Frontend)",
+  "private": true,
+  "keywords": ["lms", "school", "education", "supabase"]
 }
