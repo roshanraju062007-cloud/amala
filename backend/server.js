@@ -6,18 +6,21 @@ require('dotenv').config();
 
 const express      = require('express');
 const http         = require('http');
-const socketIo     = require('socket.io');
 const cookieParser = require('cookie-parser');
 const cors         = require('cors');
 const path         = require('path');
-
 const compression  = require('compression');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = socketIo(server, {
-  cors: { origin: '*', methods: ['GET','POST'] }
-});
+
+// Socket.IO is only active outside of Vercel serverless (WebSockets not supported)
+const IS_VERCEL = Boolean(process.env.VERCEL);
+let io = null;
+if (!IS_VERCEL) {
+  const socketIo = require('socket.io');
+  io = socketIo(server, { cors: { origin: '*', methods: ['GET','POST'] } });
+}
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const MAX_PORT_TRIES = 10;
@@ -132,9 +135,8 @@ app.get('/', (req, res) => {
 });
 
 // ── SOCKET.IO REAL-TIME MESSAGING ────────────────────────────────────────────
-const JWT_SECRET_WS = JWT_SECRET; // re-use already declared JWT_SECRET
-
-
+const JWT_SECRET_WS = JWT_SECRET;
+if (io) {
 io.use((socket, next) => {
   // Authenticate socket via token in handshake
   const token = socket.handshake.auth?.token ||
@@ -223,6 +225,7 @@ io.on('connection', (socket) => {
     console.log(`Socket disconnected: ${socket.id} (${uid})`);
   });
 });
+} // end if (io)
 
 // ── START SERVER ──────────────────────────────────────────────────────────────
 function startServer(port, attempt = 0) {
@@ -254,4 +257,9 @@ function startServer(port, attempt = 0) {
   });
 }
 
-startServer(PORT);
+if (!IS_VERCEL) {
+  startServer(PORT);
+}
+
+// Export for Vercel serverless
+module.exports = app;
